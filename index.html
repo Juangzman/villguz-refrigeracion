@@ -95,7 +95,7 @@
         .contenido-texto { font-weight: 300; font-size: 1.15rem; text-align: justify; max-width: 900px; margin: auto; }
         .historia-bg { background: #ffffff; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; max-width: 100%; }
 
-        /* SERVICIOS */
+        /* SERVICIOS (VERSIÓN ESCRITORIO) */
         .servicios-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 40px; }
         .servicio-card { position: relative; border-radius: 15px; overflow: hidden; height: 350px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer; background-color: #e0e0e0; }
         .servicio-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
@@ -152,20 +152,53 @@
             .btn-wrapper { position: relative; top: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 25px 15px; line-height: 1.6; }
             .btn-llamar-hero, .btn-ws-hero, .btn-maps-hero, .btn-inicio { font-size: 12px; padding: 12px 5px; width: calc(50% - 5px); justify-content: center; }
             
-            /* --- CÓDIGO NUEVO PARA LAS TARJETAS EN CELULAR --- */
+            /* --- CÓDIGO NUEVO PARA EL CARRUSEL DE TARJETAS EN MÓVIL --- */
+            .servicios-grid { 
+                display: flex; 
+                flex-wrap: nowrap;
+                overflow-x: auto; 
+                scroll-snap-type: x mandatory; 
+                gap: 15px; 
+                padding-bottom: 20px; /* Deja espacio abajo para que no corte la sombra */
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Estilo para una barra de scroll finita y prolija */
+            .servicios-grid::-webkit-scrollbar { height: 6px; }
+            .servicios-grid::-webkit-scrollbar-thumb { background: var(--verde); border-radius: 10px; }
+            .servicios-grid::-webkit-scrollbar-track { background: transparent; }
+
+            .servicio-card { 
+                flex: 0 0 85%; /* La tarjeta ocupa el 85% del ancho, deja asomar la próxima */
+                scroll-snap-align: center; 
+                height: 380px; 
+            }
+            
+            .servicio-titulo { display: none; /* Oculta el título externo */ }
+            
             .servicio-overlay { 
                 opacity: 1; /* Mantiene la información visible */
-                background: rgba(0, 51, 112, 0.95); 
+                background: rgba(0, 51, 112, 0.7); /* Transparencia del 70% pedida */
+                justify-content: flex-start; /* Sube todo el contenido arriba */
+                padding: 30px 20px;
             }
-            .servicio-titulo { 
-                opacity: 0; /* Oculta el título externo */
+            
+            .servicio-overlay h3 { 
+                font-size: 1.6rem; 
+                margin-bottom: 20px; 
+                text-transform: uppercase;
+                text-shadow: 1px 1px 5px rgba(0,0,0,0.8); /* Para que resalte sobre cualquier foto */
             }
-            /* ------------------------------------------------- */
+            
+            .servicio-overlay ul li {
+                font-size: 0.95rem;
+                margin-bottom: 10px;
+            }
+            /* --------------------------------------------------------- */
 
             .contacto-grid { grid-template-columns: 1fr; }
             h2 { font-size: 1.8rem; }
-            .qr-container { display: inline-block; } /* Mostrar QR en móvil a pedido del usuario si lo quiere, o se deja por defecto */
-            .servicios-grid { grid-template-columns: 1fr; } 
+            .qr-container { display: inline-block; } 
         }
     </style>
 </head>
