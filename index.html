@@ -88,7 +88,6 @@
         .btn-inicio { background-color: var(--verde); color: white; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 50px; text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.3s ease; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
         .btn-inicio:hover { transform: scale(1.05); background-color: #6eb135; }
 
-
         /* SECCIONES GENERALES */
         section { padding: 80px 20px; max-width: 1100px; margin: auto; text-align: center; }
         h2 { font-weight: 700; font-size: 2.5rem; margin-bottom: 20px; color: var(--azul); }
@@ -153,9 +152,19 @@
             .btn-wrapper { position: relative; top: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 25px 15px; line-height: 1.6; }
             .btn-llamar-hero, .btn-ws-hero, .btn-maps-hero, .btn-inicio { font-size: 12px; padding: 12px 5px; width: calc(50% - 5px); justify-content: center; }
             
+            /* --- CÓDIGO NUEVO PARA LAS TARJETAS EN CELULAR --- */
+            .servicio-overlay { 
+                opacity: 1; /* Mantiene la información visible */
+                background: rgba(0, 51, 112, 0.95); 
+            }
+            .servicio-titulo { 
+                opacity: 0; /* Oculta el título externo */
+            }
+            /* ------------------------------------------------- */
+
             .contacto-grid { grid-template-columns: 1fr; }
             h2 { font-size: 1.8rem; }
-            .qr-container { display: none; } 
+            .qr-container { display: inline-block; } /* Mostrar QR en móvil a pedido del usuario si lo quiere, o se deja por defecto */
             .servicios-grid { grid-template-columns: 1fr; } 
         }
     </style>
