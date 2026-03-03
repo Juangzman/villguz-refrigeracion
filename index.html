@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Villguz Refrigeración - Servicio Técnico Autorizado</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --azul: #003370;
+            --verde: #7fc241;
+            --blanco: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            color: var(--azul);
+            line-height: 1.6;
+            scroll-behavior: smooth;
+            background-color: #f4f4f4;
+            overflow-x: hidden; /* Evita scroll horizontal con el menú lateral */
+        }
+
+        nav { 
+            background: var(--azul); 
+            padding: 15px 0; 
+            position: fixed; 
+            width: 100%; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .nav-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0 20px; 
+        }
+        
+        .nav-links { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 25px; 
+            flex-wrap: wrap; 
+        }
+        
+        nav a { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 13px; 
+            letter-spacing: 0.5px; 
+            transition: all 0.3s ease; 
+        }
+        nav a:hover { color: var(--verde); }
+
+        nav a.btn-nav-admin {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+        }
+        nav a.btn-nav-admin:hover { background-color: var(--verde); border-color: var(--verde); color: white; }
+
+        .menu-btn, .close-menu { display: none; } /* Ocultos en escritorio */
+
+        /* HERO Y CARRUSEL */
+        .hero-container { 
+            position: relative; 
+            width: 100%; 
+            padding-top: 55px; 
+            line-height: 0; 
+            background-color: var(--azul);
+        }
+
+        .carousel {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            position: relative;
+        }
+        
+        .slide img { 
+            width: 100%; 
+            height: auto; 
+            display: block; 
+        }
+        
+        .slide picture {
+            display: block;
+            width: 100%;
+        }
+
+        /* BOTONES DEL HERO */
+        .btn-wrapper { 
+            position: absolute; 
+            top: 85%; 
+            left: 0; 
+            width: 100%; 
+            z-index: 10;
+            display: flex;
+            justify-content: center; 
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 0 20px;
+        }
+
+        /* ESTILOS DE LOS 4 BOTONES */
+        .btn-llamar-hero {
+            background-color: var(--azul); 
+            color: white; 
+            font-family: 'Montserrat', sans-serif; 
+            font-weight: 700;
+            font-size: 14px; 
+            padding: 10px 20px; 
+            border-radius: 50px; 
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            transition: all 0.3s ease; 
+            white-space: nowrap; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-llamar-hero:hover { transform: scale(1.05); background-color: #004a99; border-color: var(--verde); }
+
+        .btn-ws-hero {
+            background-color: #25D366; 
+            color: white; 
+            font-family: 'Montserrat', sans-serif; 
+            font-weight: 700;
+            font-size: 14px; 
+            padding: 10px 20px; 
+            border-radius: 50px; 
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            transition: all 0.3s ease; 
+            white-space: nowrap; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-ws-hero:hover { transform: scale(1.05); background-color: #1ebe57; }
+
+        .btn-maps-hero {
+            background-color: #DB4437; 
+            color: white; 
+            font-family: 'Montserrat', sans-serif; 
+            font-weight: 700;
+            font-size: 14px; 
+            padding: 10px 20px; 
+            border-radius: 50px; 
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            transition: all 0.3s ease; 
+            white-space: nowrap; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-maps-hero:hover { transform: scale(1.05); background-color: #c13b2e; }
+
+        .btn-inicio {
+            background-color: var(--verde); 
+            color: white; 
+            font-family: 'Montserrat', sans-serif; 
+            font-weight: 700;
+            font-size: 14px; 
+            padding: 10px 20px; 
+            border-radius: 50px; 
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            transition: all 0.3s ease; 
+            white-space: nowrap; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-inicio:hover { transform: scale(1.05); background-color: #6eb135; }
+
+
+        /* SECCIONES GENERALES */
+        section { padding: 80px 20px; max-width: 1100px; margin: auto; text-align: center; }
+        h2 { font-weight: 700; font-size: 2.5rem; margin-bottom: 20px; color: var(--azul); }
+        h2::after { content: ''; display: block; width: 60px; height: 4px; background: var(--verde); margin: 10px auto; }
+        .contenido-texto { font-weight: 300; font-size: 1.15rem; text-align: justify; max-width: 900px; margin: auto; }
+        .historia-bg { background: #ffffff; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; max-width: 100%; }
+
+        /* SERVICIOS */
+        .servicios-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+            margin-top: 40px;
+        }
+        .servicio-card {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            height: 350px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            background-color: #e0e0e0;
+        }
+        .servicio-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .servicio-card:hover img {
+            transform: scale(1.1); 
+        }
+        .servicio-titulo {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
+            z-index: 2;
+            transition: opacity 0.3s;
+        }
+        .servicio-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 51, 112, 0.95);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            padding: 15px;
+            z-index: 3;
+        }
+        .servicio-card:hover .servicio-overlay { opacity: 1; }
+        .servicio-card:hover .servicio-titulo { opacity: 0; }
+        .servicio-overlay h3 { margin: 0 0 10px 0; color: var(--verde); font-size: 1.2rem; font-weight: 700; }
+        .servicio-overlay ul {
+            list-style: none; padding: 0; margin: 0; text-align: left; font-size: 0.85rem; line-height: 1.6; font-weight: 300;
+        }
+        .servicio-overlay ul li i { color: var(--verde); margin-right: 5px; font-size: 0.9rem; }
+
+        /* CONTACTO Y MAPA */
+        .contacto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; text-align: left; }
+        .info-contacto { display: flex; flex-direction: column; gap: 25px; }
+        .item-contacto { display: flex; align-items: flex-start; gap: 15px; font-size: 1.1rem; }
+        .item-contacto i { color: var(--verde); font-size: 1.5rem; width: 30px; margin-top: 5px; }
+        .btn-accion { display: inline-block; padding: 10px 20px; background: var(--verde); color: white; text-decoration: none; border-radius: 5px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; margin-top: 8px; }
+        .btn-accion:hover { background: var(--azul); }
+        .qr-container { margin-top: 10px; background: white; padding: 10px; border-radius: 10px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .qr-container img { width: 120px; height: 120px; }
+        .qr-container p { font-size: 10px; color: #666; margin: 5px 0 0 0; }
+        .mapa-wrapper { border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); height: 400px; }
+        
+        /* TURNOS */
+        .turnos-box { background: var(--azul); padding: 40px 20px; border-radius: 20px; }
+        .turnos-box h2 { color: white; }
+        .iframe-wrapper { background: white; border-radius: 15px; overflow: hidden; height: 750px; margin-top: 20px; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* FOOTER Y CRÉDITOS */
+        footer { 
+            background: #00224a; 
+            color: white; 
+            padding: 25px 20px; 
+            text-align: center; 
+        }
+        .footer-derechos { font-size: 12px; margin-bottom: 8px; }
+        .footer-creditos { font-size: 11px; color: #a0bcdc; font-weight: 300; }
+        .footer-creditos strong { color: var(--verde); font-weight: 600; }
+
+        /* AJUSTES RESPONSIVOS (TABLET) */
+        @media (max-width: 900px) {
+            .servicios-grid { grid-template-columns: repeat(2, 1fr); } 
+        }
+        
+        /* AJUSTES RESPONSIVOS (CELULAR) */
+        @media (max-width: 768px) {
+            
+            /* --- NAVEGACIÓN MÓVIL (MENÚ HAMBURGUESA) --- */
+            .nav-container { justify-content: flex-end; }
+            .menu-btn { 
+                display: flex; 
+                align-items: center; 
+                gap: 8px; 
+                color: white; 
+                font-weight: 700; 
+                font-size: 14px; 
+                cursor: pointer; 
+                letter-spacing: 1px;
+            }
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%; /* Menú oculto fuera de la pantalla */
+                width: 75%;
+                max-width: 300px;
+                height: 100vh;
+                background-color: rgba(255, 255, 255, 0.95); /* Blanco con opacidad */
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: flex-start;
+                padding: 80px 30px 30px 30px;
+                transition: right 0.4s ease;
+                box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+                z-index: 1001; 
+            }
+            .nav-links.active {
+                right: 0; /* Desliza hacia adentro */
+            }
+            .close-menu {
+                display: block;
+                position: absolute;
+                top: 20px;
+                right: 25px;
+                font-size: 28px;
+                color: var(--azul);
+                cursor: pointer;
+            }
+            .nav-links a {
+                color: var(--azul); /* Letras en azul */
+                font-size: 15px;
+                font-weight: 700;
+                margin-bottom: 25px;
+                width: 100%;
+                text-align: left;
+                border-bottom: 1px solid rgba(0, 51, 112, 0.1);
+                padding-bottom: 10px;
+            }
+            .nav-links a.btn-nav-admin {
+                background-color: transparent;
+                color: var(--azul);
+                border: 2px solid var(--azul);
+                text-align: center;
+                padding: 12px;
+                margin-top: auto; /* Empuja el botón admin hacia abajo */
+                border-radius: 8px;
+                margin-bottom: 0;
+            }
+            /* ------------------------------------------- */
+
+            .carousel, .slide { height: auto; }
+            .slide img { height: auto; object-fit: unset; }
+
+            .btn-wrapper { 
+                position: relative; 
+                top: 0; 
+                flex-direction: row; 
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                padding: 25px 15px; 
+                line-height: 1.6; 
+            }
+            .btn-llamar-hero, .btn-ws-hero, .btn-maps-hero, .btn-inicio { 
+                font-size: 12px; 
+                padding: 12px 5px; 
+                width: calc(50% - 5px); 
+                justify-content: center; 
+            }
+            
+            .contacto-grid { grid-template-columns: 1fr; }
+            h2 { font-size: 1.8rem; }
+            .qr-container { display: none; } 
+            .servicios-grid { grid-template-columns: 1fr; } 
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-container">
+        <div class="menu-btn" id="menuBtn">
+            MENÚ <i class="fas fa-bars"></i>
+        </div>
+        
+        <div class="nav-links" id="navLinks">
+            <span class="close-menu" id="closeMenu"><i class="fas fa-times"></i></span>
+            <a href="#inicio">INICIO</a>
+            <a href="#servicios">SERVICIOS</a>
+            <a href="#nosotros">QUIÉNES SOMOS</a>
+            <a href="#historia">HISTORIA</a>
+            <a href="#turnos">TURNOS WEB</a>
+            <a href="#contacto">CONTACTO</a>
+            <a href="https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec?vista=admin" target="_blank" class="btn-nav-admin">
+                <i class="fas fa-lock"></i> ADMIN
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div id="inicio" class="hero-container">
+    
+    <div class="carousel">
+        <div class="slide active">
+            <picture>
+                <source media="(max-width: 768px)" srcset="https://i.postimg.cc/PrcMqf7t/Mesa-de-trabajo-4.jpg">
+                <img src="https://i.postimg.cc/GpFTrXkB/HERO.jpg" class="hero-img" alt="Villguz Hero 1">
+            </picture>
+        </div>
+        <div class="slide">
+            <picture>
+                <source media="(max-width: 768px)" srcset="https://i.postimg.cc/Jzk5HVwH/Mesa-de-trabajo-5.jpg">
+                <img src="https://i.postimg.cc/s2YGyTpM/Mesa-de-trabajo-1.jpg" class="hero-img" alt="Villguz Hero 2">
+            </picture>
+        </div>
+        <div class="slide">
+            <picture>
+                <source media="(max-width: 768px)" srcset="https://i.postimg.cc/BvfcxYsm/Mesa-de-trabajo-6.jpg">
+                <img src="https://i.postimg.cc/QMQKsfpH/Mesa-de-trabajo-2.jpg" class="hero-img" alt="Villguz Hero 3">
+            </picture>
+        </div>
+        <div class="slide">
+            <picture>
+                <source media="(max-width: 768px)" srcset="https://i.postimg.cc/TPvqr7fG/Mesa-de-trabajo-7.jpg">
+                <img src="https://i.postimg.cc/JhNHmpbD/Mesa-de-trabajo-3.jpg" class="hero-img" alt="Villguz Hero 4">
+            </picture>
+        </div>
+    </div>
+
+    <div class="btn-wrapper">
+        <a href="tel:03814331451" class="btn-llamar-hero"><i class="fas fa-phone-alt"></i> LLAMAR</a>
+        <a href="https://wa.me/543814900124" target="_blank" class="btn-ws-hero"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
+        <a href="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3560.227560416805!2d-65.2072044236142!3d-26.83272997669493!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94225c0e6255146b%3A0xe54e207920b75487!2sPcia.%20de%20Corrientes%201373%2C%20T4000%20San%20Miguel%20de%20Tucum%C3%A1n%2C%20Tucum%C3%A1n!5e0!3m2!1ses-419!2sar!4v1700000000000!5m2!1ses-419!2sar" target="_blank" class="btn-maps-hero"><i class="fas fa-map-marker-alt"></i> CÓMO LLEGAR</a>
+        <a href="#turnos" class="btn-inicio"><i class="fas fa-tools"></i> AGENDAR VISITA</a>
+    </div>
+</div>
+
+<section id="servicios">
+    <h2>Nuestros Servicios</h2>
+    <p style="color: #666; margin-bottom: 30px;">Soluciones técnicas con garantía y repuestos originales.</p>
+    
+    <div class="servicios-grid">
+        <div class="servicio-card">
+            <img src="https://i.postimg.cc/nr9559D6/Lifestyle-image.jpg" alt="Heladeras">
+            <div class="servicio-titulo">Heladeras</div>
+            <div class="servicio-overlay">
+                <h3>Heladeras</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Revisión y mant. general</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de compresor / bochas</li>
+                    <li><i class="fas fa-check-circle"></i> Carga de gas refrigerante</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio por plaquetas nuevas</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de termostatos</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de burletes</li>
+                </ul>
+            </div>
+        </div>
+        <div class="servicio-card">
+            <img src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=600&q=80" alt="Lavarropas">
+            <div class="servicio-titulo">Lavarropas</div>
+            <div class="servicio-overlay">
+                <h3>Lavarropas</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Revisión general y diagnóstico</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de rulemanes y ejes</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio por plaquetas nuevas</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de bomba de desagote</li>
+                    <li><i class="fas fa-check-circle"></i> Solución a códigos de error</li>
+                    <li><i class="fas fa-check-circle"></i> Limpieza profunda de tambor</li>
+                </ul>
+            </div>
+        </div>
+        <div class="servicio-card">
+            <img src="https://i.postimg.cc/4N9k2qvJ/MCIM01777658-DW-Content-02-R-1600x1499-9c3983b1-483f-4d18-a9f6-6a31b67e9a9c.webp" alt="Lavavajillas">
+            <div class="servicio-titulo">Lavavajillas</div>
+            <div class="servicio-overlay">
+                <h3>Lavavajillas</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Destranque de cañerías</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de bomba de lavado</li>
+                    <li><i class="fas fa-check-circle"></i> Solución a fugas de agua</li>
+                    <li><i class="fas fa-check-circle"></i> Mantenimiento de filtros</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio por plaquetas nuevas</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de termostatos</li>
+                </ul>
+            </div>
+        </div>
+        <div class="servicio-card">
+            <img src="https://i.postimg.cc/sxKBk1CB/limpiar-filtros-aire-acondicionado.jpg" alt="Aire Acondicionado">
+            <div class="servicio-titulo">Aire Acond.</div>
+            <div class="servicio-overlay">
+                <h3>Aire Acond.</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Carga de gas y control de fugas</li>
+                    <li><i class="fas fa-check-circle"></i> Mantenimiento preventivo</li>
+                    <li><i class="fas fa-check-circle"></i> Limpieza profunda de unidad</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio de capacitores</li>
+                    <li><i class="fas fa-check-circle"></i> Cambio por plaquetas nuevas</li>
+                    <li><i class="fas fa-check-circle"></i> Solución a goteos o ruidos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="nosotros" class="historia-bg">
+    <h2>Quiénes Somos</h2>
+    <div class="contenido-texto">
+        <p>En <strong>Villguz Refrigeración</strong>, el profesionalismo es nuestra base. Con décadas de experiencia, nos hemos consolidado en San Miguel de Tucumán gracias a nuestra excelencia técnica. </p>
+        <p>Nuestro equipo se capacita constantemente con grandes marcas las cuales atendemos oficialmente hace más de 25 años, asegurando soluciones precisas para los equipos más modernos.</p>
+    </div>
+</section>
+
+<section id="historia">
+    <div style="max-width: 1100px; margin: auto; padding: 20px;">
+        <h2>Nuestra Historia</h2>
+        <div class="contenido-texto">
+            <p>Nuestra historia comenzó en <strong>1990</strong>, fundada originalmente como <strong>Friguz</strong> por Juan Santiago Guzmán e Inés Verónica Villalba. Durante años crecimos bajo ese nombre, capacitándonos siempre para dar lo mejor.</p>
+            <p>Hoy, como <strong>Villguz</strong>, somos una <strong>empresa familiar en constante crecimiento</strong> donde todos apoyamos para garantizar la confianza de nuestros clientes.</p>
+        </div>
+    </div>
+</section>
+
+<section id="turnos">
+    <div class="turnos-box">
+        <h2>Turnos Web</h2>
+        <div class="iframe-wrapper">
+            <iframe src="https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec"></iframe>
+        </div>
+    </div>
+</section>
+
+<section id="contacto">
+    <h2>Contacto</h2>
+    <div class="contacto-grid">
+        <div class="info-contacto">
+            <div class="item-contacto">
+                <i class="fab fa-whatsapp"></i>
+                <div>
+                    <strong>WhatsApp:</strong> 381 4 900 124<br>
+                    <a href="https://wa.me/543814900124" target="_blank" class="btn-accion">Enviar Mensaje</a><br>
+                    <div class="qr-container">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/543814900124" alt="QR WhatsApp">
+                        <p>Escaneá para chatear</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="item-contacto">
+                <i class="fas fa-phone-alt"></i>
+                <div>
+                    <strong>Teléfono Fijo:</strong> 0381 4331451<br>
+                    <a href="tel:03814331451" class="btn-accion">Llamar Ahora</a>
+                </div>
+            </div>
+            
+            <div class="item-contacto">
+                <i class="fas fa-envelope"></i>
+                <div><strong>Email:</strong> friguz.refrigeracion@gmail.com</div>
+            </div>
+            
+            <div class="item-contacto">
+                <i class="fas fa-map-marker-alt"></i>
+                <div><strong>Dirección:</strong> Corrientes 1373, San Miguel de Tucumán.</div>
+            </div>
+        </div>
+        
+        <div class="mapa-wrapper">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3560.227560416805!2d-65.2072044236142!3d-26.83272997669493!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94225c0e6255146b%3A0xe54e207920b75487!2sPcia.%20de%20Corrientes%201373%2C%20T4000%20San%20Miguel%20de%20Tucum%C3%A1n%2C%20Tucum%C3%A1n!5e0!3m2!1ses-419!2sar!4v1700000000000!5m2!1ses-419!2sar" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-derechos">© 2026 Villguz Refrigeración. Todos los derechos reservados.</div>
+    <div class="footer-creditos">Diseño UX/UI y Desarrollo Web por <strong>Juan Guzmán</strong></div>
+</footer>
+
+<script>
+    // 1. Script para el Carrusel
+    let slideIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    
+    function showSlides() {
+        slides.forEach(slide => slide.classList.remove('active'));
+        slideIndex++;
+        if (slideIndex > slides.length) { slideIndex = 1; }
+        slides[slideIndex-1].classList.add('active');
+        setTimeout(showSlides, 4000); 
+    }
+    setTimeout(showSlides, 4000);
+
+    // 2. Script para el Menú Lateral Móvil
+    const menuBtn = document.getElementById('menuBtn');
+    const navLinks = document.getElementById('navLinks');
+    const closeMenu = document.getElementById('closeMenu');
+    const links = document.querySelectorAll('.nav-links a');
+
+    // Abrir menú
+    menuBtn.addEventListener('click', () => {
+        navLinks.classList.add('active');
+    });
+
+    // Cerrar menú con la "X"
+    closeMenu.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+    });
+
+    // Cerrar menú automáticamente al hacer clic en cualquier sección
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
+        });
+    });
+</script>
+
+</body>
+</html>
