@@ -152,49 +152,27 @@
             .btn-wrapper { position: relative; top: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 25px 15px; line-height: 1.6; }
             .btn-llamar-hero, .btn-ws-hero, .btn-maps-hero, .btn-inicio { font-size: 12px; padding: 12px 5px; width: calc(50% - 5px); justify-content: center; }
             
-            /* --- CÓDIGO NUEVO PARA EL CARRUSEL DE TARJETAS EN MÓVIL --- */
+            /* CARRUSEL DE TARJETAS EN MÓVIL */
             .servicios-grid { 
                 display: flex; 
                 flex-wrap: nowrap;
                 overflow-x: auto; 
                 scroll-snap-type: x mandatory; 
                 gap: 15px; 
-                padding-bottom: 20px; /* Deja espacio abajo para que no corte la sombra */
+                padding-bottom: 20px; 
                 -webkit-overflow-scrolling: touch;
             }
-            
-            /* Estilo para una barra de scroll finita y prolija */
             .servicios-grid::-webkit-scrollbar { height: 6px; }
             .servicios-grid::-webkit-scrollbar-thumb { background: var(--verde); border-radius: 10px; }
             .servicios-grid::-webkit-scrollbar-track { background: transparent; }
-
-            .servicio-card { 
-                flex: 0 0 85%; /* La tarjeta ocupa el 85% del ancho, deja asomar la próxima */
-                scroll-snap-align: center; 
-                height: 380px; 
-            }
-            
-            .servicio-titulo { display: none; /* Oculta el título externo */ }
-            
+            .servicio-card { flex: 0 0 85%; scroll-snap-align: center; height: 380px; }
+            .servicio-titulo { display: none; }
             .servicio-overlay { 
-                opacity: 1; /* Mantiene la información visible */
-                background: rgba(0, 51, 112, 0.7); /* Transparencia del 70% pedida */
-                justify-content: flex-start; /* Sube todo el contenido arriba */
-                padding: 30px 20px;
+                opacity: 1; background: rgba(0, 51, 112, 0.7); 
+                justify-content: flex-start; padding: 30px 20px;
             }
-            
-            .servicio-overlay h3 { 
-                font-size: 1.6rem; 
-                margin-bottom: 20px; 
-                text-transform: uppercase;
-                text-shadow: 1px 1px 5px rgba(0,0,0,0.8); /* Para que resalte sobre cualquier foto */
-            }
-            
-            .servicio-overlay ul li {
-                font-size: 0.95rem;
-                margin-bottom: 10px;
-            }
-            /* --------------------------------------------------------- */
+            .servicio-overlay h3 { font-size: 1.6rem; margin-bottom: 20px; text-transform: uppercase; text-shadow: 1px 1px 5px rgba(0,0,0,0.8); }
+            .servicio-overlay ul li { font-size: 0.95rem; margin-bottom: 10px; }
 
             .contacto-grid { grid-template-columns: 1fr; }
             h2 { font-size: 1.8rem; }
@@ -218,6 +196,8 @@
             <a href="#historia">HISTORIA</a>
             <a href="#turnos">TURNOS WEB</a>
             <a href="#contacto">CONTACTO</a>
+            <a href="https://www.vermiorden.com/friguz/" target="_blank" style="color: var(--verde); font-weight: 700;"><i class="fas fa-search"></i> ESTADO DE ORDEN</a>
+            
             <a href="https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec?vista=admin" target="_blank" class="btn-nav-admin">
                 <i class="fas fa-lock"></i> ADMIN
             </a>
@@ -351,6 +331,17 @@
     </div>
 </section>
 
+<section id="estado-orden" style="padding: 40px 20px;">
+    <div style="background-color: var(--verde); padding: 40px 20px; border-radius: 20px; max-width: 900px; margin: auto; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+        <div style="color: white; font-weight: 700; font-size: 2.2rem; margin-bottom: 10px;">¿Ya estamos revisando tu equipo?</div>
+        <div style="width: 60px; height: 4px; background: white; margin: 10px auto 20px auto;"></div>
+        <p style="color: white; font-size: 1.1rem; margin-bottom: 30px; font-weight: 600;">Ingresá con tu número de orden (TS) para ver el estado de la reparación en tiempo real.</p>
+        <a href="https://www.vermiorden.com/friguz/" target="_blank" style="background-color: white; color: var(--azul); padding: 15px 35px; border-radius: 50px; font-weight: 700; text-decoration: none; font-size: 1.1rem; transition: transform 0.3s ease; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <i class="fas fa-search"></i> VER MI ORDEN AQUÍ
+        </a>
+    </div>
+</section>
+
 <section id="turnos">
     <div class="turnos-box">
         <h2>Turnos Web</h2>
@@ -407,7 +398,6 @@
 </footer>
 
 <script>
-    // 1. Script para el Carrusel
     let slideIndex = 0;
     const slides = document.querySelectorAll('.slide');
     
@@ -420,23 +410,19 @@
     }
     setTimeout(showSlides, 4000);
 
-    // 2. Script para el Menú Lateral Móvil
     const menuBtn = document.getElementById('menuBtn');
     const navLinks = document.getElementById('navLinks');
     const closeMenu = document.getElementById('closeMenu');
     const links = document.querySelectorAll('.nav-links a');
 
-    // Abrir menú
     menuBtn.addEventListener('click', () => {
         navLinks.classList.add('active');
     });
 
-    // Cerrar menú con la "X"
     closeMenu.addEventListener('click', () => {
         navLinks.classList.remove('active');
     });
 
-    // Cerrar menú automáticamente al hacer clic en cualquier sección
     links.forEach(link => {
         link.addEventListener('click', () => {
             navLinks.classList.remove('active');
