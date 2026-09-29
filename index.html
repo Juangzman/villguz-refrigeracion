@@ -171,6 +171,13 @@ p{margin:0}
 .brands-title span:last-child{font-family:var(--f-display);font-size:1.7rem;letter-spacing:.02em;color:var(--ink)}
 .brand-row{list-style:none;margin:0;padding:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:24px 32px;flex-wrap:wrap;min-width:0}
 .brand-row li{display:flex;align-items:center;justify-content:center}
+.brand-list{flex:1;min-width:0;display:grid;gap:10px}
+@media (min-width:901px){.brand-row{display:grid;grid-template-columns:repeat(5,auto);justify-content:space-between;gap:8px}}
+.brand-row a{display:flex;align-items:center;justify-content:center;padding:6px 8px;border-radius:10px;transition:background .15s,transform .15s}
+.brand-row a:hover{background:var(--mist);transform:translateY(-2px)}
+.brand-hint{margin:0;font-size:.8rem;color:var(--muted);text-align:right}
+.turnos-notes a{color:var(--green);font-weight:600}
+@media (max-width:900px){.brand-hint{text-align:center}}
 .brand-row img{display:block;width:auto;height:auto;filter:var(--logo-filter);opacity:.92;transition:opacity .15s}
 .brand-row img:hover{opacity:1}
 @media (max-width:900px){.brand-row{justify-content:center}.brands .wrap{justify-content:center;text-align:center}.brands-title{justify-items:center;width:100%}}
@@ -620,10 +627,10 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
   </div>
 </section>
 
-<section class="brands" aria-labelledby="b-title">
+<section class="brands" id="marcas" aria-labelledby="b-title">
   <div class="wrap">
     <h2 id="b-title" class="brands-title"><span class="eyebrow">Servicio técnico oficial</span><span>Las marcas que atendemos</span></h2>
-    <ul class="brand-row"><li><img src="img/marcas/samsung-azul.png" alt="Samsung" style="max-width:150px;max-height:24px" loading="lazy"></li><li><img src="img/marcas/lg-azul.png" alt="LG" style="max-width:120px;max-height:46px" loading="lazy"></li><li><img src="img/marcas/whirlpool-azul.png" alt="Whirlpool" style="max-width:150px;max-height:44px" loading="lazy"></li><li><img src="img/marcas/bgh-azul.png" alt="BGH" style="max-width:112px;max-height:44px" loading="lazy"></li><li><img src="img/marcas/eslabon-de-lujo-azul.png" alt="Eslabón de Lujo" style="max-width:120px;max-height:50px" loading="lazy"></li></ul>
+    <div class="brand-list"><ul class="brand-row"><li><a href="https://www.samsung.com/ar/support/service-center/" target="_blank" rel="noopener" title="Pedir service oficial Samsung" aria-label="Pedir service oficial Samsung (sitio de la marca, abre en otra pestaña)"><img src="img/marcas/samsung-azul.png" alt="Samsung" style="max-width:150px;max-height:24px" loading="lazy"></a></li><li><a href="https://www.lg.com/ar/soporte/servicio-tecnico-online/solicitud" target="_blank" rel="noopener" title="Pedir service oficial LG" aria-label="Pedir service oficial LG (sitio de la marca, abre en otra pestaña)"><img src="img/marcas/lg-azul.png" alt="LG" style="max-width:120px;max-height:46px" loading="lazy"></a></li><li><a href="https://www.whirlpool.com.ar/servicio-tecnico" target="_blank" rel="noopener" title="Pedir service oficial Whirlpool" aria-label="Pedir service oficial Whirlpool (sitio de la marca, abre en otra pestaña)"><img src="img/marcas/whirlpool-azul.png" alt="Whirlpool" style="max-width:150px;max-height:44px" loading="lazy"></a></li><li><a href="https://www.bgh.com.ar/institucional/ayuda" target="_blank" rel="noopener" title="Pedir service oficial BGH" aria-label="Pedir service oficial BGH (sitio de la marca, abre en otra pestaña)"><img src="img/marcas/bgh-azul.png" alt="BGH" style="max-width:112px;max-height:44px" loading="lazy"></a></li><li><a href="https://www.whirlpool.com.ar/servicio-tecnico" target="_blank" rel="noopener" title="Pedir service oficial Eslabón de Lujo" aria-label="Pedir service oficial Eslabón de Lujo (sitio de la marca, abre en otra pestaña)"><img src="img/marcas/eslabon-de-lujo-azul.png" alt="Eslabón de Lujo" style="max-width:120px;max-height:50px" loading="lazy"></a></li></ul><p class="brand-hint">Tocá la marca de tu equipo para pedir el service oficial en su sitio y obtener tu número de solicitud de fábrica.</p></div>
   </div>
 </section>
 
@@ -844,7 +851,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
           <p>Completá tus datos y enviá la solicitud por WhatsApp. Después coordinamos con vos el día de la visita.</p>
           <ul class="turnos-notes">
             <li><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><span><b>Lunes a viernes de 8:30 a 17:00 hs.</b> No entregamos horarios exactos.</span></li>
-            <li><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg><span>Si tu equipo está en <b>garantía de fábrica</b>, tené a mano el número de solicitud que te dio la marca.</span></li>
+            <li><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg><span>Si tu equipo está en <b>garantía de fábrica</b>, tené a mano el número de solicitud que te dio la marca. ¿Todavía no lo tenés? <a href="#marcas">Pedilo en el sitio de tu marca</a>.</span></li>
             <li><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg><span>Al enviar se abre WhatsApp con tus datos ya escritos. Solo tenés que tocar enviar.</span></li>
           </ul>
         </div>
