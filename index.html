@@ -174,7 +174,7 @@ p{margin:0}
 .brand-list{flex:1;min-width:0;display:grid;gap:10px}
 @media (min-width:901px){.brand-row{display:grid;grid-template-columns:repeat(5,auto);justify-content:space-between;gap:8px}}
 .brand-row a{display:flex;align-items:center;justify-content:center;padding:6px 8px;border-radius:10px;transition:background .15s,transform .15s}
-.brand-row a:hover{background:var(--mist);transform:translateY(-2px)}
+
 .brand-hint{margin:0;font-size:.8rem;color:var(--muted);text-align:right}
 .turnos-notes a{color:var(--green);font-weight:600}
 @media (max-width:900px){.brand-hint{text-align:center}}
@@ -208,7 +208,9 @@ p{margin:0}
 .brands .eyebrow{color:#76B72A}
 .brands .brand-hint{color:#B9C9DD}
 .brand-row a.bt{background:transparent;border:0;padding:6px 8px;width:auto;height:auto}
-.brand-row a.bt:hover{background:rgba(255,255,255,.08);box-shadow:none;transform:translateY(-2px)}
+.brand-row a.bt,.brand-row a.bt:hover{background:transparent!important;box-shadow:none}
+.brand-row a.bt{transition:transform .2s ease}
+.brand-row a.bt:hover{transform:scale(1.08)}
 .brand-row img{filter:none!important;opacity:.95!important}
 .brand-row a.bt:hover img{opacity:1!important}
 .brand-row a.bt-samsung img,.brand-row a.bt-whirlpool img{filter:drop-shadow(0 0 1px rgba(255,255,255,.55)) drop-shadow(0 0 6px rgba(255,255,255,.28))!important}
