@@ -308,14 +308,40 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
 .c-item .qr span{font-size:.78rem;color:var(--on-navy-muted)}
 .c-item.wa{grid-row:span 2}
 .turnos{padding-block:clamp(56px,8vw,96px) 0}
-.turnos-box{background:var(--navy);color:#fff;border-radius:24px;padding:clamp(22px,4vw,44px)}
-.turnos-box .eyebrow{color:var(--green)}
-.turnos-box h2{color:#fff}
-.turnos-box .sec-head p.sub{color:var(--on-navy-muted)}
-.iframe-wrap{background:#fff;border-radius:16px;overflow:hidden;height:760px}
-.iframe-wrap iframe{width:100%;height:100%;border:0;display:block}
-.turnos-alt{margin-top:16px;color:var(--green)}
-@media (max-width:520px){.iframe-wrap{height:820px}.turnos-box{border-radius:18px}}
+.turnos-box{background:var(--navy);color:#fff;border-radius:24px;padding:clamp(22px,4vw,48px)}
+.turnos-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(24px,5vw,64px);align-items:start}
+.turnos-intro{display:grid;gap:16px;min-width:0}
+.turnos-intro .eyebrow{color:var(--green)}
+.turnos-intro h2{color:#fff;font-size:clamp(2.4rem,4.6vw,3.6rem)}
+.turnos-intro > p{color:var(--on-navy-muted);font-weight:300;font-size:1.05rem;max-width:42ch}
+.turnos-notes{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:14px}
+.turnos-notes li{display:flex;gap:12px;align-items:flex-start;font-size:.9rem;color:var(--on-navy-muted)}
+.turnos-notes b{color:#fff;font-weight:600}
+.turnos-notes svg{width:20px;height:20px;flex:none;color:var(--green);margin-top:2px}
+.tform{background:#fff;color:#0C1624;border-radius:18px;padding:clamp(18px,3vw,30px);display:grid;gap:18px;min-width:0}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.f-field{display:grid;gap:6px;min-width:0}
+.f-full{grid-column:1/-1}
+.f-field label{font-size:.8rem;font-weight:600;color:#003370;letter-spacing:.02em}
+.f-field .opt{font-weight:400;color:#6B7A8F}
+.tform input,.tform select,.tform textarea{width:100%;font:500 1rem/1.3 var(--f-body);color:#0C1624;background:#F4F7FB;border:1.5px solid #D6DFEA;border-radius:10px;padding:.8em .9em;transition:border-color .15s,background .15s;color-scheme:light}
+.tform textarea{resize:vertical;min-height:84px}
+.tform input::placeholder,.tform textarea::placeholder{color:#8A98AB}
+.tform input:focus,.tform select:focus,.tform textarea:focus{outline:none;border-color:#76B72A;background:#fff;box-shadow:0 0 0 3px rgba(118,183,42,.25)}
+.tform .invalid{border-color:#C8372D;background:#FFF6F5}
+.f-error{margin:0;color:#B3261E;font-size:.88rem;font-weight:600}
+.f-submit{justify-content:center;width:100%;padding:1.05em 1.4em;font-size:1rem}
+.f-submit[disabled]{opacity:.6;cursor:progress}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.tdone{background:#fff;color:#0C1624;border-radius:18px;padding:clamp(22px,4vw,40px);display:grid;gap:14px;justify-items:start;align-content:start}
+.tdone-ico{width:56px;height:56px;border-radius:50%;background:#76B72A;display:grid;place-items:center;color:#003370}
+.tdone-ico svg{width:30px;height:30px}
+.tdone h3{font-size:2.4rem;color:#003370}
+.tdone p{color:#4A5A70;max-width:52ch}
+.tdone .ctas{display:flex;gap:10px;flex-wrap:wrap}
+.tdone .btn-ghost{color:#003370}
+@media (max-width:900px){.turnos-grid{grid-template-columns:1fr}}
+@media (max-width:560px){.f-row{grid-template-columns:1fr}.turnos-box{border-radius:18px}}
 @media (max-width:900px){.contact-grid{grid-template-columns:1fr}}
 @media (max-width:520px){.c-list{grid-template-columns:1fr}}
 
@@ -811,17 +837,79 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
 <section class="turnos" id="turnos" aria-labelledby="tw-title">
   <div class="wrap">
     <div class="turnos-box">
-      <div class="sec-head">
-        <div>
+      <div class="turnos-grid">
+        <div class="turnos-intro">
           <span class="eyebrow">Turnos web</span>
-          <h2 id="tw-title">Reservá tu turno online</h2>
+          <h2 id="tw-title">Pedí tu turno online</h2>
+          <p>Completá tus datos y enviá la solicitud por WhatsApp. Después coordinamos con vos el día de la visita.</p>
+          <ul class="turnos-notes">
+            <li><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><span><b>Lunes a viernes de 8:30 a 17:00 hs.</b> No entregamos horarios exactos.</span></li>
+            <li><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg><span>Si tu equipo está en <b>garantía de fábrica</b>, tené a mano el número de solicitud que te dio la marca.</span></li>
+            <li><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg><span>Al enviar se abre WhatsApp con tus datos ya escritos. Solo tenés que tocar enviar.</span></li>
+          </ul>
         </div>
-        <p class="sub">Elegí el día y el horario disponible. Te confirmamos por WhatsApp.</p>
+
+        <form class="tform" id="turnoForm" novalidate>
+          <div class="f-row">
+            <div class="f-field f-full">
+              <label for="t_disponibilidad">Disponibilidad horaria</label>
+              <input id="t_disponibilidad" name="disponibilidad" type="text" required autocomplete="off" placeholder="Ej: a la mañana, o después de las 14:00">
+            </div>
+            <div class="f-field f-full">
+              <label for="t_tipo">Tipo de servicio</label>
+              <select id="t_tipo" name="tipo_servicio" required>
+                <option value="">Seleccionar…</option>
+                <option value="Sin garantia">Sin garantía</option>
+                <option value="Garantia">Garantía de fábrica</option>
+                <option value="Garantia de taller">Garantía de taller</option>
+              </select>
+            </div>
+            <div class="f-field f-full" id="t_fabrica_wrap" hidden>
+              <label for="t_fabrica">Número de solicitud de fábrica</label>
+              <input id="t_fabrica" name="numero_fabrica" type="text" autocomplete="off" placeholder="El número que te dio la marca">
+            </div>
+            <div class="f-field">
+              <label for="t_nombre">Nombre y apellido</label>
+              <input id="t_nombre" name="nombre" type="text" required autocomplete="name">
+            </div>
+            <div class="f-field">
+              <label for="t_telefono">Teléfono</label>
+              <input id="t_telefono" name="telefono" type="tel" required autocomplete="tel" inputmode="tel" placeholder="Ej: 381 555-1234">
+            </div>
+            <div class="f-field f-full">
+              <label for="t_domicilio">Domicilio</label>
+              <input id="t_domicilio" name="domicilio" type="text" required autocomplete="street-address" placeholder="Calle, número, barrio o localidad">
+            </div>
+            <div class="f-field">
+              <label for="t_producto">Producto</label>
+              <input id="t_producto" name="producto" type="text" required list="t_productos" autocomplete="off" placeholder="Ej: Heladera">
+              <datalist id="t_productos"><option value="Heladera"><option value="Freezer"><option value="Lavarropas"><option value="Lavasecarropas"><option value="Lavavajillas"><option value="Aire acondicionado"></datalist>
+            </div>
+            <div class="f-field">
+              <label for="t_marca">Marca</label>
+              <input id="t_marca" name="marca" type="text" required list="t_marcas" autocomplete="off" placeholder="Ej: Samsung">
+              <datalist id="t_marcas"><option value="Samsung"><option value="LG"><option value="Whirlpool"><option value="BGH"><option value="Eslabón de Lujo"></datalist>
+            </div>
+            <div class="f-field f-full">
+              <label for="t_falla">¿Qué le pasa al equipo? <span class="opt">(opcional)</span></label>
+              <textarea id="t_falla" name="falla" rows="3" placeholder="Ej: no enfría abajo, hace ruido al centrifugar…"></textarea>
+            </div>
+            <div class="hp" aria-hidden="true"><label for="t_web">No completar</label><input id="t_web" name="web" type="text" tabindex="-1" autocomplete="off"></div>
+          </div>
+          <p class="f-error" id="t_error" role="alert" hidden></p>
+          <button class="btn btn-green f-submit" type="submit" id="t_submit"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Enviar solicitud por WhatsApp</button>
+        </form>
+
+        <div class="tdone" id="turnoDone" hidden tabindex="-1">
+          <span class="tdone-ico"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
+          <h3>¡Listo, <span id="t_done_name">gracias</span>!</h3>
+          <p>Registramos tu solicitud. Si WhatsApp no se abrió solo, tocá el botón para enviarnos el mensaje. Te contactamos para coordinar el día de la visita.</p>
+          <div class="ctas">
+            <a class="btn btn-green" id="t_wa_link" href="https://wa.me/5493814900124" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg>Abrir WhatsApp</a>
+            <button class="btn btn-ghost" type="button" id="t_again">Pedir otro turno</button>
+          </div>
+        </div>
       </div>
-      <div class="iframe-wrap">
-        <iframe src="https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec" title="Formulario de turnos web de VILLGUZ" loading="lazy"></iframe>
-      </div>
-      <a class="link-arrow turnos-alt" href="https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec" target="_blank" rel="noopener">Abrir el formulario en una pestaña nueva</a>
     </div>
   </div>
 </section>
@@ -941,6 +1029,45 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
     t.addEventListener('keydown',function(e){var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(d){e.preventDefault();selectTab(tabs[(k+d+tabs.length)%tabs.length].id.slice(2),true)}})});
   [].forEach.call(document.querySelectorAll('[data-go-tab]'),function(a){a.addEventListener('click',function(){selectTab(a.getAttribute('data-go-tab'))})});
 
+
+  // Turnos web: guarda en la planilla y abre WhatsApp
+  var TURNOS_URL='https://script.google.com/macros/s/AKfycbz6eTDnXVIXw1OV10oyZLOboD3D2Oe9JqqQm7BoBWApnGHIHYr0UeawLumXO7TnglDa/exec';
+  var WA_NUM='5493814900124';
+  var tf=document.getElementById('turnoForm'),tdone=document.getElementById('turnoDone'),terr=document.getElementById('t_error'),tsub=document.getElementById('t_submit');
+  var ttipo=document.getElementById('t_tipo'),tfabW=document.getElementById('t_fabrica_wrap'),tfab=document.getElementById('t_fabrica');
+  var TIPOS={'Sin garantia':'Sin garantía','Garantia':'Garantía de fábrica','Garantia de taller':'Garantía de taller'};
+  function syncFab(){var g=ttipo.value==='Garantia';tfabW.hidden=!g;tfab.required=g;}
+  ttipo.addEventListener('change',syncFab);
+  tf.addEventListener('input',function(e){e.target.classList.remove('invalid');});
+  function v(id){return document.getElementById(id).value.trim();}
+  tf.addEventListener('submit',function(e){
+    e.preventDefault();terr.hidden=true;
+    var bad=[].filter.call(tf.querySelectorAll('[required]'),function(el){return !el.closest('[hidden]')&&!el.value.trim();});
+    bad.forEach(function(el){el.classList.add('invalid');});
+    var tel=v('t_telefono').replace(/\D/g,'');
+    if(bad.length){terr.textContent='Completá los campos marcados para poder enviar la solicitud.';terr.hidden=false;bad[0].focus();return;}
+    if(tel.length<8){var te=document.getElementById('t_telefono');te.classList.add('invalid');terr.textContent='Revisá el teléfono: escribilo con característica, por ejemplo 381 555-1234.';terr.hidden=false;te.focus();return;}
+    if(v('t_web'))return;
+    var d=new Date(),hoy=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var datos={fecha:hoy,numero_orden:'A generar',tipo_servicio:ttipo.value,numero_fabrica:ttipo.value==='Garantia'?v('t_fabrica'):'',
+      nombre:v('t_nombre'),domicilio:v('t_domicilio'),telefono:v('t_telefono'),producto:v('t_producto'),marca:v('t_marca'),
+      tecnico:'Pendiente',dia_semana:'A confirmar',prioridad:'Normal',disponibilidad:v('t_disponibilidad')};
+    var falla=v('t_falla');
+    var L=['Hola VILLGUZ, quiero solicitar un turno de servicio técnico.','',
+      '*Nombre:* '+datos.nombre,'*Teléfono:* '+datos.telefono,'*Domicilio:* '+datos.domicilio,
+      '*Producto:* '+datos.producto+' · *Marca:* '+datos.marca,'*Tipo de servicio:* '+(TIPOS[datos.tipo_servicio]||datos.tipo_servicio)];
+    if(datos.numero_fabrica)L.push('*N° de solicitud de fábrica:* '+datos.numero_fabrica);
+    L.push('*Disponibilidad:* '+datos.disponibilidad);
+    if(falla)L.push('*Falla:* '+falla);
+    var wa='https://wa.me/'+WA_NUM+'?text='+encodeURIComponent(L.join('\n'));
+    tsub.disabled=true;
+    try{fetch(TURNOS_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(datos)}).catch(function(){});}catch(err){}
+    var w=null;try{w=window.open(wa,'_blank','noopener');}catch(err){}
+    document.getElementById('t_wa_link').href=wa;
+    document.getElementById('t_done_name').textContent=datos.nombre.split(' ')[0]||'gracias';
+    tf.hidden=true;tdone.hidden=false;tdone.focus();tsub.disabled=false;
+  });
+  document.getElementById('t_again').addEventListener('click',function(){tf.reset();syncFab();tdone.hidden=true;tf.hidden=false;document.getElementById('t_disponibilidad').focus();});
   document.getElementById('yr').textContent=new Date().getFullYear();
 })();
 </script>
