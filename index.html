@@ -183,6 +183,25 @@ p{margin:0}
 @media (max-width:900px){.brand-row{justify-content:center}.brands .wrap{justify-content:center;text-align:center}.brands-title{justify-items:center;width:100%}}
 @media (max-width:480px){.brand-row{gap:20px 26px}.brand-row li{flex:0 0 auto}.brand-row img{transform:scale(.85)}}
 
+/* Consejos */
+.tips{padding-block:0 clamp(56px,8vw,96px)}
+.tip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tip{border:1px solid var(--line);border-radius:var(--radius);padding:24px;display:grid;grid-template-rows:auto auto 1fr auto auto;gap:12px;background:var(--paper);min-width:0}
+.tip h3{font-size:1.7rem}
+.tip ul{margin:0;padding-left:1.1em;display:grid;gap:8px;align-content:start;color:var(--muted);font-size:.9rem}
+.tip ul li::marker{color:var(--green-ink)}
+.tip-foot{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;font-weight:600;color:var(--ink);padding-top:12px;border-top:1px solid var(--line)}
+.tip-foot svg{width:16px;height:16px;flex:none;margin-top:3px;color:var(--green-ink)}
+.ig-btn{color:var(--ink)}
+.tb-ig{display:inline-flex;align-items:center;gap:6px}
+.tb-ig svg{width:14px;height:14px}
+.f-social{display:inline-flex;align-items:center;gap:8px;color:#fff;font-weight:600;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:.55em 1em;width:max-content}
+.f-social svg{width:18px;height:18px;color:var(--green)}
+.c-item .val + .val{margin-top:-4px}
+@media (max-width:1000px){.tip-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.tip-grid{grid-template-columns:1fr}}
+@media (max-width:480px){.tb-ig span{display:none}}
+
 /* Accesos rápidos por equipo */
 .quick{position:relative;z-index:3;margin-top:-1px;background:var(--paper);padding-block:clamp(40px,6vw,64px)}
 .sec-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:28px}
@@ -314,6 +333,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
 .c-item .qr img{background:#fff;border-radius:8px;padding:4px;width:96px;height:96px}
 .c-item .qr span{font-size:.78rem;color:var(--on-navy-muted)}
 .c-item.wa{grid-row:span 2}
+.c-item > .lbl + .val{margin-top:0}
 .turnos{padding-block:clamp(56px,8vw,96px) 0}
 .turnos-box{background:var(--navy);color:#fff;border-radius:24px;padding:clamp(22px,4vw,48px)}
 .turnos-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(24px,5vw,64px);align-items:start}
@@ -518,6 +538,8 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
 <symbol id="i-clip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9zM8.5 12l2 2 4-4M8.5 18h7"/></g></symbol>
 <symbol id="i-phone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></g></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></g></symbol>
+<symbol id="i-ig" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></g></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
 <symbol id="i-snow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"><path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 3.5l3 2 3-2M9 20.5l3-2 3 2"/></g></symbol>
 
 <symbol id="ap-phone" viewBox="0 0 210 330">
@@ -547,6 +569,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
       <span><b>Servicio técnico oficial</b> · Taller y visitas a domicilio en Tucumán</span>
     </div>
     <div class="tb-right">
+      <a class="tb-ig" href="https://www.instagram.com/villguz.refrigeracion/" target="_blank" rel="noopener" aria-label="Instagram @villguz.refrigeracion"><svg viewBox="0 0 24 24"><use href="#i-ig"/></svg><span>Instagram</span></a>
       <a href="https://wa.me/5493814900124?text=Hola%20VILLGUZ%2C%20quiero%20saber%20el%20estado%20de%20mi%20orden.%0A%0ANombre%3A%20%0AN%C2%B0%20de%20orden%20%28si%20lo%20tengo%29%3A%20%0AEquipo%3A%20" target="_blank" rel="noopener">Estado de orden</a>
       <a href="https://wa.me/5493814900124" target="_blank" rel="noopener">WhatsApp 381 490-0124</a>
       <a class="tb-tel" href="tel:+543814331451">Tel. 0381 433-1451</a>
@@ -561,7 +584,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
       <a href="#servicios">Servicios</a>
       <a href="#como-trabajamos">Cómo trabajamos</a>
       <a href="#nosotros">Nosotros</a>
-      <a href="#historia">Historia</a>
+      <a href="#consejos">Consejos</a>
       <a href="#turnos">Turnos web</a>
       <a href="#contacto">Contacto</a>
     </nav>
@@ -760,6 +783,48 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
   </div>
 </section>
 
+<section class="tips" id="consejos" aria-labelledby="k-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="eyebrow">Consejos de uso</span>
+        <h2 id="k-title">Cuidá tus equipos entre service y service</h2>
+      </div>
+      <a class="btn btn-ghost ig-btn" href="https://www.instagram.com/villguz.refrigeracion/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><use href="#i-ig"/></svg>Más consejos en Instagram</a>
+    </div>
+    <div class="tip-grid">
+      <article class="tip">
+        <span class="eyebrow">Heladeras</span>
+        <h3>Que enfríe mejor y dure más años</h3>
+        <ul><li>Dejale espacio atrás: no la pegues a la pared, necesita ventilar.</li><li>Limpiá la rejilla trasera: el polvo recalienta el motor.</li><li>No guardes comida caliente: esperá que tome temperatura ambiente.</li><li>Revisá los burletes: si el frío se escapa, sube la luz.</li></ul>
+        <p class="tip-foot"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Service integral cada 12 meses.</p>
+        <a class="link-arrow" href="https://www.instagram.com/villguz.refrigeracion/p/DT20Suqleq2/" target="_blank" rel="noopener">Ver la publicación</a>
+      </article>
+      <article class="tip">
+        <span class="eyebrow">Lavarropas</span>
+        <h3>Evitá reparaciones costosas</h3>
+        <ul><li>Pequeños descuidos de uso terminan en roturas caras.</li><li>Desarmado, limpieza y lubricación de piezas móviles en cada service.</li><li>Control de la electrónica para prevenir fallas.</li></ul>
+        <p class="tip-foot"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Service integral cada 6 a 12 meses, según el uso.</p>
+        <a class="link-arrow" href="https://www.instagram.com/villguz.refrigeracion/p/DT0Fh6plaCz/" target="_blank" rel="noopener">Ver la publicación</a>
+      </article>
+      <article class="tip">
+        <span class="eyebrow">Aire acondicionado</span>
+        <h3>Más rendimiento, menos consumo</h3>
+        <ul><li>Usalo en 24 °C: es la temperatura más eficiente.</li><li>En equipos inverter, el motor trabaja a su mínima potencia de ahorro.</li><li>Filtros limpios: aire más sano y motor sin esfuerzo.</li><li>Revisalo antes del calor, no el día que falla.</li></ul>
+        <p class="tip-foot"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Mantenimiento preventivo antes de cada temporada.</p>
+        <a class="link-arrow" href="https://www.instagram.com/villguz.refrigeracion/p/DUBK2f7lVyr/" target="_blank" rel="noopener">Ver la publicación</a>
+      </article>
+      <article class="tip">
+        <span class="eyebrow">Inverter o común</span>
+        <h3>¿Cuál te conviene?</h3>
+        <ul><li>El inverter ahorra energía; el común es robusto y más barato al comprarlo.</li><li>Los inverter sí se reparan: tenemos repuestos y placas originales.</li></ul>
+        <p class="tip-foot"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Consultanos antes de comprar o reparar.</p>
+        <a class="link-arrow" href="https://www.instagram.com/villguz.refrigeracion/p/DUa8bDzFSVb/" target="_blank" rel="noopener">Ver la publicación</a>
+      </article>
+    </div>
+  </div>
+</section>
+
 <section class="process" id="como-trabajamos" aria-labelledby="p-title">
   <div class="wrap">
     <div class="sec-head">
@@ -948,12 +1013,23 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
           <span class="val">serviciotecnico@<wbr>villguzrefrigeracion.com</span>
           <span class="hint">Presupuestos y empresas</span>
         </a>
+        <div class="c-item">
+          <span class="lbl"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg>Horarios</span>
+          <span class="val">Lun a vie 8:30 a 17:00</span>
+          <span class="val">Sábados 9:00 a 12:30</span>
+          <span class="hint">Local y recepción de equipos</span>
+        </div>
+        <a class="c-item" href="https://www.instagram.com/villguz.refrigeracion/" target="_blank" rel="noopener">
+          <span class="lbl"><svg viewBox="0 0 24 24"><use href="#i-ig"/></svg>Instagram</span>
+          <span class="val">@villguz.refrigeracion</span>
+          <span class="hint">Consejos de uso y novedades</span>
+        </a>
       </div>
       <div class="map">
         <iframe src="https://maps.google.com/maps?q=Corrientes%201373,%20San%20Miguel%20de%20Tucum%C3%A1n&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" title="Mapa: Corrientes 1373, San Miguel de Tucumán" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
         <a class="map-card" href="https://www.google.com/maps/search/?api=1&amp;query=Corrientes+1373%2C+San+Miguel+de+Tucum%C3%A1n%2C+Argentina" target="_blank" rel="noopener">
           <span class="dotp"><svg viewBox="0 0 24 24"><use href="#i-snow"/></svg></span>
-          <span><b>Corrientes 1373</b><span>San Miguel de Tucumán</span></span>
+          <span><b>Corrientes 1373</b><span>A metros de Plazoleta Mitre · San Miguel de Tucumán</span></span>
           <span class="link-arrow">Cómo llegar</span>
         </a>
       </div>
@@ -968,6 +1044,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
       <div class="f-brand">
         <span class="brand" aria-label="VILLGUZ Refrigeración"><svg viewBox="0 0 682 212"><use href="#logo"/></svg></span>
         <p>Servicio técnico oficial de heladeras, lavarropas, lavavajillas y aire acondicionado en San Miguel de Tucumán.</p>
+        <a class="f-social" href="https://www.instagram.com/villguz.refrigeracion/" target="_blank" rel="noopener" aria-label="Seguinos en Instagram"><svg viewBox="0 0 24 24"><use href="#i-ig"/></svg>Seguinos en Instagram</a>
       </div>
       <div>
         <h4>Servicios</h4>
@@ -993,6 +1070,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
           <li><a href="#historia">Historia</a></li>
           <li><a href="#contacto">Corrientes 1373, Tucumán</a></li>
           <li><a href="https://wa.me/5493814900124" target="_blank" rel="noopener">WhatsApp 381 490-0124</a></li>
+          <li><a href="https://www.instagram.com/villguz.refrigeracion/" target="_blank" rel="noopener">Instagram @villguz.refrigeracion</a></li>
         </ul>
       </div>
     </div>
