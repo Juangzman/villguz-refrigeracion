@@ -128,6 +128,8 @@ tr.r-rev td{background:#FFFBEF}
 tr.r-zero td{background:#FFF1D6}
 tr.r-liq td{background:#F6F7F9}
 td.pago{min-width:96px}
+.mini{display:block;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 0 .45em}
+.c-ce .ie{border-color:var(--line);background:#fff}
 .warn{background:#FFF3D6;border:1px solid #F1D48A;color:#5E4300;border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .okmsg{background:#EAF5DC;border:1px solid #C9E3A6;color:#2F5A0A;border-radius:12px;padding:10px 14px;font-weight:600}
 .doc [data-open]{cursor:pointer}
@@ -514,7 +516,7 @@ function trRow(t){var dis=t.liqId?' disabled':'';var zero=(+t.total||0)===0;
     '<td class="c-ok"><input type="checkbox" data-f="ok" title="Revisada, lista para liquidar"'+(t.ok!==false?' checked':'')+dis+'></td>'+
     '<td>'+cell(t,'orden','text',' style="width:84px"')+'</td>'+
     '<td>'+cell(t,'fecha','date')+'</td><td>'+cell(t,'entrega','date')+'</td>'+
-    '<td>'+cell(t,'desc','text',' placeholder="Equipo" style="min-width:150px"')+cell(t,'cliente','text',' placeholder="Cliente" style="min-width:150px;margin-top:4px"')+'</td>'+
+    '<td class="c-ce"><label class="mini">Cliente</label>'+cell(t,'cliente','text',' placeholder="Nombre del cliente" style="min-width:160px"')+'<label class="mini">Equipo</label>'+cell(t,'desc','text',' placeholder="Ej: HEL WH" style="min-width:160px"')+'</td>'+
     '<td class="c-tipo"><select class="ie" data-f="tipo"'+dis+'>'+['sin','visita','con','taller'].map(function(k){return '<option value="'+k+'"'+(t.tipo===k?' selected':'')+'>'+TIPOS_T[k]+'</option>';}).join('')+'</select></td>'+
     '<td>'+tec+'</td>'+
     '<td>'+cell(t,'total','num')+'</td><td>'+cell(t,'repuesto','num')+'</td><td>'+cell(t,'mo','num')+'</td>'+
