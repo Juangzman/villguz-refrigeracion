@@ -63,6 +63,16 @@ input.i.n{text-align:right;font-variant-numeric:tabular-nums}
 .tab:hover{color:#fff;background:rgba(255,255,255,.07)}
 .tab[aria-selected="true"]{color:#fff;background:rgba(255,255,255,.12);box-shadow:inset 0 -3px 0 var(--green)}
 .top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+/* Barra de semana */
+.weekbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:15}
+.weekbar-in{max-width:1280px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.wk-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-size:1.4rem;line-height:1;cursor:pointer;color:var(--navy)}
+.wk-btn:hover{border-color:var(--navy)}
+.wk-lbl{display:grid;line-height:1.1;min-width:250px}
+.wk-lbl span{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-ink)}
+.wk-lbl b{font-family:var(--f-display);font-weight:400;font-size:1.6rem;color:var(--navy)}
+.wk-info{color:var(--muted);font-size:.85rem}
+@media print{.weekbar{display:none!important}}
 main{max-width:1280px;margin:auto;padding:24px 20px 60px;display:grid;gap:20px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
 .card-h{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -192,15 +202,22 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
     </div>
   </header>
 
+  <div class="weekbar"><div class="weekbar-in">
+    <button class="wk-btn" id="wkPrev" aria-label="Semana anterior">‹</button>
+    <div class="wk-lbl"><span>Semana de pago</span><b id="wkLbl"></b></div>
+    <button class="wk-btn" id="wkNext" aria-label="Semana siguiente">›</button>
+    <button class="btn btn-sm" id="wkHoy">Esta semana</button>
+    <span class="wk-info" id="wkInfo"></span>
+  </div></div>
   <main>
     <!-- LIQUIDACION -->
     <section id="vLiq" data-view>
       <div class="card no-print">
-        <div class="card-h"><div><h2>Liquidación a técnicos</h2><p>Elegí a quién liquidar y el período. Se incluyen los trabajos y fletes que todavía no fueron pagados.</p></div></div>
-        <div class="grid g4">
+        <div class="card-h"><div><h2>Liquidación a técnicos</h2><p>Se liquida la semana elegida arriba (sábado a viernes), por fecha de entrega de cada orden.</p></div></div>
+        <div class="grid g2">
           <label class="f">Técnico / personal<select class="i" id="lqPers"></select></label>
-          <label class="f">Desde<input class="i" type="date" id="lqDesde"></label>
-          <label class="f">Hasta<input class="i" type="date" id="lqHasta"></label>
+          <input type="hidden" id="lqDesde">
+          <input type="hidden" id="lqHasta">
           <label class="f">Mostrar<select class="i" id="lqEstado"><option value="pend">Solo pendientes de pago</option><option value="todos">Todo el período</option></select></label>
         </div>
         <div class="row" style="margin-top:14px">
@@ -233,6 +250,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
           <label class="f">Técnico<select class="i" id="trTec"></select></label>
           <label class="f">Estado<select class="i" id="trEst"><option value="">Todos</option><option value="rev">Sin revisar</option><option value="cero">Con total $ 0</option><option value="pend">Pendiente de pago</option><option value="liq">Pagado</option></select></label>
         </div>
+        <label class="chk" style="margin-top:10px;font-size:.85rem"><input type="checkbox" id="trAll"> Ver órdenes de todas las semanas</label>
       </div>
       <div id="trSum"></div>
       <div class="card"><p class="hint" style="margin:0 0 10px">Todo se edita directo en la tabla y se guarda solo. Revisá cada orden y marcala con ✓ para que pase a la liquidación.</p><div id="trTable"></div></div>
@@ -295,6 +313,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
           <button class="btn" id="csvDown">Exportar trabajos a Excel (CSV)</button>
         </div>
         <p class="hint" id="bkInfo" style="margin-top:10px"></p>
+        <div class="row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)"><button class="btn btn-danger" id="wipe">Empezar de cero</button><span class="hint">Borra todas las órdenes, fletes y liquidaciones. Se mantienen técnicos, tarifas y contraseña.</span></div>
       </div>
       <div class="card">
         <div class="card-h"><div><h2>Contraseña</h2><p>Cambia la contraseña de acceso en este navegador.</p></div></div>
@@ -355,6 +374,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
   <div class="grid g3">
     <label class="f">Si no hay columna de tipo, importar como<select class="i" id="mapTipoDef"><option value="sin">Sin garantía</option><option value="con">Con garantía</option></select></label>
     <label class="f">Técnico de estas órdenes<select class="i" id="mapTecDef"></select></label>
+    <label class="f">Semana<select class="i" id="mapSem"><option value="sem">Solo órdenes entregadas en la semana</option><option value="todo">Todas las del archivo</option></select></label>
     <label class="f">Órdenes con total $ 0<select class="i" id="mapCero"><option value="con">Importar como con garantía</option><option value="tipo">Usar el tipo de arriba</option><option value="no">No importarlas</option></select></label>
   </div>
   <div id="mapPreview"></div>
@@ -407,7 +427,6 @@ async function sha(t){var b=await crypto.subtle.digest('SHA-256',new TextEncoder
 /* ---------- Login ---------- */
 var firstRun=!DB.cfg.pwHash;
 if(firstRun){$('loginTitle').textContent='Crear contraseña';$('loginSub').textContent='Es la primera vez que se usa el panel en este navegador. Elegí una contraseña para el equipo.';$('pw2wrap').hidden=false;$('loginBtn').textContent='Crear y entrar';$('pw1').setAttribute('autocomplete','new-password');}
-try{if(sessionStorage.getItem('vg_ok')===DB.cfg.pwHash&&DB.cfg.pwHash)enter();}catch(e){}
 $('loginForm').addEventListener('submit',async function(e){
   e.preventDefault();var err=$('loginErr');err.hidden=true;var p=$('pw1').value;
   if(firstRun){
@@ -471,8 +490,8 @@ function conceptoTxt(t){return (t.modo==='fijo')?(t.tarifa||'Monto fijo'):((+t.p
 function applyConcepto(t,val){if(val==='pct'){t.modo='pct';t.tarifa='';if(t.pct==null)t.pct=pctDefault(t.tecnicoId,t.tipo);}
   else if(val==='fijo'){t.modo='fijo';t.tarifa='';if(t.fijo==null)t.fijo=0;}
   else{var x=DB.cfg.tarifasTec[+val.slice(3)];t.modo='fijo';t.tarifa=x.nombre;t.fijo=x.monto;}}
-function trFiltered(){var q=$('trQ').value.trim().toLowerCase(),tp=$('trTipo').value,tc=$('trTec').value,es=$('trEst').value;
-  return DB.trabajos.filter(function(t){if(tp&&t.tipo!==tp)return false;if(tc&&t.tecnicoId!==tc)return false;
+function trFiltered(){var q=$('trQ').value.trim().toLowerCase(),tp=$('trTipo').value,tc=$('trTec').value,es=$('trEst').value,all=$('trAll').checked;
+  return DB.trabajos.filter(function(t){if(!all&&!q&&!inWeek(t.entrega||t.fecha))return false;if(tp&&t.tipo!==tp)return false;if(tc&&t.tecnicoId!==tc)return false;
     if(es==='pend'&&t.liqId)return false;if(es==='liq'&&!t.liqId)return false;if(es==='rev'&&(t.ok!==false||t.liqId))return false;if(es==='cero'&&(+t.total||0)!==0)return false;
     if(q&&(String(t.orden)+' '+(t.cliente||'')+' '+(t.desc||'')+' '+(t.obs||'')).toLowerCase().indexOf(q)<0)return false;return true;})
     .sort(function(a,b){return (b.entrega||b.fecha||'').localeCompare(a.entrega||a.fecha||'')||String(b.orden).localeCompare(String(a.orden),'es',{numeric:true});});}
@@ -497,19 +516,19 @@ function trRow(t){var dis=t.liqId?' disabled':'';var zero=(+t.total||0)===0;
     '<td>'+cell(t,'obs','text',' placeholder="Nota (sale impresa)" style="min-width:140px"')+'</td>'+
     '<td>'+(t.liqId?'<span class="pill p-liq">Pagado</span>':'<button class="btn btn-sm btn-danger" data-del="'+t.id+'" title="Eliminar orden">✕</button>')+'</td></tr>';}
 function renderTrab(){var cur=$('trTec').dataset.want||$('trTec').value;delete $('trTec').dataset.want;optPersonal($('trTec'),{empty:'Todos',keep:cur});$('trTec').value=cur;
-  if(!DB.trabajos.length){$('trTable').innerHTML='<p class="empty">No hay trabajos. Importá el archivo exportado de TS o cargá uno con “Nuevo trabajo”.</p>';$('trSum').innerHTML='';return;}
+  
   var L=trFiltered();
   $('trTable').innerHTML='<div class="tbl-wrap"><table class="t te"><thead><tr><th title="Revisada">✓</th><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo / cliente</th><th>Tipo</th><th>Técnico</th><th class="num">Total cobrado</th><th class="num">Repuestos</th><th class="num">Mano de obra</th><th>Pago al técnico</th><th class="num">A pagar</th><th>Nota</th><th></th></tr></thead><tbody>'+
     (L.map(trRow).join('')||'<tr><td colspan="14" class="empty">Ninguna orden coincide con el filtro.</td></tr>')+'</tbody><tfoot><tr><td colspan="7" id="trFootN"></td><td class="num" id="trF1"></td><td class="num" id="trF2"></td><td class="num" id="trF3"></td><td></td><td class="num" id="trF4"></td><td colspan="2"></td></tr></tfoot></table></div>';
   trTotals();}
 function trTotals(){var L=trFiltered();var s=function(f){return L.reduce(function(a,t){return a+(+f(t)||0);},0);};
-  var rev=DB.trabajos.filter(function(t){return t.ok===false&&!t.liqId;}).length,cero=DB.trabajos.filter(function(t){return t.ok===false&&!t.liqId&&(+t.total||0)===0;}).length;
+  var W=function(t){return $('trAll').checked||inWeek(t.entrega||t.fecha);};var rev=DB.trabajos.filter(function(t){return W(t)&&t.ok===false&&!t.liqId;}).length,cero=DB.trabajos.filter(function(t){return W(t)&&t.ok===false&&!t.liqId&&(+t.total||0)===0;}).length;
   if($('trFootN')){$('trFootN').textContent=L.length+' órdenes';$('trF1').textContent=money(s(function(t){return t.total;}));$('trF2').textContent=money(s(function(t){return t.repuesto;}));$('trF3').textContent=money(s(function(t){return t.mo;}));$('trF4').textContent=money(s(pagoTrab));}
-  $('trSum').innerHTML=rev?'<div class="warn"><b>'+rev+' órdenes sin revisar</b>'+(cero?' · '+cero+' en $ 0 (visitas o presupuestos pendientes)':'')+'. Las órdenes no pasan a la liquidación hasta que las marques con ✓. <button class="btn btn-sm" id="trShowRev">Ver sin revisar</button> <button class="btn btn-sm" id="trOkAll">Marcar como revisadas las '+L.filter(function(t){return t.ok===false&&!t.liqId;}).length+' que estoy viendo</button></div>':'<div class="okmsg">Todas las órdenes están revisadas.</div>';}
+  $('trSum').innerHTML=rev?'<div class="warn"><b>'+rev+' órdenes sin revisar</b>'+(cero?' · '+cero+' en $ 0 (visitas o presupuestos pendientes)':'')+'. Las órdenes no pasan a la liquidación hasta que las marques con ✓. <button class="btn btn-sm" id="trShowRev">Ver sin revisar</button> <button class="btn btn-sm" id="trOkAll">Marcar como revisadas las '+L.filter(function(t){return t.ok===false&&!t.liqId;}).length+' que estoy viendo</button></div>':(L.length?'<div class="okmsg">Todas las órdenes de esta semana están revisadas.</div>':'<div class="okmsg" style="background:#F2F6FA;border-color:var(--line);color:var(--muted)">No hay órdenes cargadas para esta semana. Importá el Excel de TS de sábado a viernes.</div>');}
 $('trSum').addEventListener('click',async function(e){if(e.target.id==='trShowRev'){$('trEst').value='rev';renderTrab();}
   if(e.target.id==='trOkAll'){var L=trFiltered().filter(function(t){return t.ok===false&&!t.liqId;});if(!L.length)return;
     if(!await confirmar('Marcar como revisadas',L.length+' órdenes pasan a estar listas para liquidar.','Marcar'))return;L.forEach(function(t){t.ok=true;});save();renderTrab();}});
-['trQ','trTipo','trTec','trEst'].forEach(function(id){$(id).addEventListener('input',renderTrab);});
+['trQ','trTipo','trTec','trEst','trAll'].forEach(function(id){$(id).addEventListener('input',renderTrab);});
 $('trTable').addEventListener('change',function(e){var el=e.target,tr=el.closest('tr[data-id]');if(!tr||!el.dataset.f)return;
   var t=DB.trabajos.find(function(x){return x.id===tr.dataset.id;});if(!t||t.liqId)return;var f=el.dataset.f;
   if(f==='ok')t.ok=el.checked;
@@ -519,12 +538,12 @@ $('trTable').addEventListener('change',function(e){var el=e.target,tr=el.closest
   else t[f]=el.value.trim();
   if(f==='total'||f==='repuesto'){if(!t.moManual){t.mo=Math.max(0,(+t.total||0)-(+t.repuesto||0));}}
   if(f==='mo')t.moManual=true;
-  save();var nr=document.createElement('tbody');nr.innerHTML=trRow(t);tr.replaceWith(nr.firstChild);trTotals();});
+  save();setWeekInfo();var nr=document.createElement('tbody');nr.innerHTML=trRow(t);tr.replaceWith(nr.firstChild);trTotals();});
 $('trTable').addEventListener('click',async function(e){var b=e.target.closest('[data-del]');if(!b)return;var t=DB.trabajos.find(function(x){return x.id===b.dataset.del;});
   if(await confirmar('Eliminar orden','Se elimina la orden '+t.orden+'.','Eliminar')){DB.trabajos=DB.trabajos.filter(function(x){return x.id!==t.id;});save();renderTrab();}});
 $('trNew').addEventListener('click',function(){if(!DB.personal.length){toast('Primero cargá al menos un técnico');show('vPers');return;}
   var tid=$('trTec').value||(DB.personal.find(function(p){return p.rol==='tecnico'&&p.activo!==false;})||DB.personal[0]).id;
-  var t={id:uid(),liqId:null,ok:true,orden:'',fecha:hoy(),entrega:hoy(),tipo:'sin',cliente:'',tecnicoId:tid,desc:'',total:0,repuesto:0,mo:0,modo:'pct',pct:pctDefault(tid,'sin'),obs:''};
+  var dd=inWeek(hoy())?hoy():wkEnd();var t={id:uid(),liqId:null,ok:true,orden:'',fecha:dd,entrega:dd,tipo:'sin',cliente:'',tecnicoId:tid,desc:'',total:0,repuesto:0,mo:0,modo:'pct',pct:pctDefault(tid,'sin'),obs:''};
   DB.trabajos.unshift(t);save();$('trEst').value='';$('trQ').value='';renderTrab();var inp=document.querySelector('tr[data-id="'+t.id+'"] [data-f="orden"]');if(inp)inp.focus();toast('Orden nueva agregada arriba: completala en la tabla');});
 /* Abre una orden desde la liquidación */
 function openTrab(id){var t=DB.trabajos.find(function(x){return x.id===id;});if(!t)return;$('trEst').value='';$('trTipo').value='';$('trTec').value='';$('trQ').value=String(t.orden);show('vTrab');}
@@ -544,6 +563,7 @@ $('tsFile').addEventListener('change',function(e){var f=e.target.files[0];e.targ
         var hl=row.findIndex(function(c){return /^hasta/i.test(c);});if(hl>=0)imp.hasta=parseDate(aoa[k].slice(hl+1).find(function(c){return String(c).trim();}));}
       imp.headers=aoa[hi].map(function(h,i){return String(h||'Columna '+(i+1)).trim();});
       imp.rows=aoa.slice(hi+1).filter(function(r){return r.some(function(c){return String(c).trim()!=='';});});
+      if(imp.hasta||imp.desde){var ws=satOf(imp.hasta||imp.desde);if(ws!==WK){setWeek(ws);toast('Semana cambiada a la del archivo: '+fdate(WK)+' al '+fdate(wkEnd()));}}
       openMap(f.name);}catch(err){toast('No pude leer el archivo. Probá exportarlo como Excel o CSV.');}};
   r.readAsArrayBuffer(f);});
 function openMap(name){var html='';FIELDS.forEach(function(f){var g=imp.headers.findIndex(function(h){return f[2].test(h);});
@@ -572,23 +592,24 @@ function buildImport(){var m=getMap(),def=$('mapTipoDef').value,tdef=$('mapTecDe
     if(m.tipo<0&&parseNum(g('total'))===0){if(cero==='no')return;if(cero==='con')tipo='con';}var tecName=String(g('tecnico')).trim();var tid=m.tecnico>=0?findTec(tecName):tdef;
     if(m.tecnico>=0&&!tid&&tecName){newTec[tecName.toLowerCase()]=tecName;}
     var total=parseNum(g('total')),rep=parseNum(g('repuesto')),mo=m.mo>=0?parseNum(g('mo')):Math.max(0,total-rep);
-    out.push({orden:orden,entrega:parseDate(g('entrega')),fecha:parseDate(g('fecha'))||hoy(),cliente:String(g('cliente')).trim(),desc:String(g('desc')).trim(),tipo:tipo,tecName:tecName,tecnicoId:tid||tdef,total:total,repuesto:rep,mo:mo});});
-  return {list:out,newTec:newTec};}
+    var ent=parseDate(g('entrega'));var fe=parseDate(g('fecha'));if($('mapSem').value==='sem'&&!inWeek(ent||fe)){out.skipped=(out.skipped||0)+1;return;}
+    out.push({orden:orden,entrega:ent,fecha:parseDate(g('fecha'))||hoy(),cliente:String(g('cliente')).trim(),desc:String(g('desc')).trim(),tipo:tipo,tecName:tecName,tecnicoId:tid||tdef,total:total,repuesto:rep,mo:mo});});
+  return {list:out,newTec:newTec,skipped:out.skipped||0};}
 function mapPreview(){var b=buildImport();var dup=b.list.filter(function(x){return DB.trabajos.some(function(t){return String(t.orden)===x.orden&&t.tipo===x.tipo;});}).length;
   var nt=Object.keys(b.newTec).length;
-  $('mapPreview').innerHTML='<p class="hint">'+b.list.length+' órdenes para importar'+(dup?' · '+dup+' ya estaban cargadas y se saltean':'')+(nt?' · se van a crear '+nt+' técnicos nuevos ('+Object.values(b.newTec).map(esc).join(', ')+')':'')+'.</p><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo</th><th>Tipo</th><th>Técnico</th><th class="num">Total</th><th class="num">Repuestos</th><th class="num">M. de obra</th></tr></thead><tbody>'+
+  $('mapPreview').innerHTML='<p class="hint">'+b.list.length+' órdenes para importar (semana del '+fdate(WK)+' al '+fdate(wkEnd())+')'+(b.skipped?' · '+b.skipped+' quedan afuera por ser de otra semana':'')+(dup?' · '+dup+' ya estaban cargadas y se saltean':'')+(nt?' · se van a crear '+nt+' técnicos nuevos ('+Object.values(b.newTec).map(esc).join(', ')+')':'')+'.</p><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo</th><th>Tipo</th><th>Técnico</th><th class="num">Total</th><th class="num">Repuestos</th><th class="num">M. de obra</th></tr></thead><tbody>'+
     b.list.slice(0,5).map(function(x){return '<tr><td>'+esc(x.orden)+'</td><td>'+fdate(x.fecha)+'</td><td>'+fdate(x.entrega)+'</td><td>'+esc(x.desc)+'</td><td>'+(x.tipo==='con'?'Con garantía':'Sin garantía')+'</td><td>'+esc(x.tecName||pname(x.tecnicoId))+'</td><td class="num">'+money(x.total)+'</td><td class="num">'+money(x.repuesto)+'</td><td class="num">'+money(x.mo)+'</td></tr>';}).join('')+'</tbody></table></div>';}
-$('mapTipoDef').addEventListener('change',mapPreview);$('mapCero').addEventListener('change',mapPreview);$('mapTecDef').addEventListener('change',mapPreview);
+$('mapTipoDef').addEventListener('change',mapPreview);$('mapSem').addEventListener('change',mapPreview);$('mapCero').addEventListener('change',mapPreview);$('mapTecDef').addEventListener('change',mapPreview);
 $('fMap').addEventListener('submit',function(e){e.preventDefault();var b=buildImport(),n=0;
   Object.keys(b.newTec).forEach(function(k){DB.personal.push({id:uid(),nombre:b.newTec[k],doc:'',rol:'tecnico',pctSin:30,pctCon:0,activo:true});});
   b.list.forEach(function(x){if(DB.trabajos.some(function(t){return String(t.orden)===x.orden&&t.tipo===x.tipo;}))return;
     var tid=x.tecName?(findTec(x.tecName)||x.tecnicoId):x.tecnicoId;
     DB.trabajos.push({id:uid(),liqId:null,ok:false,modo:'pct',obs:'',moManual:x.mo>0,orden:x.orden,fecha:x.fecha,entrega:x.entrega,cliente:x.cliente,desc:x.desc,tipo:x.tipo,tecnicoId:tid,total:x.total,repuesto:x.repuesto,mo:x.mo,pct:pctDefault(tid,x.tipo)});n++;});
-  save();$('dMap').close();if(imp.desde){$('lqDesde').value=imp.desde;$('lqHasta').value=imp.hasta||hoy();}if(b.list[0])$('lqPers').dataset.want=b.list[0].tecnicoId;renderTrab();toast(n+' trabajos importados'+(Object.keys(b.newTec).length?'. Revisá el % de los técnicos nuevos.':''));});
+  save();$('dMap').close();setWeekInfo();if(b.list[0])$('lqPers').dataset.want=b.list[0].tecnicoId;renderTrab();toast(n+' trabajos importados'+(Object.keys(b.newTec).length?'. Revisá el % de los técnicos nuevos.':''));});
 
 /* Fletes */
-function renderFlete(){if(!DB.fletes.length){$('flTable').innerHTML='<p class="empty">No hay fletes cargados.</p>';return;}
-  var rows=DB.fletes.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(f){var sh=fleteShares(f),liq=f.liq||{};
+function renderFlete(){var FW=DB.fletes.filter(function(f){return inWeek(f.fecha);});if(!FW.length){$('flTable').innerHTML='<p class="empty">No hay fletes cargados en esta semana.</p>';return;}
+  var rows=FW.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(f){var sh=fleteShares(f),liq=f.liq||{};
     var reparto=Object.keys(sh).map(function(pid){return esc(pname(pid))+': '+money(sh[pid])+(liq[pid]?' ✓':'');}).join('<br>');
     var allPaid=Object.keys(sh).every(function(pid){return liq[pid];});
     return '<tr><td>'+fdate(f.fecha)+'</td><td>'+esc(f.orden||'—')+'</td><td>'+esc(f.cliente)+'</td><td>'+esc(f.zona)+'<br><span class="muted">'+(f.modo==='ida'?'Solo ida o vuelta':'Ida y vuelta')+'</span></td><td class="num"><b>'+money(f.monto)+'</b></td><td>'+reparto+'</td><td>'+(allPaid?'<span class="pill p-liq">Pagado</span>':'<span class="pill p-pend">Pendiente</span>')+'</td><td><button class="btn btn-sm" data-ef="'+f.id+'">Editar</button></td></tr>';}).join('');
@@ -598,7 +619,7 @@ $('flNew').addEventListener('click',function(){openFlete(null);});
 var editFlete=null,montoTouched=false;
 function tarifa(zona,modo){var t=DB.cfg.tarifas.find(function(x){return x.zona===zona;});if(!t)return 0;return modo==='ida'?t.monto/2+(+DB.cfg.extraIda||0):t.monto;}
 function openFlete(id){if(!DB.personal.length){toast('Primero cargá el personal');show('vPers');return;}
-  editFlete=id;montoTouched=!!id;var f=id?DB.fletes.find(function(x){return x.id===id;}):{fecha:hoy(),orden:'',cliente:'',zona:DB.cfg.tarifas[0].zona,modo:'iv',monto:null,fleteroId:(DB.personal.find(function(p){return p.rol==='fletero';})||{}).id||'',ayudantes:[]};
+  editFlete=id;montoTouched=!!id;var f=id?DB.fletes.find(function(x){return x.id===id;}):{fecha:inWeek(hoy())?hoy():wkEnd(),orden:'',cliente:'',zona:DB.cfg.tarifas[0].zona,modo:'iv',monto:null,fleteroId:(DB.personal.find(function(p){return p.rol==='fletero';})||{}).id||'',ayudantes:[]};
   $('f_zona').innerHTML=DB.cfg.tarifas.map(function(t){return '<option>'+esc(t.zona)+'</option>';}).join('')+'<option value="Otro">Otro (monto a mano)</option>';
   optPersonal($('f_fletero'),{empty:'— Elegir —',keep:f.fleteroId});
   $('f_ayud').innerHTML=DB.personal.filter(function(p){return p.activo!==false||(f.ayudantes||[]).indexOf(p.id)>=0;}).map(function(p){return '<label class="chk"><input type="checkbox" value="'+p.id+'"'+((f.ayudantes||[]).indexOf(p.id)>=0?' checked':'')+'> '+esc(p.nombre)+'</label>';}).join('');
@@ -663,7 +684,7 @@ function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete 
 }
 function renderHist(){
   var H=DB.liquidaciones.slice().sort(function(a,b){return b.fecha.localeCompare(a.fecha)||b.numero-a.numero;});
-  $('lqHist').innerHTML=H.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>N°</th><th>Fecha</th><th>Prestador/a</th><th>Período</th><th class="num">Total</th><th></th></tr></thead><tbody>'+H.map(function(l){return '<tr><td>'+l.numero+'</td><td>'+fdate(l.fecha)+'</td><td>'+esc(pname(l.personaId))+'</td><td>'+(l.desde?fdate(l.desde):'inicio')+' al '+(l.hasta?fdate(l.hasta):fdate(l.fecha))+'</td><td class="num">'+money(l.total)+'</td><td><button class="btn btn-sm" data-lv="'+l.id+'">Ver / imprimir</button> <button class="btn btn-sm btn-danger" data-la="'+l.id+'">Anular</button></td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Todavía no hay liquidaciones pagadas.</p>';
+  $('lqHist').innerHTML=H.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>N°</th><th>Fecha</th><th>Prestador/a</th><th>Semana</th><th class="num">Total</th><th></th></tr></thead><tbody>'+H.map(function(l){return '<tr><td>'+l.numero+'</td><td>'+fdate(l.fecha)+'</td><td>'+esc(pname(l.personaId))+'</td><td>Semana '+(l.desde?fdate(l.desde).slice(0,5):'')+' al '+(l.hasta?fdate(l.hasta):fdate(l.fecha))+'</td><td class="num">'+money(l.total)+'</td><td><button class="btn btn-sm" data-lv="'+l.id+'">Ver / imprimir</button> <button class="btn btn-sm btn-danger" data-la="'+l.id+'">Anular</button></td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Todavía no hay liquidaciones pagadas.</p>';
 }
 function renderResumen(de,ha,mo){var per=(de?fdate(de):'inicio')+' al '+(ha?fdate(ha):fdate(hoy()));var G={s:0,c:0,f:0},blocks='',srTot=0;
   DB.personal.forEach(function(p){var d=liqData(p.id,de,ha,mo);var n=d.sin.length+d.con.length+d.fl.length;srTot+=sinRevisar(p.id,de,ha).length;if(!n)return;
@@ -719,14 +740,35 @@ $('csvDown').addEventListener('click',function(){var h=['Orden','Fecha','Tipo','
   var q=function(v){v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};var n=function(x){return String(Math.round((+x||0)*100)/100).replace('.',',');};
   var rows=DB.trabajos.map(function(t){return [t.orden,fdate(t.fecha),t.tipo==='con'?'Con garantía':'Sin garantía',t.cliente,t.desc,pname(t.tecnicoId),n(t.total),n(t.repuesto),n(t.mo),n(t.pct),n(pagoTrab(t)),t.liqId?'Pagado':'Pendiente'].map(q).join(';');});
   download('trabajos-villguz-'+hoy()+'.csv','﻿'+[h.join(';')].concat(rows).join('\r\n'),'text/csv;charset=utf-8');});
+$('wipe').addEventListener('click',async function(){if(!await confirmar('Empezar de cero','Se borran '+DB.trabajos.length+' órdenes, '+DB.fletes.length+' fletes y '+DB.liquidaciones.length+' liquidaciones de este navegador. Si querés conservarlas, descargá antes una copia.','Borrar todo'))return;DB.trabajos=[];DB.fletes=[];DB.liquidaciones=[];save();setWeekInfo();toast('Listo, panel vacío');});
 $('pwSave').addEventListener('click',async function(){var e=$('pwErr');e.hidden=true;
   if(await sha($('pwOld').value)!==DB.cfg.pwHash){e.textContent='La contraseña actual no es correcta.';e.hidden=false;return;}
   if($('pwNew').value.length<6){e.textContent='La nueva contraseña necesita al menos 6 caracteres.';e.hidden=false;return;}
   if($('pwNew').value!==$('pwNew2').value){e.textContent='Las contraseñas nuevas no coinciden.';e.hidden=false;return;}
   DB.cfg.pwHash=await sha($('pwNew').value);save();try{sessionStorage.setItem('vg_ok',DB.cfg.pwHash);}catch(x){}['pwOld','pwNew','pwNew2'].forEach(function(i){$(i).value='';});toast('Contraseña cambiada');});
 
+/* Semana sábado a viernes */
+var DIAS=['dom','lun','mar','mié','jue','vie','sáb'];
+function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function pd(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function satOf(s){var d=pd(s);d.setDate(d.getDate()-((d.getDay()+1)%7));return ds(d);}
+function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
+var WK=satOf(hoy());
+function wkEnd(){return addD(WK,6);}
+function inWeek(d){return d&&d>=WK&&d<=wkEnd();}
+function curView(){var t=tabs.find(function(x){return x.getAttribute('aria-selected')==='true';});return t?t.dataset.v:'vLiq';}
+function setWeekInfo(){var n=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha);}).length,f=DB.fletes.filter(function(x){return inWeek(x.fecha);}).length,r=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha)&&t.ok===false&&!t.liqId;}).length;$('wkInfo').textContent=n+' órdenes · '+f+' fletes'+(r?' · '+r+' sin revisar':'');}
+function setWeek(s){WK=satOf(s);$('lqDesde').value=WK;$('lqHasta').value=wkEnd();lqView=null;
+  $('wkLbl').textContent='Sáb '+fdate(WK).slice(0,5)+' al vie '+fdate(wkEnd());
+  var n=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha);}).length,f=DB.fletes.filter(function(x){return inWeek(x.fecha);}).length,r=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha)&&t.ok===false&&!t.liqId;}).length;
+  $('wkInfo').textContent=n+' órdenes · '+f+' fletes'+(r?' · '+r+' sin revisar':'');
+  if(started)render(curView());}
+$('wkPrev').addEventListener('click',function(){setWeek(addD(WK,-7));});
+$('wkNext').addEventListener('click',function(){setWeek(addD(WK,7));});
+$('wkHoy').addEventListener('click',function(){setWeek(hoy());});
 var started=false;
-function initApp(){if(started)return;started=true;var d=new Date();$('lqDesde').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';$('lqHasta').value=hoy();show('vLiq');}
+function initApp(){if(started)return;setWeek(hoy());started=true;show('vLiq');return;var d=new Date();$('lqDesde').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';$('lqHasta').value=hoy();show('vLiq');}
+try{if(sessionStorage.getItem('vg_ok')===DB.cfg.pwHash&&DB.cfg.pwHash)enter();}catch(e){}
 })();
 </script>
 </body>
