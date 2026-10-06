@@ -64,6 +64,21 @@ input.i.n{text-align:right;font-variant-numeric:tabular-nums}
 .tab:hover{color:#fff;background:rgba(255,255,255,.07)}
 .tab[aria-selected="true"]{color:#fff;background:rgba(255,255,255,.12);box-shadow:inset 0 -3px 0 var(--green)}
 .top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+/* Ayudantes */
+.ay-card{border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-bottom:14px}
+.ay-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.ay-h h3{font-size:1.7rem;color:var(--navy)}
+.ay-tot{text-align:right;display:grid;justify-items:end;gap:2px}
+.ay-tot span{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.ay-tot b{font-family:var(--f-display);font-weight:400;font-size:2rem;color:var(--navy);line-height:1}
+.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.days{grid-template-columns:repeat(3,1fr)}}
+.day{border:2px solid var(--line);border-radius:12px;padding:10px 6px;background:#fff;cursor:pointer;display:grid;gap:2px;justify-items:center;font:inherit}
+.day b{font-size:.85rem}.day span{font-size:.75rem;color:var(--muted)}.day em{font-style:normal;font-size:.75rem;font-weight:700}
+.day.on{border-color:#9FD06A;background:#F2F9EA}.day.on em{color:var(--green-ink)}
+.day.off{border-color:#F0B6B1;background:#FFF2F1}.day.off em{color:var(--red)}
+.day:disabled{cursor:default;opacity:.7}
+.aj{flex-wrap:nowrap;margin-bottom:6px}.aj .i:first-child{flex:2}.aj .n{flex:1;max-width:160px}
 /* Barra de semana */
 .weekbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:15}
 .weekbar-in{max-width:1280px;margin:auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -201,6 +216,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
         <button class="tab" data-v="vLiq" role="tab">Liquidación</button>
         <button class="tab" data-v="vTrab" role="tab">Trabajos</button>
         <button class="tab" data-v="vFlete" role="tab">Fletes</button>
+        <button class="tab" data-v="vAyu" role="tab">Ayudantes</button>
         <button class="tab" data-v="vPers" role="tab">Técnicos y personal</button>
         <button class="tab" data-v="vAjustes" role="tab">Ajustes</button>
       </nav>
@@ -247,6 +263,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
           <div><h2>Trabajos</h2><p>Importá el Excel de TS, corregí lo que haga falta y marcá cada orden como revisada.</p></div>
           <div class="row">
             <label class="btn"><input type="file" id="tsFile" accept=".xlsx,.xls,.csv" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Importar desde TS</label>
+            <button class="btn" id="trAyu">+ Pago semanal de ayudante</button>
             <button class="btn btn-primary" id="trNew">+ Nueva orden</button>
           </div>
         </div>
@@ -270,6 +287,15 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
           <button class="btn btn-primary" id="flNew">+ Nuevo flete</button>
         </div>
         <div id="flTable"></div>
+      </div>
+    </section>
+
+    <!-- AYUDANTES -->
+    <section id="vAyu" data-view hidden>
+      <div class="card">
+        <div class="card-h"><div><h2>Pago semanal de ayudantes</h2><p>Marcá la asistencia de lunes a viernes. Cada falta descuenta un día. Podés sumar extras o descontar adelantos.</p></div>
+          <button class="btn" id="ayNewP">+ Agregar ayudante</button></div>
+        <div id="ayList"></div>
       </div>
     </section>
 
@@ -371,6 +397,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
     <label class="f">% mano de obra · sin garantía<input class="i n" type="number" step="0.5" min="0" max="100" id="p_sin"></label>
     <label class="f">% mano de obra · con garantía<input class="i n" type="number" step="0.5" min="0" max="100" id="p_con"></label>
   </div>
+  <div class="grid g3"><label class="f">Pago fijo semanal (lun a vie)<input class="i n" type="number" step="1000" min="0" id="p_sem" placeholder="0 = no tiene"></label><p class="hint" style="align-self:end;grid-column:span 2">Para ayudantes con sueldo fijo. Cada falta descuenta un día (el semanal dividido 5).</p></div>
   <label class="chk"><input type="checkbox" id="p_act" checked> Activo</label>
   <div class="dlg-f"><button class="btn btn-danger" type="button" id="p_del" hidden>Eliminar</button><button class="btn" type="button" data-close>Cancelar</button><button class="btn btn-primary" type="submit">Guardar</button></div>
 </form></dialog>
@@ -426,7 +453,7 @@ var DEFAULT={
 var DB;
 function load(){try{DB=JSON.parse(localStorage.getItem(KEY))||null;}catch(e){DB=null;}
   if(!DB)DB=JSON.parse(JSON.stringify(DEFAULT));
-  DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones'].forEach(function(k){DB[k]=DB[k]||[];});}
+  DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones','asistencias'].forEach(function(k){DB[k]=DB[k]||[];});}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true;}catch(e){toast('No se pudo guardar en este navegador');return false;}}
 load();
 
@@ -474,19 +501,19 @@ function optPersonal(sel,opts){opts=opts||{};var html=opts.empty?'<option value=
   DB.personal.filter(function(p){return p.activo!==false||p.id===opts.keep;}).filter(function(p){return !opts.rol||p.rol===opts.rol||p.id===opts.keep;}).forEach(function(p){html+='<option value="'+p.id+'">'+esc(p.nombre)+'</option>';});sel.innerHTML=html;}
 
 /* ---------- Render ---------- */
-function render(v){({vLiq:renderLiq,vTrab:renderTrab,vFlete:renderFlete,vPers:renderPers,vAjustes:renderAjustes}[v]||function(){})();}
+function render(v){({vLiq:renderLiq,vTrab:renderTrab,vFlete:renderFlete,vPers:renderPers,vAyu:renderAyu,vAjustes:renderAjustes}[v]||function(){})();}
 
 /* Personal */
 function renderPers(){
-  var rows=DB.personal.map(function(p){return '<tr><td><b>'+esc(p.nombre)+'</b>'+(p.doc?'<br><span class="muted">'+esc(p.doc)+'</span>':'')+'</td><td>'+({tecnico:'Técnico',ayudante:'Ayudante',fletero:'Fletero'}[p.rol]||'')+'</td><td class="num">'+(+p.pctSin||0)+' %</td><td class="num">'+(+p.pctCon||0)+' %</td><td>'+(p.activo===false?'<span class="pill p-liq">Inactivo</span>':'<span class="pill p-con">Activo</span>')+'</td><td><button class="btn btn-sm" data-ep="'+p.id+'">Editar</button></td></tr>';}).join('');
-  $('peTable').innerHTML=DB.personal.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>Nombre</th><th>Rol</th><th class="num">% sin garantía</th><th class="num">% con garantía</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">Todavía no cargaste técnicos. Agregá el primero para poder asignar trabajos.</p>';
+  var rows=DB.personal.map(function(p){return '<tr><td><b>'+esc(p.nombre)+'</b>'+(p.doc?'<br><span class="muted">'+esc(p.doc)+'</span>':'')+'</td><td>'+({tecnico:'Técnico',ayudante:'Ayudante',fletero:'Fletero'}[p.rol]||'')+'</td><td class="num">'+(+p.pctSin||0)+' %</td><td class="num">'+(+p.pctCon||0)+' %</td><td class="num">'+((+p.semanal)?money(p.semanal):'—')+'</td><td>'+(p.activo===false?'<span class="pill p-liq">Inactivo</span>':'<span class="pill p-con">Activo</span>')+'</td><td><button class="btn btn-sm" data-ep="'+p.id+'">Editar</button></td></tr>';}).join('');
+  $('peTable').innerHTML=DB.personal.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>Nombre</th><th>Rol</th><th class="num">% sin garantía</th><th class="num">% con garantía</th><th class="num">Fijo semanal</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">Todavía no cargaste técnicos. Agregá el primero para poder asignar trabajos.</p>';
 }
 $('peTable').addEventListener('click',function(e){var b=e.target.closest('[data-ep]');if(b)openPers(b.dataset.ep);});
 $('peNew').addEventListener('click',function(){openPers(null);});
 var editPers=null;
-function openPers(id){editPers=id;var p=id?persona(id):{nombre:'',doc:'',rol:'tecnico',pctSin:30,pctCon:0,activo:true};
-  $('p_nombre').value=p.nombre;$('p_doc').value=p.doc||'';$('p_rol').value=p.rol;$('p_sin').value=p.pctSin;$('p_con').value=p.pctCon;$('p_act').checked=p.activo!==false;$('p_del').hidden=!id;$('dPers').showModal();$('p_nombre').focus();}
-$('fPers').addEventListener('submit',function(e){e.preventDefault();var d={nombre:$('p_nombre').value.trim(),doc:$('p_doc').value.trim(),rol:$('p_rol').value,pctSin:+$('p_sin').value||0,pctCon:+$('p_con').value||0,activo:$('p_act').checked};
+function openPers(id){editPers=id;var p=id?persona(id):{nombre:'',doc:'',rol:'tecnico',pctSin:30,pctCon:0,semanal:0,activo:true};
+  $('p_nombre').value=p.nombre;$('p_doc').value=p.doc||'';$('p_rol').value=p.rol;$('p_rol').onchange=function(){if($('p_rol').value==='ayudante'&&!$('p_sem').value)$('p_sem').value=100000;};$('p_sin').value=p.pctSin;$('p_con').value=p.pctCon;$('p_sem').value=p.semanal||'';$('p_act').checked=p.activo!==false;$('p_del').hidden=!id;$('dPers').showModal();$('p_nombre').focus();}
+$('fPers').addEventListener('submit',function(e){e.preventDefault();var d={nombre:$('p_nombre').value.trim(),doc:$('p_doc').value.trim(),rol:$('p_rol').value,pctSin:+$('p_sin').value||0,pctCon:+$('p_con').value||0,semanal:+$('p_sem').value||0,activo:$('p_act').checked};
   if(!d.nombre)return;if(editPers)Object.assign(persona(editPers),d);else DB.personal.push(Object.assign({id:uid()},d));save();$('dPers').close();renderPers();toast('Guardado');});
 $('p_del').addEventListener('click',async function(){var used=DB.trabajos.some(function(t){return t.tecnicoId===editPers;})||DB.fletes.some(function(f){return f.fleteroId===editPers||(f.ayudantes||[]).indexOf(editPers)>=0;});
   if(used){$('p_act').checked=false;toast('Tiene trabajos o fletes cargados: lo dejamos como inactivo');return;}
@@ -652,7 +679,9 @@ $('f_del').addEventListener('click',async function(){var f=DB.fletes.find(functi
   if(await confirmar('Eliminar flete','Se elimina el flete del '+fdate(f.fecha)+'.','Eliminar')){DB.fletes=DB.fletes.filter(function(x){return x.id!==editFlete;});save();renderFlete();}});
 
 /* Liquidación */
-function liqData(pid,desde,hasta,modo){var inR=function(d){return (!desde||d>=desde)&&(!hasta||d<=hasta);};
+function liqData(pid,desde,hasta,modo){var ay=null;if(semanal(persona(pid))>0&&desde){var a=asis(pid,satOf(desde),false);if(modo==='todos'||!a.liqId)ay=a;}
+  var _r=liqData0(pid,desde,hasta,modo);_r.ay=ay;return _r;}
+function liqData0(pid,desde,hasta,modo){var inR=function(d){return (!desde||d>=desde)&&(!hasta||d<=hasta);};
   var tr=DB.trabajos.filter(function(t){return t.tecnicoId===pid&&inR(t.entrega||t.fecha)&&(modo==='todos'?true:(!t.liqId&&t.ok!==false));}).sort(function(a,b){return (a.entrega||a.fecha).localeCompare(b.entrega||b.fecha)||String(a.orden).localeCompare(String(b.orden),'es',{numeric:true});});
   var fl=DB.fletes.filter(function(f){var sh=fleteShares(f);return sh[pid]!=null&&inR(f.fecha)&&(modo==='todos'||!(f.liq||{})[pid]);}).sort(function(a,b){return a.fecha.localeCompare(b.fecha);});
   return {vis:tr.filter(function(t){return t.tipo==='visita';}),sin:tr.filter(function(t){return t.tipo!=='con'&&t.tipo!=='taller'&&t.tipo!=='visita';}),con:tr.filter(function(t){return t.tipo==='con';}),tal:tr.filter(function(t){return t.tipo==='taller';}),fl:fl};}
@@ -672,13 +701,13 @@ function flTable(list,pid){if(!list.length)return '';
   var rows=list.map(function(f){var sh=fleteShares(f);var rol=f.fleteroId===pid?'Flete · dueño de la camioneta':'Flete · ayudante';return '<tr><td>'+esc(f.orden||'—')+'</td><td>'+fdate(f.fecha)+'</td><td class="desc">'+cliEq(f.cliente,eqDeOrden(f.orden))+'</td><td>'+rol+'</td><td class="num"><b>'+money(sh[pid])+'</b></td></tr>';}).join('');
   return '<h4>Fletes · '+list.length+'</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>N° de orden</th><th>Fecha</th><th>Cliente / equipo</th><th>Concepto</th><th class="num">A pagar</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4">Subtotal</td><td class="num">'+money(sum(list,function(f){return fleteShares(f)[pid];}))+'</td></tr></tfoot></table></div>';}
 function docHTML(pid,desde,hasta,d,liq){var p=persona(pid)||{nombre:'—'},c=DB.cfg;
-  var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab),tT=sum(d.tal||[],pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[pid];}),T=tS+tC+tT+tF;
+  var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab),tT=sum(d.tal||[],pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[pid];}),tA=d.ay?asisTot(d.ay):0,T=tS+tC+tT+tF+tA;
   var periodo=(desde?fdate(desde):'inicio')+' al '+(hasta?fdate(hasta):fdate(hoy()));
-  var body=trTable(d.sin,'Mano de obra sin garantía')+trTable(d.con,'Mano de obra con garantía')+trTable(d.tal||[],'Garantía de taller')+flTable(d.fl,pid)+visTable(d.vis||[]);
+  var body=ayTable(d.ay)+trTable(d.sin,'Mano de obra sin garantía')+trTable(d.con,'Mano de obra con garantía')+trTable(d.tal||[],'Garantía de taller')+flTable(d.fl,pid)+visTable(d.vis||[]);
   if(!body)body='<p class="empty">No hay trabajos ni fletes para '+esc(p.nombre)+' en este período.</p>';
   return '<article class="doc"><div class="doc-h"><span class="logo"><svg viewBox="0 0 682 212"><use href="#logo"/></svg></span><div class="meta"><b>Liquidación de honorarios</b>'+(liq?'N° '+esc(liq.numero)+' · ':'')+'Emitida el '+fdate(liq?liq.fecha:hoy())+'<br>'+esc(c.razon)+(c.cuit?' · CUIT '+esc(c.cuit):'')+'<br>'+esc(c.dom)+'</div></div>'+
     '<div class="doc-p"><div><span>Prestador/a</span><b>'+esc(p.nombre)+'</b>'+(p.doc?'<br>DNI/CUIT '+esc(p.doc):'')+'</div><div><span>Período</span>'+periodo+'</div><div><span>Condición</span>Agente externo (tercerizado)</div></div>'+body+
-    '<div class="tot">'+(d.sin.length?'<div><span>Mano de obra sin garantía</span><span class="num">'+money(tS)+'</span></div>':'')+(d.con.length?'<div><span>Mano de obra con garantía</span><span class="num">'+money(tC)+'</span></div>':'')+((d.tal||[]).length?'<div><span>Garantía de taller</span><span class="num">'+money(tT)+'</span></div>':'')+(d.fl.length?'<div><span>Fletes</span><span class="num">'+money(tF)+'</span></div>':'')+'<div><span>Total a pagar</span><span class="num">'+money(T)+'</span></div></div>'+
+    '<div class="tot">'+(d.ay?'<div><span>Pago semanal fijo</span><span class="num">'+money(tA)+'</span></div>':'')+(d.sin.length?'<div><span>Mano de obra sin garantía</span><span class="num">'+money(tS)+'</span></div>':'')+(d.con.length?'<div><span>Mano de obra con garantía</span><span class="num">'+money(tC)+'</span></div>':'')+((d.tal||[]).length?'<div><span>Garantía de taller</span><span class="num">'+money(tT)+'</span></div>':'')+(d.fl.length?'<div><span>Fletes</span><span class="num">'+money(tF)+'</span></div>':'')+'<div><span>Total a pagar</span><span class="num">'+money(T)+'</span></div></div>'+
     ((d.vis||[]).length?'<p class="hint" style="text-align:right;margin-top:8px">Visitas cobradas por el técnico al cliente (no incluidas en el total): '+money(sum(d.vis,visitaMonto))+'</p>':'')+'<p class="decl">'+esc(c.decl)+'</p>'+
     '<div class="firmas"><div class="firma"><b>Firma del prestador/a</b><span>Aclaración: '+esc(p.nombre)+'</span><span>DNI/CUIT: '+esc(p.doc||'..............................')+'</span><span>Fecha: ...... / ...... / ............</span></div><div class="firma"><b>Por '+esc(c.razon)+'</b><span>Aclaración: ..............................</span><span>Fecha: ...... / ...... / ............</span></div></div></article>';}
 var lqView=null; // liquidación del historial que se está viendo
@@ -688,11 +717,11 @@ function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete 
   if(pid==='__all'&&!lqView){renderResumen(de,ha,mo);return;}
   var d,liq=null;
   if(lqView){liq=DB.liquidaciones.find(function(l){return l.id===lqView;});pid=liq.personaId;de=liq.desde;ha=liq.hasta;
-    d={vis:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='visita';}),sin:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo!=='con'&&t.tipo!=='taller'&&t.tipo!=='visita';}),con:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='con';}),tal:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='taller';}),fl:DB.fletes.filter(function(f){return (f.liq||{})[pid]===liq.id;})};}
+    d={vis:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='visita';}),sin:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo!=='con'&&t.tipo!=='taller'&&t.tipo!=='visita';}),con:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='con';}),tal:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='taller';}),fl:DB.fletes.filter(function(f){return (f.liq||{})[pid]===liq.id;}),ay:DB.asistencias.find(function(a){return a.liqId===liq.id;})||null};}
   else d=liqData(pid,de,ha,mo);
-  var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab)+sum(d.tal||[],pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[pid];});
+  var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab)+sum(d.tal||[],pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[pid];}),tA=d.ay?asisTot(d.ay):0;
   $('lqStats').innerHTML=(lqView?'<div class="stat" style="grid-column:1/-1;background:#FFF3D6"><span>Estás viendo la liquidación pagada N° '+esc(liq.numero)+'.</span> <button class="btn btn-sm" id="lqBack">Volver a liquidar</button></div>':'')+
-    '<div class="stat"><span>Sin garantía · '+d.sin.length+'</span><b>'+money(tS)+'</b></div><div class="stat"><span>Con garantía'+((d.tal||[]).length?' y taller':'')+' · '+(d.con.length+(d.tal||[]).length)+'</span><b>'+money(tC)+'</b></div><div class="stat"><span>Fletes · '+d.fl.length+'</span><b>'+money(tF)+'</b></div>'+((d.vis||[]).length?'<div class="stat" style="background:#E3F4F5"><span>Visitas cobradas por el técnico · '+d.vis.length+' (no se pagan)</span><b>'+money(sum(d.vis,visitaMonto))+'</b></div>':'')+'<div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total a pagar</span><b style="color:#fff">'+money(tS+tC+tF)+'</b></div>';
+    '<div class="stat"><span>Sin garantía · '+d.sin.length+'</span><b>'+money(tS)+'</b></div><div class="stat"><span>Con garantía'+((d.tal||[]).length?' y taller':'')+' · '+(d.con.length+(d.tal||[]).length)+'</span><b>'+money(tC)+'</b></div><div class="stat"><span>Fletes · '+d.fl.length+'</span><b>'+money(tF)+'</b></div>'+((d.vis||[]).length?'<div class="stat" style="background:#E3F4F5"><span>Visitas cobradas por el técnico · '+d.vis.length+' (no se pagan)</span><b>'+money(sum(d.vis,visitaMonto))+'</b></div>':'')+'<div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total a pagar</span><b style="color:#fff">'+money(tS+tC+tF+tA)+'</b></div>'+(d.ay?'<div class="stat" style="grid-column:1/-1;background:#F2F9EA"><span>Incluye pago semanal fijo</span><b>'+money(tA)+'</b></div>':'')+'';
   if(lqView)$('lqBack').addEventListener('click',function(){lqView=null;renderLiq();});
   var sr=lqView?[]:sinRevisar(pid,de,ha);
   if(sr.length)$('lqStats').insertAdjacentHTML('afterbegin','<div class="warn" style="grid-column:1/-1;margin:0"><b>'+sr.length+' órdenes de este técnico sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>');
@@ -706,35 +735,35 @@ function renderHist(){
   $('lqHist').innerHTML=H.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>N°</th><th>Fecha</th><th>Prestador/a</th><th>Semana</th><th class="num">Total</th><th></th></tr></thead><tbody>'+H.map(function(l){return '<tr><td>'+l.numero+'</td><td>'+fdate(l.fecha)+'</td><td>'+esc(pname(l.personaId))+'</td><td>Semana '+(l.desde?fdate(l.desde).slice(0,5):'')+' al '+(l.hasta?fdate(l.hasta):fdate(l.fecha))+'</td><td class="num">'+money(l.total)+'</td><td><button class="btn btn-sm" data-lv="'+l.id+'">Ver / imprimir</button> <button class="btn btn-sm btn-danger" data-la="'+l.id+'">Anular</button></td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Todavía no hay liquidaciones pagadas.</p>';
 }
 function renderResumen(de,ha,mo){var per=(de?fdate(de):'inicio')+' al '+(ha?fdate(ha):fdate(hoy()));var G={s:0,c:0,f:0},blocks='',srTot=0;
-  DB.personal.forEach(function(p){var d=liqData(p.id,de,ha,mo);var n=d.sin.length+d.con.length+d.tal.length+d.fl.length+d.vis.length;srTot+=sinRevisar(p.id,de,ha).length;if(!n)return;
-    var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab)+sum(d.tal,pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[p.id];});G.s+=tS;G.c+=tC;G.f+=tF;var tV=sum(d.vis,visitaMonto);G.v=(G.v||0)+tV;
+  DB.personal.forEach(function(p){var d=liqData(p.id,de,ha,mo);var n=d.sin.length+d.con.length+d.tal.length+d.fl.length+d.vis.length+(d.ay?1:0);srTot+=sinRevisar(p.id,de,ha).length;if(!n)return;
+    var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab)+sum(d.tal,pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[p.id];});var tA=d.ay?asisTot(d.ay):0;G.s+=tS;G.c+=tC;G.f+=tF;G.a=(G.a||0)+tA;var tV=sum(d.vis,visitaMonto);G.v=(G.v||0)+tV;
     var lst=function(L,f){return L.map(function(x){return '<tr><td>'+esc(x.orden||'—')+'</td><td class="desc">'+(f?cliEq(x.cliente,eqDeOrden(x.orden)):cliEq(x.cliente,x.desc,x.obs))+'</td><td>'+esc(f?'Flete':(x.tipo==='taller'?conceptoDoc(x):conceptoTxt(x)))+'</td><td class="num">'+money(f?fleteShares(x)[p.id]:pagoTrab(x))+'</td></tr>';}).join('');};
     var part=function(t,L,tot,f){return L.length?'<tr class="rs-h"><td colspan="3">'+t+' · '+L.length+'</td><td class="num">'+money(tot)+'</td></tr>'+lst(L,f):'';};
-    blocks+='<h4>'+esc(p.nombre)+' · '+money(tS+tC+tF)+'</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Cliente / equipo</th><th>Concepto</th><th class="num">A pagar</th></tr></thead><tbody>'+part('Con garantía',d.con,sum(d.con,pagoTrab))+part('Garantía de taller',d.tal,sum(d.tal,pagoTrab))+part('Sin garantía',d.sin,tS)+(d.vis.length?'<tr class="rs-h"><td colspan="3">Solo visita · cobradas por el técnico (no se pagan) · '+d.vis.length+'</td><td class="num">'+money(tV)+'</td></tr>'+d.vis.map(function(x){return '<tr><td>'+esc(x.orden)+'</td><td class="desc">'+cliEq(x.cliente,x.desc,x.obs)+'</td><td>Visita cobrada al cliente</td><td class="num muted">'+money(visitaMonto(x))+'</td></tr>';}).join(''):'')+part('Fletes',d.fl,tF,true)+'</tbody><tfoot><tr><td colspan="3">Total '+esc(p.nombre)+'</td><td class="num">'+money(tS+tC+tF)+'</td></tr></tfoot></table></div>';});
-  var T=G.s+G.c+G.f;
-  $('lqStats').innerHTML=(srTot?'<div class="warn" style="grid-column:1/-1;margin:0"><b>'+srTot+' órdenes sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>':'')+'<div class="stat"><span>Con garantía</span><b>'+money(G.c)+'</b></div><div class="stat"><span>Sin garantía</span><b>'+money(G.s)+'</b></div><div class="stat"><span>Fletes</span><b>'+money(G.f)+'</b></div>'+(G.v?'<div class="stat" style="background:#E3F4F5"><span>Visitas cobradas por técnicos (no se pagan)</span><b>'+money(G.v)+'</b></div>':'')+'<div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total del período</span><b style="color:#fff">'+money(T)+'</b></div>';
+    blocks+='<h4>'+esc(p.nombre)+' · '+money(tS+tC+tF+tA)+'</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Cliente / equipo</th><th>Concepto</th><th class="num">A pagar</th></tr></thead><tbody>'+(d.ay?'<tr class="rs-h"><td colspan="3">Pago semanal fijo · '+DLAB.filter(function(x){return d.ay.dias[x[0]];}).length+' de 5 días</td><td class="num">'+money(tA)+'</td></tr>':'')+part('Con garantía',d.con,sum(d.con,pagoTrab))+part('Garantía de taller',d.tal,sum(d.tal,pagoTrab))+part('Sin garantía',d.sin,tS)+(d.vis.length?'<tr class="rs-h"><td colspan="3">Solo visita · cobradas por el técnico (no se pagan) · '+d.vis.length+'</td><td class="num">'+money(tV)+'</td></tr>'+d.vis.map(function(x){return '<tr><td>'+esc(x.orden)+'</td><td class="desc">'+cliEq(x.cliente,x.desc,x.obs)+'</td><td>Visita cobrada al cliente</td><td class="num muted">'+money(visitaMonto(x))+'</td></tr>';}).join(''):'')+part('Fletes',d.fl,tF,true)+'</tbody><tfoot><tr><td colspan="3">Total '+esc(p.nombre)+'</td><td class="num">'+money(tS+tC+tF+tA)+'</td></tr></tfoot></table></div>';});
+  var T=G.s+G.c+G.f+(G.a||0);
+  $('lqStats').innerHTML=(srTot?'<div class="warn" style="grid-column:1/-1;margin:0"><b>'+srTot+' órdenes sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>':'')+'<div class="stat"><span>Con garantía</span><b>'+money(G.c)+'</b></div><div class="stat"><span>Sin garantía</span><b>'+money(G.s)+'</b></div><div class="stat"><span>Fletes'+(G.a?' y fijos de ayudantes':'')+'</span><b>'+money(G.f+(G.a||0))+'</b></div>'+(G.v?'<div class="stat" style="background:#E3F4F5"><span>Visitas cobradas por técnicos (no se pagan)</span><b>'+money(G.v)+'</b></div>':'')+'<div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total del período</span><b style="color:#fff">'+money(T)+'</b></div>';
   if($('lqGoRev'))$('lqGoRev').addEventListener('click',function(){$('trEst').value='rev';show('vTrab');});
   $('lqMark').hidden=true;
   $('docWrap').innerHTML='<article class="doc"><div class="doc-h"><span class="logo"><svg viewBox="0 0 682 212"><use href="#logo"/></svg></span><div class="meta"><b>Resumen de liquidaciones</b>Período '+per+'<br>Emitido el '+fdate(hoy())+'</div></div>'+(blocks||'<p class="empty">No hay órdenes revisadas ni fletes en este período.</p>')+(G.v?'<p class="hint" style="text-align:right;margin-top:10px">Visitas cobradas por los técnicos a clientes en la semana (no incluidas en el total): <b>'+money(G.v)+'</b></p>':'')+
-    '<div class="tot"><div><span>Con garantía</span><span class="num">'+money(G.c)+'</span></div><div><span>Sin garantía</span><span class="num">'+money(G.s)+'</span></div><div><span>Fletes</span><span class="num">'+money(G.f)+'</span></div><div><span>Total a pagar</span><span class="num">'+money(T)+'</span></div></div><p class="hint" style="margin-top:12px">Resumen interno. Para que cada técnico firme, elegí su nombre e imprimí su liquidación.</p></article>';
+    '<div class="tot"><div><span>Con garantía</span><span class="num">'+money(G.c)+'</span></div><div><span>Sin garantía</span><span class="num">'+money(G.s)+'</span></div><div><span>Fletes</span><span class="num">'+money(G.f)+'</span></div>'+(G.a?'<div><span>Pago semanal de ayudantes</span><span class="num">'+money(G.a)+'</span></div>':'')+'<div><span>Total a pagar</span><span class="num">'+money(T)+'</span></div></div><p class="hint" style="margin-top:12px">Resumen interno. Para que cada técnico firme, elegí su nombre e imprimí su liquidación.</p></article>';
   renderHist();}
 ['lqPers','lqDesde','lqHasta','lqEstado'].forEach(function(id){$(id).addEventListener('change',function(){lqView=null;renderLiq();});});
 $('lqPrint').addEventListener('click',function(){window.print();});
 $('docWrap').addEventListener('click',function(e){if(lqView)return;var r=e.target.closest('[data-open]');if(r)openTrab(r.dataset.open);});
 $('lqMark').addEventListener('click',async function(){var pid=$('lqPers').value,de=$('lqDesde').value,ha=$('lqHasta').value;var d=liqData(pid,de,ha,'pend');
-  var n=d.sin.length+d.con.length+d.tal.length+d.vis.length+d.fl.length;if(!n){toast('No hay nada pendiente para pagar');return;}
-  var total=sum(d.sin,pagoTrab)+sum(d.con,pagoTrab)+sum(d.tal,pagoTrab)+sum(d.fl,function(f){return fleteShares(f)[pid];});
+  var n=d.sin.length+d.con.length+d.tal.length+d.vis.length+d.fl.length+(d.ay?1:0);if(!n){toast('No hay nada pendiente para pagar');return;}
+  var total=(d.ay?asisTot(d.ay):0)+sum(d.sin,pagoTrab)+sum(d.con,pagoTrab)+sum(d.tal,pagoTrab)+sum(d.fl,function(f){return fleteShares(f)[pid];});
   if(!await confirmar('Marcar como pagado','Se registra el pago de '+money(total)+' a '+pname(pid)+' ('+n+' ítems). Esos trabajos y fletes no vuelven a aparecer como pendientes.','Registrar pago'))return;
   var num=(DB.liquidaciones.reduce(function(m,l){return Math.max(m,l.numero);},0)||0)+1;
   var L={id:uid(),numero:num,personaId:pid,fecha:hoy(),desde:de,hasta:ha||hoy(),total:Math.round(total*100)/100};
-  DB.liquidaciones.push(L);d.sin.concat(d.con,d.tal,d.vis).forEach(function(t){t.liqId=L.id;});L.visitas=sum(d.vis,visitaMonto);d.fl.forEach(function(f){f.liq=f.liq||{};f.liq[pid]=L.id;});
+  DB.liquidaciones.push(L);d.sin.concat(d.con,d.tal,d.vis).forEach(function(t){t.liqId=L.id;});L.visitas=sum(d.vis,visitaMonto);if(d.ay){if(d.ay.virtual){delete d.ay.virtual;DB.asistencias.push(d.ay);}d.ay.liqId=L.id;}d.fl.forEach(function(f){f.liq=f.liq||{};f.liq[pid]=L.id;});
   save();lqView=L.id;renderLiq();toast('Pago registrado. Imprimí la liquidación para que la firme.');});
 $('lqHist').addEventListener('click',async function(e){var v=e.target.closest('[data-lv]'),a=e.target.closest('[data-la]');
   if(v){lqView=v.dataset.lv;renderLiq();window.scrollTo({top:0,behavior:'smooth'});}
   if(a){var L=DB.liquidaciones.find(function(l){return l.id===a.dataset.la;});
     if(!await confirmar('Anular liquidación','La liquidación N° '+L.numero+' se borra y sus trabajos y fletes vuelven a quedar pendientes de pago.','Anular'))return;
     DB.trabajos.forEach(function(t){if(t.liqId===L.id)t.liqId=null;});DB.fletes.forEach(function(f){if(f.liq&&f.liq[L.personaId]===L.id)delete f.liq[L.personaId];});
-    DB.liquidaciones=DB.liquidaciones.filter(function(l){return l.id!==L.id;});if(lqView===L.id)lqView=null;save();renderLiq();toast('Liquidación anulada');}});
+    DB.asistencias.forEach(function(a){if(a.liqId===L.id)a.liqId=null;});DB.liquidaciones=DB.liquidaciones.filter(function(l){return l.id!==L.id;});if(lqView===L.id)lqView=null;save();renderLiq();toast('Liquidación anulada');}});
 
 /* Ajustes */
 function renderTarTec(){$('tarTec').innerHTML=DB.cfg.tarifasTec.map(function(t,i){return '<div class="row" style="flex-wrap:nowrap"><label class="f" style="flex:2">Nombre<input class="i" data-tt="n'+i+'" value="'+esc(t.nombre)+'"></label><label class="f" style="flex:1">Monto<input class="i n" type="number" step="500" min="0" data-tt="m'+i+'" value="'+t.monto+'"></label><button class="btn btn-sm btn-danger" data-ttdel="'+i+'" title="Quitar">✕</button></div>';}).join('');}
@@ -759,12 +788,42 @@ $('csvDown').addEventListener('click',function(){var h=['Orden','Fecha','Tipo','
   var q=function(v){v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};var n=function(x){return String(Math.round((+x||0)*100)/100).replace('.',',');};
   var rows=DB.trabajos.map(function(t){return [t.orden,fdate(t.fecha),TIPOS_T[t.tipo]||'Sin garantía',t.cliente,t.desc,pname(t.tecnicoId),n(t.total),n(t.repuesto),n(t.mo),n(t.pct),n(pagoTrab(t)),n(visitaMonto(t)),t.liqId?'Pagado':'Pendiente'].map(q).join(';');});
   download('trabajos-villguz-'+hoy()+'.csv','﻿'+[h.join(';')].concat(rows).join('\r\n'),'text/csv;charset=utf-8');});
-$('wipe').addEventListener('click',async function(){if(!await confirmar('Empezar de cero','Se borran '+DB.trabajos.length+' órdenes, '+DB.fletes.length+' fletes y '+DB.liquidaciones.length+' liquidaciones de este navegador. Si querés conservarlas, descargá antes una copia.','Borrar todo'))return;DB.trabajos=[];DB.fletes=[];DB.liquidaciones=[];save();setWeekInfo();toast('Listo, panel vacío');});
+$('wipe').addEventListener('click',async function(){if(!await confirmar('Empezar de cero','Se borran '+DB.trabajos.length+' órdenes, '+DB.fletes.length+' fletes y '+DB.liquidaciones.length+' liquidaciones de este navegador. Si querés conservarlas, descargá antes una copia.','Borrar todo'))return;DB.trabajos=[];DB.fletes=[];DB.liquidaciones=[];DB.asistencias=[];save();setWeekInfo();toast('Listo, panel vacío');});
 $('pwSave').addEventListener('click',async function(){var e=$('pwErr');e.hidden=true;
   if(await sha($('pwOld').value)!==DB.cfg.pwHash){e.textContent='La contraseña actual no es correcta.';e.hidden=false;return;}
   if($('pwNew').value.length<6){e.textContent='La nueva contraseña necesita al menos 6 caracteres.';e.hidden=false;return;}
   if($('pwNew').value!==$('pwNew2').value){e.textContent='Las contraseñas nuevas no coinciden.';e.hidden=false;return;}
   DB.cfg.pwHash=await sha($('pwNew').value);save();try{sessionStorage.setItem('vg_ok',DB.cfg.pwHash);}catch(x){}['pwOld','pwNew','pwNew2'].forEach(function(i){$(i).value='';});toast('Contraseña cambiada');});
+
+/* Ayudantes: pago fijo semanal */
+var DLAB=[['lun','Lunes',2],['mar','Martes',3],['mie','Miércoles',4],['jue','Jueves',5],['vie','Viernes',6]];
+DB.asistencias=DB.asistencias||[];
+function semanal(p){return p?(+p.semanal||0):0;}
+function asis(pid,wk,create){var a=DB.asistencias.find(function(x){return x.personaId===pid&&x.semana===wk;});
+  if(!a){a={id:uid(),personaId:pid,semana:wk,dias:{lun:true,mar:true,mie:true,jue:true,vie:true},ajustes:[],liqId:null,virtual:true};if(create){delete a.virtual;DB.asistencias.push(a);}}return a;}
+function asisTot(a){var p=persona(a.personaId);var v=semanal(p)/5;var n=DLAB.filter(function(d){return a.dias[d[0]];}).length;return Math.round((n*v+(a.ajustes||[]).reduce(function(s,x){return s+(+x.monto||0);},0))*100)/100;}
+function ayudantes(){return DB.personal.filter(function(p){return semanal(p)>0&&(p.activo!==false);});}
+function renderAyu(){var L=ayudantes();
+  if(!L.length){$('ayList').innerHTML='<p class="empty">No hay ayudantes con pago fijo semanal. Tocá “Agregar ayudante” o cargale un monto fijo semanal a alguien en Técnicos y personal.</p>';return;}
+  $('ayList').innerHTML=L.map(function(p){var a=asis(p.id,WK,false);var v=semanal(p)/5;var dis=a.liqId?' disabled':'';
+    var dias=DLAB.map(function(d){var on=a.dias[d[0]];return '<button class="day'+(on?' on':' off')+'" data-ay="'+p.id+'" data-dia="'+d[0]+'"'+dis+'><b>'+d[1]+'</b><span>'+fdate(addD(WK,d[2])).slice(0,5)+'</span><em>'+(on?'Presente':'Falta')+'</em></button>';}).join('');
+    var aj=(a.ajustes||[]).map(function(x,i){return '<div class="row aj"><input class="i" data-ajc="'+i+'" data-ay="'+p.id+'" value="'+esc(x.concepto)+'" placeholder="Concepto (ej: adelanto, extra sábado)"'+dis+'><input class="i n" type="number" step="500" data-ajm="'+i+'" data-ay="'+p.id+'" value="'+x.monto+'"'+dis+'><button class="btn btn-sm btn-danger" data-ajdel="'+i+'" data-ay="'+p.id+'"'+dis+'>✕</button></div>';}).join('');
+    var faltas=DLAB.filter(function(d){return !a.dias[d[0]];}).length;
+    return '<div class="ay-card"><div class="ay-h"><div><h3>'+esc(p.nombre)+'</h3><span class="hint">Fijo semanal '+money(semanal(p))+' · '+money(v)+' por día</span></div><div class="ay-tot"><span>A pagar esta semana</span><b data-ayt="'+p.id+'">'+money(asisTot(a))+'</b>'+(a.liqId?'<span class="pill p-liq">Pagado</span>':'')+'</div></div>'+
+      '<div class="days">'+dias+'</div>'+(faltas?'<p class="hint" style="margin:8px 0 0">'+faltas+(faltas===1?' falta':' faltas')+': se descuentan '+money(faltas*v)+'.</p>':'')+
+      '<div class="aj-list">'+aj+'</div>'+(a.liqId?'':'<button class="btn btn-sm" data-ajadd="'+p.id+'">+ Extra o descuento</button> <span class="hint">Para descontar, poné el monto en negativo (ej: -20000).</span>')+'</div>';}).join('');}
+$('ayList').addEventListener('click',function(e){var b=e.target.closest('[data-dia]'),ad=e.target.closest('[data-ajadd]'),dl=e.target.closest('[data-ajdel]');
+  if(b){var a=asis(b.dataset.ay,WK,true);if(a.liqId)return;a.dias[b.dataset.dia]=!a.dias[b.dataset.dia];save();renderAyu();}
+  if(ad){var a2=asis(ad.dataset.ajadd,WK,true);a2.ajustes.push({concepto:'',monto:0});save();renderAyu();var ins=document.querySelectorAll('[data-ajc][data-ay="'+ad.dataset.ajadd+'"]');if(ins.length)ins[ins.length-1].focus();}
+  if(dl){var a3=asis(dl.dataset.ay,WK,true);a3.ajustes.splice(+dl.dataset.ajdel,1);save();renderAyu();}});
+$('ayList').addEventListener('change',function(e){var el=e.target;if(!el.dataset.ay)return;var a=asis(el.dataset.ay,WK,true);if(a.liqId)return;
+  if(el.dataset.ajc!=null)a.ajustes[+el.dataset.ajc].concepto=el.value.trim();if(el.dataset.ajm!=null)a.ajustes[+el.dataset.ajm].monto=+el.value||0;save();var tb=document.querySelector('[data-ayt="'+el.dataset.ay+'"]');if(tb)tb.textContent=money(asisTot(a));});
+$('ayNewP').addEventListener('click',function(){openPers(null);$('p_rol').value='ayudante';$('p_sem').value=100000;$('p_sin').value=0;$('p_con').value=0;});
+$('trAyu').addEventListener('click',function(){show('vAyu');});
+function ayTable(a){if(!a)return '';var p=persona(a.personaId);var v=semanal(p)/5;
+  var rows=DLAB.map(function(d){var on=a.dias[d[0]];return '<tr><td>'+d[1]+'</td><td>'+fdate(addD(a.semana,d[2]))+'</td><td>'+(on?'Presente':'<b>Falta</b>')+'</td><td class="num">'+money(on?v:0)+'</td></tr>';}).join('')+
+    (a.ajustes||[]).filter(function(x){return +x.monto;}).map(function(x){return '<tr><td colspan="3">'+esc(x.concepto||((+x.monto)<0?'Descuento':'Adicional'))+'</td><td class="num">'+money(x.monto)+'</td></tr>';}).join('');
+  return '<h4>Pago semanal fijo · '+money(semanal(p))+' ('+money(v)+' por día)</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Día</th><th>Fecha</th><th>Asistencia</th><th class="num">Monto</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="3">Subtotal</td><td class="num">'+money(asisTot(a))+'</td></tr></tfoot></table></div>';}
 
 /* Semana sábado a viernes */
 var DIAS=['dom','lun','mar','mié','jue','vie','sáb'];
@@ -775,6 +834,7 @@ function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
 var WK=satOf(hoy());
 function wkEnd(){return addD(WK,6);}
 function inWeek(d){return d&&d>=WK&&d<=wkEnd();}
+function curView0(){}
 function curView(){var t=tabs.find(function(x){return x.getAttribute('aria-selected')==='true';});return t?t.dataset.v:'vLiq';}
 function setWeekInfo(){var n=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha);}).length,f=DB.fletes.filter(function(x){return inWeek(x.fecha);}).length,r=DB.trabajos.filter(function(t){return inWeek(t.entrega||t.fecha)&&t.ok===false&&!t.liqId;}).length;$('wkInfo').textContent=n+' órdenes · '+f+' fletes'+(r?' · '+r+' sin revisar':'');}
 function setWeek(s){WK=satOf(s);$('lqDesde').value=WK;$('lqHasta').value=wkEnd();lqView=null;
