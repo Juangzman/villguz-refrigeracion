@@ -497,16 +497,29 @@ function fleteShares(f){var c=DB.cfg,res={};var m=+f.monto||0;
   if(ay.length){var each=m*(+c.pctAyud)/100/ay.length;ay.forEach(function(a){res[a]=(res[a]||0)+each;});}
   else if(f.fleteroId){res[f.fleteroId]+=m*(+c.pctAyud)/100;}
   Object.keys(res).forEach(function(k){res[k]=Math.round(res[k]*100)/100;});return res;}
+function optLabel(p){var n=DB.personal.filter(function(x){return nk(x.nombre)===nk(p.nombre);}).length;return p.nombre+(n>1?' ('+({tecnico:'técnico',ayudante:'ayudante',fletero:'fletero'}[p.rol]||'')+(semanal(p)?', con fijo':'')+')':'');}
 function optPersonal(sel,opts){opts=opts||{};var html=opts.empty?'<option value="">'+esc(opts.empty)+'</option>':'';
-  DB.personal.filter(function(p){return p.activo!==false||p.id===opts.keep;}).filter(function(p){return !opts.rol||p.rol===opts.rol||p.id===opts.keep;}).forEach(function(p){html+='<option value="'+p.id+'">'+esc(p.nombre)+'</option>';});sel.innerHTML=html;}
+  DB.personal.filter(function(p){return p.activo!==false||p.id===opts.keep;}).filter(function(p){return !opts.rol||p.rol===opts.rol||p.id===opts.keep;}).forEach(function(p){html+='<option value="'+p.id+'">'+esc(optLabel(p))+'</option>';});sel.innerHTML=html;}
 
 /* ---------- Render ---------- */
 function render(v){({vLiq:renderLiq,vTrab:renderTrab,vFlete:renderFlete,vPers:renderPers,vAyu:renderAyu,vAjustes:renderAjustes}[v]||function(){})();}
 
 /* Personal */
+function nk(x){return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');}
+function duplicados(){var g={};DB.personal.forEach(function(p){var k=nk(p.nombre);(g[k]=g[k]||[]).push(p);});return Object.keys(g).map(function(k){return g[k];}).filter(function(a){return a.length>1;});}
+function unir(grupo){var keep=grupo.slice().sort(function(a,b){return semanal(b)-semanal(a);})[0];
+  grupo.forEach(function(p){if(p.id===keep.id)return;
+    DB.trabajos.forEach(function(t){if(t.tecnicoId===p.id)t.tecnicoId=keep.id;});
+    DB.fletes.forEach(function(f){if(f.fleteroId===p.id)f.fleteroId=keep.id;f.ayudantes=(f.ayudantes||[]).map(function(a){return a===p.id?keep.id:a;}).filter(function(a,i,arr){return arr.indexOf(a)===i;});if(f.liq&&f.liq[p.id]){f.liq[keep.id]=f.liq[keep.id]||f.liq[p.id];delete f.liq[p.id];}});
+    DB.asistencias.forEach(function(a){if(a.personaId===p.id)a.personaId=keep.id;});
+    DB.liquidaciones.forEach(function(l){if(l.personaId===p.id)l.personaId=keep.id;});
+    if(!keep.doc&&p.doc)keep.doc=p.doc;});
+  DB.personal=DB.personal.filter(function(p){return p.id===keep.id||grupo.indexOf(p)<0;});save();return keep;}
 function renderPers(){
   var rows=DB.personal.map(function(p){return '<tr><td><b>'+esc(p.nombre)+'</b>'+(p.doc?'<br><span class="muted">'+esc(p.doc)+'</span>':'')+'</td><td>'+({tecnico:'Técnico',ayudante:'Ayudante',fletero:'Fletero'}[p.rol]||'')+'</td><td class="num">'+(+p.pctSin||0)+' %</td><td class="num">'+(+p.pctCon||0)+' %</td><td class="num">'+((+p.semanal)?money(p.semanal):'—')+'</td><td>'+(p.activo===false?'<span class="pill p-liq">Inactivo</span>':'<span class="pill p-con">Activo</span>')+'</td><td><button class="btn btn-sm" data-ep="'+p.id+'">Editar</button></td></tr>';}).join('');
-  $('peTable').innerHTML=DB.personal.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>Nombre</th><th>Rol</th><th class="num">% sin garantía</th><th class="num">% con garantía</th><th class="num">Fijo semanal</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">Todavía no cargaste técnicos. Agregá el primero para poder asignar trabajos.</p>';
+  var D=duplicados();var dupHtml=D.length?'<div class="warn" style="margin-bottom:12px"><b>Hay personas repetidas:</b> '+D.map(function(g){return esc(g[0].nombre)+' ('+g.length+')';}).join(', ')+'. Sus trabajos y fletes quedan separados. <button class="btn btn-sm" id="peUnir">Unir repetidos</button></div>':'';
+  $('peTable').innerHTML=dupHtml+(DB.personal.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>Nombre</th><th>Rol</th><th class="num">% sin garantía</th><th class="num">% con garantía</th><th class="num">Fijo semanal</th><th>Estado</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">Todavía no cargaste técnicos. Agregá el primero para poder asignar trabajos.</p>');
+  if($('peUnir'))$('peUnir').addEventListener('click',function(){D.forEach(unir);renderPers();setWeekInfo();toast('Listo: se unieron las personas repetidas');});
 }
 $('peTable').addEventListener('click',function(e){var b=e.target.closest('[data-ep]');if(b)openPers(b.dataset.ep);});
 $('peNew').addEventListener('click',function(){openPers(null);});
@@ -514,7 +527,9 @@ var editPers=null;
 function openPers(id){editPers=id;var p=id?persona(id):{nombre:'',doc:'',rol:'tecnico',pctSin:30,pctCon:0,semanal:0,activo:true};
   $('p_nombre').value=p.nombre;$('p_doc').value=p.doc||'';$('p_rol').value=p.rol;$('p_rol').onchange=function(){if($('p_rol').value==='ayudante'&&!$('p_sem').value)$('p_sem').value=100000;};$('p_sin').value=p.pctSin;$('p_con').value=p.pctCon;$('p_sem').value=p.semanal||'';$('p_act').checked=p.activo!==false;$('p_del').hidden=!id;$('dPers').showModal();$('p_nombre').focus();}
 $('fPers').addEventListener('submit',function(e){e.preventDefault();var d={nombre:$('p_nombre').value.trim(),doc:$('p_doc').value.trim(),rol:$('p_rol').value,pctSin:+$('p_sin').value||0,pctCon:+$('p_con').value||0,semanal:+$('p_sem').value||0,activo:$('p_act').checked};
-  if(!d.nombre)return;if(editPers)Object.assign(persona(editPers),d);else DB.personal.push(Object.assign({id:uid()},d));save();$('dPers').close();renderPers();toast('Guardado');});
+  if(!d.nombre)return;var dupP=DB.personal.find(function(x){return x.id!==editPers&&nk(x.nombre)===nk(d.nombre);});
+  if(dupP){if(!editPers&&semanal(d)>0&&!semanal(dupP)){dupP.semanal=d.semanal;if(d.rol==='ayudante')dupP.rol='ayudante';save();$('dPers').close();renderPers();render(curView());toast('Ya existía '+dupP.nombre+': le cargamos el fijo semanal');return;}toast('Ya existe una persona llamada '+dupP.nombre);return;}
+  if(editPers)Object.assign(persona(editPers),d);else DB.personal.push(Object.assign({id:uid()},d));save();$('dPers').close();renderPers();toast('Guardado');});
 $('p_del').addEventListener('click',async function(){var used=DB.trabajos.some(function(t){return t.tecnicoId===editPers;})||DB.fletes.some(function(f){return f.fleteroId===editPers||(f.ayudantes||[]).indexOf(editPers)>=0;});
   if(used){$('p_act').checked=false;toast('Tiene trabajos o fletes cargados: lo dejamos como inactivo');return;}
   $('dPers').close();if(await confirmar('Eliminar persona','Se elimina '+pname(editPers)+'.','Eliminar')){DB.personal=DB.personal.filter(function(p){return p.id!==editPers;});save();renderPers();}});
@@ -723,7 +738,11 @@ function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete 
   $('lqStats').innerHTML=(lqView?'<div class="stat" style="grid-column:1/-1;background:#FFF3D6"><span>Estás viendo la liquidación pagada N° '+esc(liq.numero)+'.</span> <button class="btn btn-sm" id="lqBack">Volver a liquidar</button></div>':'')+
     '<div class="stat"><span>Sin garantía · '+d.sin.length+'</span><b>'+money(tS)+'</b></div><div class="stat"><span>Con garantía'+((d.tal||[]).length?' y taller':'')+' · '+(d.con.length+(d.tal||[]).length)+'</span><b>'+money(tC)+'</b></div><div class="stat"><span>Fletes · '+d.fl.length+'</span><b>'+money(tF)+'</b></div>'+((d.vis||[]).length?'<div class="stat" style="background:#E3F4F5"><span>Visitas cobradas por el técnico · '+d.vis.length+' (no se pagan)</span><b>'+money(sum(d.vis,visitaMonto))+'</b></div>':'')+'<div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total a pagar</span><b style="color:#fff">'+money(tS+tC+tF+tA)+'</b></div>'+(d.ay?'<div class="stat" style="grid-column:1/-1;background:#F2F9EA"><span>Incluye pago semanal fijo</span><b>'+money(tA)+'</b></div>':'')+'';
   if(lqView)$('lqBack').addEventListener('click',function(){lqView=null;renderLiq();});
-  var sr=lqView?[]:sinRevisar(pid,de,ha);
+  var pp=persona(pid);var sr=lqView?[]:sinRevisar(pid,de,ha);
+  if(!lqView&&pp&&pp.rol==='ayudante'&&!semanal(pp))$('lqStats').insertAdjacentHTML('afterbegin','<div class="warn" style="grid-column:1/-1;margin:0"><b>'+esc(pp.nombre)+' no tiene pago fijo semanal cargado</b>, por eso solo se ven sus fletes. <button class="btn btn-sm" id="lqGoAyu">Cargarlo en Ayudantes</button></div>');
+  if($('lqGoAyu'))$('lqGoAyu').addEventListener('click',function(){show('vAyu');});
+  if(!lqView&&duplicados().some(function(g){return g.some(function(x){return x.id===pid;});}))$('lqStats').insertAdjacentHTML('afterbegin','<div class="warn" style="grid-column:1/-1;margin:0"><b>Hay otra persona con el nombre '+esc(pp.nombre)+'.</b> Lo que está cargado a nombre de la otra no aparece acá. <button class="btn btn-sm" id="lqUnir">Unirlas ahora</button></div>');
+  if($('lqUnir'))$('lqUnir').addEventListener('click',function(){var g=duplicados().find(function(g){return g.some(function(x){return x.id===pid;});});var k=unir(g);$('lqPers').dataset.want=k.id;renderLiq();toast('Personas unidas');});
   if(sr.length)$('lqStats').insertAdjacentHTML('afterbegin','<div class="warn" style="grid-column:1/-1;margin:0"><b>'+sr.length+' órdenes de este técnico sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>');
   if($('lqGoRev'))$('lqGoRev').addEventListener('click',function(){$('trTec').dataset.want=pid;$('trEst').value='rev';show('vTrab');});
   $('lqMark').hidden=!!lqView||mo==='todos';
@@ -803,16 +822,18 @@ function asis(pid,wk,create){var a=DB.asistencias.find(function(x){return x.pers
   if(!a){a={id:uid(),personaId:pid,semana:wk,dias:{lun:true,mar:true,mie:true,jue:true,vie:true},ajustes:[],liqId:null,virtual:true};if(create){delete a.virtual;DB.asistencias.push(a);}}return a;}
 function asisTot(a){var p=persona(a.personaId);var v=semanal(p)/5;var n=DLAB.filter(function(d){return a.dias[d[0]];}).length;return Math.round((n*v+(a.ajustes||[]).reduce(function(s,x){return s+(+x.monto||0);},0))*100)/100;}
 function ayudantes(){return DB.personal.filter(function(p){return semanal(p)>0&&(p.activo!==false);});}
-function renderAyu(){var L=ayudantes();
-  if(!L.length){$('ayList').innerHTML='<p class="empty">No hay ayudantes con pago fijo semanal. Tocá “Agregar ayudante” o cargale un monto fijo semanal a alguien en Técnicos y personal.</p>';return;}
-  $('ayList').innerHTML=L.map(function(p){var a=asis(p.id,WK,false);var v=semanal(p)/5;var dis=a.liqId?' disabled':'';
+function renderAyu(){var L=ayudantes();var sinFijo=DB.personal.filter(function(p){return p.rol==='ayudante'&&p.activo!==false&&!semanal(p);});
+  var aviso=(duplicados().length?'<div class="warn" style="margin-bottom:12px"><b>Hay personas con el mismo nombre.</b> Unilas en Técnicos y personal para que el fijo y los fletes salgan en la misma liquidación. <button class="btn btn-sm" id="ayGoPers">Ir a unirlas</button></div>':'')+sinFijo.map(function(p){return '<div class="warn" style="margin-bottom:12px"><b>'+esc(p.nombre)+'</b> es ayudante pero no tiene pago fijo semanal. <input class="i n" type="number" step="1000" value="100000" id="sf_'+p.id+'" style="width:140px"> <button class="btn btn-sm btn-primary" data-setfijo="'+p.id+'">Cargar fijo semanal</button></div>';}).join('');
+  if(!L.length){$('ayList').innerHTML=aviso+'<p class="empty">No hay ayudantes con pago fijo semanal. Tocá “Agregar ayudante” o cargale un monto fijo semanal a alguien en Técnicos y personal.</p>';return;}
+  $('ayList').innerHTML=aviso+L.map(function(p){var a=asis(p.id,WK,false);var v=semanal(p)/5;var dis=a.liqId?' disabled':'';
     var dias=DLAB.map(function(d){var on=a.dias[d[0]];return '<button class="day'+(on?' on':' off')+'" data-ay="'+p.id+'" data-dia="'+d[0]+'"'+dis+'><b>'+d[1]+'</b><span>'+fdate(addD(WK,d[2])).slice(0,5)+'</span><em>'+(on?'Presente':'Falta')+'</em></button>';}).join('');
     var aj=(a.ajustes||[]).map(function(x,i){return '<div class="row aj"><input class="i" data-ajc="'+i+'" data-ay="'+p.id+'" value="'+esc(x.concepto)+'" placeholder="Concepto (ej: adelanto, extra sábado)"'+dis+'><input class="i n" type="number" step="500" data-ajm="'+i+'" data-ay="'+p.id+'" value="'+x.monto+'"'+dis+'><button class="btn btn-sm btn-danger" data-ajdel="'+i+'" data-ay="'+p.id+'"'+dis+'>✕</button></div>';}).join('');
     var faltas=DLAB.filter(function(d){return !a.dias[d[0]];}).length;
     return '<div class="ay-card"><div class="ay-h"><div><h3>'+esc(p.nombre)+'</h3><span class="hint">Fijo semanal '+money(semanal(p))+' · '+money(v)+' por día</span></div><div class="ay-tot"><span>A pagar esta semana</span><b data-ayt="'+p.id+'">'+money(asisTot(a))+'</b>'+(a.liqId?'<span class="pill p-liq">Pagado</span>':'')+'</div></div>'+
       '<div class="days">'+dias+'</div>'+(faltas?'<p class="hint" style="margin:8px 0 0">'+faltas+(faltas===1?' falta':' faltas')+': se descuentan '+money(faltas*v)+'.</p>':'')+
       '<div class="aj-list">'+aj+'</div>'+(a.liqId?'':'<button class="btn btn-sm" data-ajadd="'+p.id+'">+ Extra o descuento</button> <span class="hint">Para descontar, poné el monto en negativo (ej: -20000).</span>')+'</div>';}).join('');}
-$('ayList').addEventListener('click',function(e){var b=e.target.closest('[data-dia]'),ad=e.target.closest('[data-ajadd]'),dl=e.target.closest('[data-ajdel]');
+$('ayList').addEventListener('click',function(e){var sf=e.target.closest('[data-setfijo]');if(sf){var pp=persona(sf.dataset.setfijo);pp.semanal=+$('sf_'+pp.id).value||0;save();renderAyu();toast('Fijo semanal cargado a '+pp.nombre);return;}if(e.target.id==='ayGoPers'){show('vPers');return;}
+  var b=e.target.closest('[data-dia]'),ad=e.target.closest('[data-ajadd]'),dl=e.target.closest('[data-ajdel]');
   if(b){var a=asis(b.dataset.ay,WK,true);if(a.liqId)return;a.dias[b.dataset.dia]=!a.dias[b.dataset.dia];save();renderAyu();}
   if(ad){var a2=asis(ad.dataset.ajadd,WK,true);a2.ajustes.push({concepto:'',monto:0});save();renderAyu();var ins=document.querySelectorAll('[data-ajc][data-ay="'+ad.dataset.ajadd+'"]');if(ins.length)ins[ins.length-1].focus();}
   if(dl){var a3=asis(dl.dataset.ay,WK,true);a3.ajustes.splice(+dl.dataset.ajdel,1);save();renderAyu();}});
