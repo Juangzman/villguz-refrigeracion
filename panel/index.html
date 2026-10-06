@@ -99,6 +99,28 @@ dialog::backdrop{background:rgba(0,20,45,.55)}
 .chk{display:flex;gap:8px;align-items:center;font-weight:500}
 .hint{font-size:.8rem;color:var(--muted);margin:0}
 
+/* Tabla editable */
+table.te td{padding:6px 6px;vertical-align:middle}
+.ie{width:100%;min-width:96px;border:1px solid transparent;background:transparent;border-radius:6px;padding:.38em .45em;font:inherit;font-size:.84rem;color:var(--ink)}
+.ie.n{text-align:right;font-variant-numeric:tabular-nums;min-width:100px}
+.ie:hover{border-color:var(--line);background:#fff}
+.ie:focus{outline:none;border-color:var(--green);background:#fff;box-shadow:0 0 0 2px rgba(118,183,42,.22)}
+.ie:disabled{color:var(--muted)}
+select.ie{cursor:pointer}
+select.ie[data-f=tipo]{min-width:128px}select.ie[data-f=tecnicoId]{min-width:150px}
+main > section{min-width:0;display:grid;gap:20px}
+.ie[type=date]{min-width:130px}
+.c-ok{text-align:center}.c-ok input{width:18px;height:18px;accent-color:var(--green-ink);cursor:pointer}
+tr.r-rev td{background:#FFFBEF}
+tr.r-zero td{background:#FFF1D6}
+tr.r-liq td{background:#F6F7F9}
+td.pago{min-width:96px}
+.warn{background:#FFF3D6;border:1px solid #F1D48A;color:#5E4300;border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.okmsg{background:#EAF5DC;border:1px solid #C9E3A6;color:#2F5A0A;border-radius:12px;padding:10px 14px;font-weight:600}
+.doc [data-open]{cursor:pointer}
+.doc [data-open]:hover td{background:#F2F7EC}
+@media print{.doc [data-open]:hover td{background:none}}
+table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
 /* Documento de liquidación (pantalla e impresión) */
 .doc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px;color:#000}
 .doc-h{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid var(--navy);padding-bottom:14px}
@@ -199,20 +221,21 @@ dialog::backdrop{background:rgba(0,20,45,.55)}
     <section id="vTrab" data-view hidden>
       <div class="card">
         <div class="card-h">
-          <div><h2>Trabajos</h2><p>Importá las órdenes exportadas del sistema TS o cargalas a mano.</p></div>
+          <div><h2>Trabajos</h2><p>Importá el Excel de TS, corregí lo que haga falta y marcá cada orden como revisada.</p></div>
           <div class="row">
             <label class="btn"><input type="file" id="tsFile" accept=".xlsx,.xls,.csv" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Importar desde TS</label>
-            <button class="btn btn-primary" id="trNew">+ Nuevo trabajo</button>
+            <button class="btn btn-primary" id="trNew">+ Nueva orden</button>
           </div>
         </div>
         <div class="grid g4">
           <label class="f">Buscar<input class="i" id="trQ" placeholder="Orden, cliente o descripción"></label>
           <label class="f">Tipo<select class="i" id="trTipo"><option value="">Todos</option><option value="sin">Sin garantía</option><option value="con">Con garantía</option></select></label>
           <label class="f">Técnico<select class="i" id="trTec"></select></label>
-          <label class="f">Estado<select class="i" id="trEst"><option value="">Todos</option><option value="pend">Pendiente de pago</option><option value="liq">Pagado</option></select></label>
+          <label class="f">Estado<select class="i" id="trEst"><option value="">Todos</option><option value="rev">Sin revisar</option><option value="cero">Con total $ 0</option><option value="pend">Pendiente de pago</option><option value="liq">Pagado</option></select></label>
         </div>
       </div>
-      <div class="card"><div id="trTable"></div></div>
+      <div id="trSum"></div>
+      <div class="card"><p class="hint" style="margin:0 0 10px">Todo se edita directo en la tabla y se guarda solo. Revisá cada orden y marcala con ✓ para que pase a la liquidación.</p><div id="trTable"></div></div>
     </section>
 
     <!-- FLETES -->
@@ -250,6 +273,11 @@ dialog::backdrop{background:rgba(0,20,45,.55)}
         <div class="row" style="margin-top:14px"><button class="btn btn-primary" id="cfgSave">Guardar tarifas</button></div>
       </div>
       <div class="card">
+        <div class="card-h"><div><h2>Tarifas fijas para técnicos</h2><p>Se eligen como concepto de pago en cada orden (visitas, mano de obra baja, media o alta). El monto se puede cambiar en la orden.</p></div><button class="btn" id="ttAdd">+ Agregar tarifa</button></div>
+        <div id="tarTec" class="grid g2"></div>
+        <div class="row" style="margin-top:14px"><button class="btn btn-primary" id="ttSave">Guardar tarifas de técnicos</button></div>
+      </div>
+      <div class="card">
         <div class="card-h"><div><h2>Texto de la liquidación</h2><p>Aparece arriba de las firmas. Revisalo con tu contador.</p></div></div>
         <label class="f">Declaración del prestador<textarea class="i" id="cfgDecl" rows="5"></textarea></label>
         <div class="grid g3" style="margin-top:12px">
@@ -283,29 +311,7 @@ dialog::backdrop{background:rgba(0,20,45,.55)}
 </div>
 
 <!-- Dialogos -->
-<dialog id="dTrab"><form class="dlg" id="fTrab" method="dialog">
-  <h3 id="dTrabT">Trabajo</h3>
-  <div class="grid g3">
-    <label class="f">N° de orden<input class="i" id="t_orden" required></label>
-    <label class="f">Fecha de ingreso<input class="i" type="date" id="t_fecha" required></label>
-    <label class="f">Tipo<select class="i" id="t_tipo"><option value="sin">Sin garantía</option><option value="con">Con garantía</option></select></label>
-  </div>
-  <div class="grid g3"><label class="f">Fecha de entrega<input class="i" type="date" id="t_ent"></label></div>
-  <div class="grid g2">
-    <label class="f">Cliente<input class="i" id="t_cliente"></label>
-    <label class="f">Técnico<select class="i" id="t_tec" required></select></label>
-  </div>
-  <label class="f">Descripción del trabajo<input class="i" id="t_desc" placeholder="Ej: Heladera Samsung RT38, cambio de sensor"></label>
-  <div class="grid g4">
-    <label class="f">Total cobrado<input class="i n" type="number" step="0.01" min="0" id="t_total"></label>
-    <label class="f">Repuestos<input class="i n" type="number" step="0.01" min="0" id="t_rep"></label>
-    <label class="f">Mano de obra<input class="i n" type="number" step="0.01" min="0" id="t_mo"></label>
-    <label class="f">% al técnico<input class="i n" type="number" step="0.5" min="0" max="100" id="t_pct"></label>
-  </div>
-  <p class="hint" id="t_calc"></p>
-  <p class="err" id="t_err" hidden></p>
-  <div class="dlg-f"><button class="btn btn-danger" type="button" id="t_del" hidden>Eliminar</button><button class="btn" type="button" data-close>Cancelar</button><button class="btn btn-primary" type="submit">Guardar</button></div>
-</form></dialog>
+
 
 <dialog id="dFlete"><form class="dlg" id="fFlete" method="dialog">
   <h3>Flete</h3>
@@ -384,6 +390,7 @@ var DEFAULT={
     pwHash:null,
     tarifas:[{zona:'San Miguel de Tucumán',monto:60000},{zona:'Yerba Buena y alrededores',monto:80000},{zona:'Más lejos de Yerba Buena (ej. Lules)',monto:100000},{zona:'Alberdi, Concepción, Monteros (+60 km)',monto:160000}],
     pctFletero:60,pctAyud:40,extraIda:10000,
+    tarifasTec:[{nombre:'Visita en SMT',monto:8000},{nombre:'Visita fuera de SMT',monto:16000},{nombre:'Mano de obra baja',monto:15000},{nombre:'Mano de obra media',monto:30000},{nombre:'Mano de obra alta',monto:50000}],
     razon:'VILLGUZ Refrigeración',cuit:'',dom:'Corrientes 1373, San Miguel de Tucumán',
     decl:'El/la prestador/a declara haber recibido de VILLGUZ Refrigeración el importe total indicado en esta liquidación, en concepto de honorarios por servicios técnicos prestados como agente externo (tercerizado), en forma independiente y por su propia cuenta. Deja constancia de que no existe relación de dependencia laboral con VILLGUZ Refrigeración, que no reviste el carácter de empleado/a y que es responsable de sus obligaciones fiscales y previsionales.'
   }
@@ -426,7 +433,7 @@ function confirmar(t,m,ok){$('cfT').textContent=t;$('cfM').textContent=m;$('cfOk
 function persona(id){return DB.personal.find(function(p){return p.id===id;});}
 function pname(id){var p=persona(id);return p?p.nombre:'—';}
 function pctDefault(pid,tipo){var p=persona(pid);if(!p)return 0;return +(tipo==='con'?p.pctCon:p.pctSin)||0;}
-function pagoTrab(t){return Math.round((+t.mo||0)*(+t.pct||0))/100;}
+function pagoTrab(t){if(t.modo==='fijo')return Math.round((+t.fijo||0)*100)/100;return Math.round((+t.mo||0)*(+t.pct||0))/100;}
 function fleteShares(f){var c=DB.cfg,res={};var m=+f.monto||0;
   if(f.fleteroId)res[f.fleteroId]=(res[f.fleteroId]||0)+m*(+c.pctFletero)/100;
   var ay=(f.ayudantes||[]).filter(Boolean);
@@ -456,55 +463,76 @@ $('p_del').addEventListener('click',async function(){var used=DB.trabajos.some(f
   $('dPers').close();if(await confirmar('Eliminar persona','Se elimina '+pname(editPers)+'.','Eliminar')){DB.personal=DB.personal.filter(function(p){return p.id!==editPers;});save();renderPers();}});
 
 /* Trabajos */
+function conceptoOpts(t){var h='<option value="pct"'+((t.modo||'pct')==='pct'?' selected':'')+'>% de mano de obra</option>';
+  DB.cfg.tarifasTec.forEach(function(x,i){h+='<option value="tar'+i+'"'+(t.modo==='fijo'&&t.tarifa===x.nombre?' selected':'')+'>'+esc(x.nombre)+' ('+money(x.monto)+')</option>';});
+  var custom=t.modo==='fijo'&&!DB.cfg.tarifasTec.some(function(x){return x.nombre===t.tarifa;});
+  h+='<option value="fijo"'+(custom?' selected':'')+'>Monto a mano</option>';return h;}
+function conceptoTxt(t){return (t.modo==='fijo')?(t.tarifa||'Monto fijo'):((+t.pct||0)+' % de M.O.');}
+function applyConcepto(t,val){if(val==='pct'){t.modo='pct';t.tarifa='';if(t.pct==null)t.pct=pctDefault(t.tecnicoId,t.tipo);}
+  else if(val==='fijo'){t.modo='fijo';t.tarifa='';if(t.fijo==null)t.fijo=0;}
+  else{var x=DB.cfg.tarifasTec[+val.slice(3)];t.modo='fijo';t.tarifa=x.nombre;t.fijo=x.monto;}}
 function trFiltered(){var q=$('trQ').value.trim().toLowerCase(),tp=$('trTipo').value,tc=$('trTec').value,es=$('trEst').value;
-  return DB.trabajos.filter(function(t){if(tp&&t.tipo!==tp)return false;if(tc&&t.tecnicoId!==tc)return false;if(es==='pend'&&t.liqId)return false;if(es==='liq'&&!t.liqId)return false;
-    if(q&&(String(t.orden)+' '+t.cliente+' '+t.desc).toLowerCase().indexOf(q)<0)return false;return true;}).sort(function(a,b){return (b.entrega||b.fecha||'').localeCompare(a.entrega||a.fecha||'');});}
-function renderTrab(){var cur=$('trTec').value;optPersonal($('trTec'),{empty:'Todos',keep:cur});$('trTec').value=cur;
+  return DB.trabajos.filter(function(t){if(tp&&t.tipo!==tp)return false;if(tc&&t.tecnicoId!==tc)return false;
+    if(es==='pend'&&t.liqId)return false;if(es==='liq'&&!t.liqId)return false;if(es==='rev'&&(t.ok!==false||t.liqId))return false;if(es==='cero'&&(+t.total||0)!==0)return false;
+    if(q&&(String(t.orden)+' '+(t.cliente||'')+' '+(t.desc||'')+' '+(t.obs||'')).toLowerCase().indexOf(q)<0)return false;return true;})
+    .sort(function(a,b){return (b.entrega||b.fecha||'').localeCompare(a.entrega||a.fecha||'')||String(b.orden).localeCompare(String(a.orden),'es',{numeric:true});});}
+function cell(t,f,type,extra){var v=t[f]==null?'':t[f];var dis=t.liqId?' disabled':'';
+  if(type==='num')return '<input class="ie n" type="number" step="any" min="0" data-f="'+f+'" value="'+v+'"'+dis+(extra||'')+'>';
+  if(type==='date')return '<input class="ie" type="date" data-f="'+f+'" value="'+v+'"'+dis+'>';
+  return '<input class="ie" type="text" data-f="'+f+'" value="'+esc(v)+'"'+dis+(extra||'')+'>';}
+function trRow(t){var dis=t.liqId?' disabled':'';var zero=(+t.total||0)===0;
+  var tec='<select class="ie" data-f="tecnicoId"'+dis+'>'+DB.personal.filter(function(p){return p.activo!==false||p.id===t.tecnicoId;}).map(function(p){return '<option value="'+p.id+'"'+(p.id===t.tecnicoId?' selected':'')+'>'+esc(p.nombre)+'</option>';}).join('')+'</select>';
+  var val=(t.modo==='fijo')?cell(t,'fijo','num'):cell(t,'pct','num',' max="100" title="% sobre la mano de obra"');
+  var cls=t.liqId?'r-liq':(t.ok===false?(zero?'r-zero':'r-rev'):'');
+  return '<tr data-id="'+t.id+'" class="'+cls+'">'+
+    '<td class="c-ok"><input type="checkbox" data-f="ok" title="Revisada, lista para liquidar"'+(t.ok!==false?' checked':'')+dis+'></td>'+
+    '<td>'+cell(t,'orden','text',' style="width:84px"')+'</td>'+
+    '<td>'+cell(t,'fecha','date')+'</td><td>'+cell(t,'entrega','date')+'</td>'+
+    '<td>'+cell(t,'desc','text',' placeholder="Equipo" style="min-width:150px"')+cell(t,'cliente','text',' placeholder="Cliente" style="min-width:150px;margin-top:4px"')+'</td>'+
+    '<td><select class="ie" data-f="tipo"'+dis+'><option value="sin"'+(t.tipo==='sin'?' selected':'')+'>Sin garantía</option><option value="con"'+(t.tipo==='con'?' selected':'')+'>Con garantía</option></select></td>'+
+    '<td>'+tec+'</td>'+
+    '<td>'+cell(t,'total','num')+'</td><td>'+cell(t,'repuesto','num')+'</td><td>'+cell(t,'mo','num')+'</td>'+
+    '<td><select class="ie" data-f="concepto"'+dis+' style="min-width:170px">'+conceptoOpts(t)+'</select><div style="margin-top:4px">'+val+'</div></td>'+
+    '<td class="num pago"><b>'+money(pagoTrab(t))+'</b></td>'+
+    '<td>'+cell(t,'obs','text',' placeholder="Nota (sale impresa)" style="min-width:140px"')+'</td>'+
+    '<td>'+(t.liqId?'<span class="pill p-liq">Pagado</span>':'<button class="btn btn-sm btn-danger" data-del="'+t.id+'" title="Eliminar orden">✕</button>')+'</td></tr>';}
+function renderTrab(){var cur=$('trTec').dataset.want||$('trTec').value;delete $('trTec').dataset.want;optPersonal($('trTec'),{empty:'Todos',keep:cur});$('trTec').value=cur;
+  if(!DB.trabajos.length){$('trTable').innerHTML='<p class="empty">No hay trabajos. Importá el archivo exportado de TS o cargá uno con “Nuevo trabajo”.</p>';$('trSum').innerHTML='';return;}
   var L=trFiltered();
-  if(!DB.trabajos.length){$('trTable').innerHTML='<p class="empty">No hay trabajos. Importá el archivo exportado de TS o cargá uno con “Nuevo trabajo”.</p>';return;}
-  var tot={total:0,rep:0,mo:0,pago:0};
-  var rows=L.map(function(t){var pg=pagoTrab(t);tot.total+=+t.total||0;tot.rep+=+t.repuesto||0;tot.mo+=+t.mo||0;tot.pago+=pg;
-    return '<tr><td><b>'+esc(t.orden)+'</b></td><td>'+fdate(t.fecha)+'</td><td>'+fdate(t.entrega)+'</td><td class="desc">'+(t.cliente?'<b>'+esc(t.cliente)+'</b><br>':'')+esc(t.desc)+'</td><td><span class="pill '+(t.tipo==='con'?'p-con">Con garantía':'p-sin">Sin garantía')+'</span></td><td>'+esc(pname(t.tecnicoId))+'</td><td class="num">'+money(t.total)+'</td><td class="num">'+money(t.repuesto)+'</td><td class="num">'+money(t.mo)+'</td><td class="num">'+(+t.pct||0)+' %</td><td class="num"><b>'+money(pg)+'</b></td><td>'+(t.liqId?'<span class="pill p-liq">Pagado</span>':'<span class="pill p-pend">Pendiente</span>')+'</td><td><button class="btn btn-sm" data-et="'+t.id+'">Editar</button></td></tr>';}).join('');
-  $('trTable').innerHTML='<div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Cliente / equipo</th><th>Tipo</th><th>Técnico</th><th class="num">Total cobrado</th><th class="num">Repuestos</th><th class="num">Mano de obra</th><th class="num">%</th><th class="num">Pago técnico</th><th>Estado</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="13" class="empty">Ningún trabajo coincide con el filtro.</td></tr>')+'</tbody><tfoot><tr><td colspan="6">'+L.length+' trabajos</td><td class="num">'+money(tot.total)+'</td><td class="num">'+money(tot.rep)+'</td><td class="num">'+money(tot.mo)+'</td><td></td><td class="num">'+money(tot.pago)+'</td><td colspan="2"></td></tr></tfoot></table></div>';
-}
+  $('trTable').innerHTML='<div class="tbl-wrap"><table class="t te"><thead><tr><th title="Revisada">✓</th><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo / cliente</th><th>Tipo</th><th>Técnico</th><th class="num">Total cobrado</th><th class="num">Repuestos</th><th class="num">Mano de obra</th><th>Pago al técnico</th><th class="num">A pagar</th><th>Nota</th><th></th></tr></thead><tbody>'+
+    (L.map(trRow).join('')||'<tr><td colspan="14" class="empty">Ninguna orden coincide con el filtro.</td></tr>')+'</tbody><tfoot><tr><td colspan="7" id="trFootN"></td><td class="num" id="trF1"></td><td class="num" id="trF2"></td><td class="num" id="trF3"></td><td></td><td class="num" id="trF4"></td><td colspan="2"></td></tr></tfoot></table></div>';
+  trTotals();}
+function trTotals(){var L=trFiltered();var s=function(f){return L.reduce(function(a,t){return a+(+f(t)||0);},0);};
+  var rev=DB.trabajos.filter(function(t){return t.ok===false&&!t.liqId;}).length,cero=DB.trabajos.filter(function(t){return t.ok===false&&!t.liqId&&(+t.total||0)===0;}).length;
+  if($('trFootN')){$('trFootN').textContent=L.length+' órdenes';$('trF1').textContent=money(s(function(t){return t.total;}));$('trF2').textContent=money(s(function(t){return t.repuesto;}));$('trF3').textContent=money(s(function(t){return t.mo;}));$('trF4').textContent=money(s(pagoTrab));}
+  $('trSum').innerHTML=rev?'<div class="warn"><b>'+rev+' órdenes sin revisar</b>'+(cero?' · '+cero+' en $ 0 (visitas o presupuestos pendientes)':'')+'. Las órdenes no pasan a la liquidación hasta que las marques con ✓. <button class="btn btn-sm" id="trShowRev">Ver sin revisar</button> <button class="btn btn-sm" id="trOkAll">Marcar como revisadas las '+L.filter(function(t){return t.ok===false&&!t.liqId;}).length+' que estoy viendo</button></div>':'<div class="okmsg">Todas las órdenes están revisadas.</div>';}
+$('trSum').addEventListener('click',async function(e){if(e.target.id==='trShowRev'){$('trEst').value='rev';renderTrab();}
+  if(e.target.id==='trOkAll'){var L=trFiltered().filter(function(t){return t.ok===false&&!t.liqId;});if(!L.length)return;
+    if(!await confirmar('Marcar como revisadas',L.length+' órdenes pasan a estar listas para liquidar.','Marcar'))return;L.forEach(function(t){t.ok=true;});save();renderTrab();}});
 ['trQ','trTipo','trTec','trEst'].forEach(function(id){$(id).addEventListener('input',renderTrab);});
-$('trTable').addEventListener('click',function(e){var b=e.target.closest('[data-et]');if(b)openTrab(b.dataset.et);});
-$('trNew').addEventListener('click',function(){openTrab(null);});
-var editTrab=null;
-function openTrab(id){if(!DB.personal.length){toast('Primero cargá al menos un técnico');show('vPers');return;}
-  editTrab=id;var t=id?DB.trabajos.find(function(x){return x.id===id;}):{orden:'',fecha:hoy(),tipo:'sin',cliente:'',tecnicoId:(DB.personal.find(function(p){return p.rol==='tecnico'&&p.activo!==false;})||DB.personal[0]).id,desc:'',total:'',repuesto:'',mo:'',pct:null};
-  optPersonal($('t_tec'),{keep:t.tecnicoId});
-  $('dTrabT').textContent=id?'Editar trabajo':'Nuevo trabajo';
-  $('t_orden').value=t.orden;$('t_fecha').value=t.fecha;$('t_ent').value=t.entrega||'';$('t_tipo').value=t.tipo;$('t_cliente').value=t.cliente;$('t_tec').value=t.tecnicoId;$('t_desc').value=t.desc;
-  $('t_total').value=t.total;$('t_rep').value=t.repuesto;$('t_mo').value=t.mo;$('t_pct').value=t.pct==null?pctDefault(t.tecnicoId,t.tipo):t.pct;
-  $('t_del').hidden=!id;$('t_err').hidden=true;
-  if(t.liqId){$('t_err').textContent='Este trabajo ya figura en una liquidación pagada. Si lo cambiás, anulá y volvé a hacer esa liquidación.';$('t_err').hidden=false;}
-  calcTrab();$('dTrab').showModal();}
-var pctTouched=false;
-function calcTrab(){var mo=+$('t_mo').value||0,pc=+$('t_pct').value||0;$('t_calc').textContent='Pago al técnico: '+money(mo*pc/100)+'  ·  '+pc+' % de '+money(mo)+' de mano de obra';}
-['t_mo','t_pct'].forEach(function(id){$(id).addEventListener('input',calcTrab);});
-$('t_pct').addEventListener('input',function(){pctTouched=true;});
-['t_tec','t_tipo'].forEach(function(id){$(id).addEventListener('change',function(){if(!pctTouched){$('t_pct').value=pctDefault($('t_tec').value,$('t_tipo').value);calcTrab();}});});
-['t_total','t_rep'].forEach(function(id){$(id).addEventListener('input',function(){var tt=$('t_total').value,rp=$('t_rep').value;if(tt!==''&&!$('t_mo').dataset.manual){$('t_mo').value=Math.max(0,(+tt||0)-(+rp||0));calcTrab();}});});
-$('t_mo').addEventListener('input',function(){$('t_mo').dataset.manual='1';});
-$('dTrab').addEventListener('close',function(){pctTouched=false;delete $('t_mo').dataset.manual;});
-$('fTrab').addEventListener('submit',function(e){e.preventDefault();
-  var d={orden:$('t_orden').value.trim(),fecha:$('t_fecha').value,entrega:$('t_ent').value,tipo:$('t_tipo').value,cliente:$('t_cliente').value.trim(),tecnicoId:$('t_tec').value,desc:$('t_desc').value.trim(),total:+$('t_total').value||0,repuesto:+$('t_rep').value||0,mo:+$('t_mo').value||0,pct:+$('t_pct').value||0};
-  if(!d.orden||!d.fecha){$('t_err').textContent='Completá el número de orden y la fecha.';$('t_err').hidden=false;return;}
-  var dup=DB.trabajos.find(function(x){return String(x.orden)===d.orden&&x.id!==editTrab&&x.tipo===d.tipo;});
-  if(dup&&!$('t_err').dataset.dupOk){$('t_err').textContent='Ya existe la orden '+d.orden+' ('+(d.tipo==='con'?'con':'sin')+' garantía). Tocá Guardar otra vez si querés cargarla igual.';$('t_err').hidden=false;$('t_err').dataset.dupOk='1';return;}
-  delete $('t_err').dataset.dupOk;
-  if(editTrab)Object.assign(DB.trabajos.find(function(x){return x.id===editTrab;}),d);else DB.trabajos.push(Object.assign({id:uid(),liqId:null},d));
-  save();$('dTrab').close();renderTrab();toast('Trabajo guardado');});
-$('t_del').addEventListener('click',async function(){var t=DB.trabajos.find(function(x){return x.id===editTrab;});$('dTrab').close();
-  if(t.liqId){toast('Está en una liquidación pagada: anulala primero');return;}
-  if(await confirmar('Eliminar trabajo','Se elimina la orden '+t.orden+'.','Eliminar')){DB.trabajos=DB.trabajos.filter(function(x){return x.id!==editTrab;});save();renderTrab();}});
+$('trTable').addEventListener('change',function(e){var el=e.target,tr=el.closest('tr[data-id]');if(!tr||!el.dataset.f)return;
+  var t=DB.trabajos.find(function(x){return x.id===tr.dataset.id;});if(!t||t.liqId)return;var f=el.dataset.f;
+  if(f==='ok')t.ok=el.checked;
+  else if(f==='concepto'){applyConcepto(t,el.value);}
+  else if(['total','repuesto','mo','pct','fijo'].indexOf(f)>=0){t[f]=+el.value||0;if(f==='fijo'&&t.tarifa){var x=DB.cfg.tarifasTec.find(function(y){return y.nombre===t.tarifa;});if(x&&x.monto!==t[f])t.tarifa=t.tarifa;}}
+  else if(f==='tecnicoId'||f==='tipo'){t[f]=el.value;if((t.modo||'pct')==='pct')t.pct=pctDefault(t.tecnicoId,t.tipo);}
+  else t[f]=el.value.trim();
+  if(f==='total'||f==='repuesto'){if(!t.moManual){t.mo=Math.max(0,(+t.total||0)-(+t.repuesto||0));}}
+  if(f==='mo')t.moManual=true;
+  save();var nr=document.createElement('tbody');nr.innerHTML=trRow(t);tr.replaceWith(nr.firstChild);trTotals();});
+$('trTable').addEventListener('click',async function(e){var b=e.target.closest('[data-del]');if(!b)return;var t=DB.trabajos.find(function(x){return x.id===b.dataset.del;});
+  if(await confirmar('Eliminar orden','Se elimina la orden '+t.orden+'.','Eliminar')){DB.trabajos=DB.trabajos.filter(function(x){return x.id!==t.id;});save();renderTrab();}});
+$('trNew').addEventListener('click',function(){if(!DB.personal.length){toast('Primero cargá al menos un técnico');show('vPers');return;}
+  var tid=$('trTec').value||(DB.personal.find(function(p){return p.rol==='tecnico'&&p.activo!==false;})||DB.personal[0]).id;
+  var t={id:uid(),liqId:null,ok:true,orden:'',fecha:hoy(),entrega:hoy(),tipo:'sin',cliente:'',tecnicoId:tid,desc:'',total:0,repuesto:0,mo:0,modo:'pct',pct:pctDefault(tid,'sin'),obs:''};
+  DB.trabajos.unshift(t);save();$('trEst').value='';$('trQ').value='';renderTrab();var inp=document.querySelector('tr[data-id="'+t.id+'"] [data-f="orden"]');if(inp)inp.focus();toast('Orden nueva agregada arriba: completala en la tabla');});
+/* Abre una orden desde la liquidación */
+function openTrab(id){var t=DB.trabajos.find(function(x){return x.id===id;});if(!t)return;$('trEst').value='';$('trTipo').value='';$('trTec').value='';$('trQ').value=String(t.orden);show('vTrab');}
 
 /* Importar TS */
 var FIELDS=[['orden','N° de orden',/(n[°º.]?\s*(de\s*)?orden|^orden|nro|n[uú]mero|^ts$|^os$|o\.s\.)/i],['fecha','Fecha de ingreso',/fecha|ingreso/i],['cliente','Cliente',/cliente|nombre|raz[oó]n/i],['desc','Equipo / descripción',/equipo|desc|trabajo|falla|detalle|art[ií]culo|producto/i],['tipo','Tipo / garantía',/garant|tipo/i],['tecnico','Técnico',/t[eé]cnico|tecn/i],['entrega','Fecha de entrega',/entreg|egreso|salida/i],['total','Total cobrado',/total|cobrad|importe|monto/i],['repuesto','Repuestos',/repuest|materia/i],['mo','Mano de obra',/mano|m\.?\s?o\.?$|^mo$|servicio/i]];
 var imp={rows:[],headers:[],tec:'',desde:'',hasta:''};
 $('tsFile').addEventListener('change',function(e){var f=e.target.files[0];e.target.value='';if(!f)return;
-  if(!DB.personal.length){toast('Primero cargá al menos un técnico');show('vPers');return;}
   if(typeof XLSX==='undefined'){toast('No se pudo cargar el lector de Excel. Revisá la conexión.');return;}
   var r=new FileReader();r.onload=function(){try{var wb=XLSX.read(new Uint8Array(r.result),{type:'array',cellDates:false});var ws=wb.Sheets[wb.SheetNames[0]];
       var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
@@ -521,6 +549,7 @@ $('tsFile').addEventListener('change',function(e){var f=e.target.files[0];e.targ
 function openMap(name){var html='';FIELDS.forEach(function(f){var g=imp.headers.findIndex(function(h){return f[2].test(h);});
     html+='<label class="f">'+f[1]+'<select class="i" data-map="'+f[0]+'"><option value="-1">— No está —</option>'+imp.headers.map(function(h,i){return '<option value="'+i+'"'+(i===g?' selected':'')+'>'+esc(h)+'</option>';}).join('')+'</select></label>';});
   $('mapFields').innerHTML=html;$('mapInfo').textContent=name+': '+imp.rows.length+' filas. Revisá que cada dato apunte a la columna correcta.';
+  if(!DB.personal.length&&!imp.tec){toast('El archivo no dice el técnico: cargalo primero en Técnicos y personal');show('vPers');return;}
   optPersonal($('mapTecDef'),{rol:'tecnico'});if(!$('mapTecDef').options.length)optPersonal($('mapTecDef'));
   if(imp.tec){var ft=findTec(imp.tec);if(!ft){var np={id:uid(),nombre:imp.tec,doc:'',rol:'tecnico',pctSin:30,pctCon:0,activo:true};DB.personal.push(np);save();ft=np.id;toast('Se creó el técnico '+imp.tec+'. Revisá sus porcentajes.');optPersonal($('mapTecDef'),{rol:'tecnico'});}
     $('mapTecDef').value=ft;$('mapInfo').textContent+=' Técnico del archivo: '+imp.tec+(imp.desde?' · '+fdate(imp.desde)+' al '+fdate(imp.hasta):'')+'.';}
@@ -554,7 +583,7 @@ $('fMap').addEventListener('submit',function(e){e.preventDefault();var b=buildIm
   Object.keys(b.newTec).forEach(function(k){DB.personal.push({id:uid(),nombre:b.newTec[k],doc:'',rol:'tecnico',pctSin:30,pctCon:0,activo:true});});
   b.list.forEach(function(x){if(DB.trabajos.some(function(t){return String(t.orden)===x.orden&&t.tipo===x.tipo;}))return;
     var tid=x.tecName?(findTec(x.tecName)||x.tecnicoId):x.tecnicoId;
-    DB.trabajos.push({id:uid(),liqId:null,orden:x.orden,fecha:x.fecha,entrega:x.entrega,cliente:x.cliente,desc:x.desc,tipo:x.tipo,tecnicoId:tid,total:x.total,repuesto:x.repuesto,mo:x.mo,pct:pctDefault(tid,x.tipo)});n++;});
+    DB.trabajos.push({id:uid(),liqId:null,ok:false,modo:'pct',obs:'',moManual:x.mo>0,orden:x.orden,fecha:x.fecha,entrega:x.entrega,cliente:x.cliente,desc:x.desc,tipo:x.tipo,tecnicoId:tid,total:x.total,repuesto:x.repuesto,mo:x.mo,pct:pctDefault(tid,x.tipo)});n++;});
   save();$('dMap').close();if(imp.desde){$('lqDesde').value=imp.desde;$('lqHasta').value=imp.hasta||hoy();}if(b.list[0])$('lqPers').dataset.want=b.list[0].tecnicoId;renderTrab();toast(n+' trabajos importados'+(Object.keys(b.newTec).length?'. Revisá el % de los técnicos nuevos.':''));});
 
 /* Fletes */
@@ -590,14 +619,15 @@ $('f_del').addEventListener('click',async function(){var f=DB.fletes.find(functi
 
 /* Liquidación */
 function liqData(pid,desde,hasta,modo){var inR=function(d){return (!desde||d>=desde)&&(!hasta||d<=hasta);};
-  var tr=DB.trabajos.filter(function(t){return t.tecnicoId===pid&&inR(t.entrega||t.fecha)&&(modo==='todos'||!t.liqId);}).sort(function(a,b){return (a.entrega||a.fecha).localeCompare(b.entrega||b.fecha)||String(a.orden).localeCompare(String(b.orden),'es',{numeric:true});});
+  var tr=DB.trabajos.filter(function(t){return t.tecnicoId===pid&&inR(t.entrega||t.fecha)&&(modo==='todos'?true:(!t.liqId&&t.ok!==false));}).sort(function(a,b){return (a.entrega||a.fecha).localeCompare(b.entrega||b.fecha)||String(a.orden).localeCompare(String(b.orden),'es',{numeric:true});});
   var fl=DB.fletes.filter(function(f){var sh=fleteShares(f);return sh[pid]!=null&&inR(f.fecha)&&(modo==='todos'||!(f.liq||{})[pid]);}).sort(function(a,b){return a.fecha.localeCompare(b.fecha);});
   return {sin:tr.filter(function(t){return t.tipo==='sin';}),con:tr.filter(function(t){return t.tipo==='con';}),fl:fl};}
 function fLiq(t){return t.entrega||t.fecha;}
+function sinRevisar(pid,desde,hasta){return DB.trabajos.filter(function(t){var d=t.entrega||t.fecha;return t.tecnicoId===pid&&!t.liqId&&t.ok===false&&(!desde||d>=desde)&&(!hasta||d<=hasta);});}
 function sum(a,f){return a.reduce(function(s,x){return s+(+f(x)||0);},0);}
 function trTable(list,titulo){if(!list.length)return '';
-  var rows=list.map(function(t){return '<tr><td>'+esc(t.orden)+'</td><td>'+fdate(t.fecha)+'</td><td>'+fdate(t.entrega)+'</td><td class="desc">'+(t.cliente?esc(t.cliente)+' · ':'')+esc(t.desc)+'</td><td class="num">'+money(t.total)+'</td><td class="num">'+money(t.repuesto)+'</td><td class="num">'+money(t.mo)+'</td><td class="num">'+(+t.pct||0)+' %</td><td class="num"><b>'+money(pagoTrab(t))+'</b></td></tr>';}).join('');
-  return '<h4>'+titulo+' · '+list.length+' órdenes</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo / descripción</th><th class="num">Total cobrado</th><th class="num">Repuestos</th><th class="num">Mano de obra</th><th class="num">%</th><th class="num">A pagar</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4">Subtotal</td><td class="num">'+money(sum(list,function(t){return t.total;}))+'</td><td class="num">'+money(sum(list,function(t){return t.repuesto;}))+'</td><td class="num">'+money(sum(list,function(t){return t.mo;}))+'</td><td></td><td class="num">'+money(sum(list,pagoTrab))+'</td></tr></tfoot></table></div>';}
+  var rows=list.map(function(t){return '<tr data-open="'+t.id+'"><td>'+esc(t.orden)+'</td><td>'+fdate(t.fecha)+'</td><td>'+fdate(t.entrega)+'</td><td class="desc">'+(t.cliente?esc(t.cliente)+' · ':'')+esc(t.desc)+(t.obs?'<br><i>'+esc(t.obs)+'</i>':'')+'</td><td class="num">'+money(t.total)+'</td><td class="num">'+money(t.repuesto)+'</td><td class="num">'+money(t.mo)+'</td><td>'+esc(conceptoTxt(t))+'</td><td class="num"><b>'+money(pagoTrab(t))+'</b></td></tr>';}).join('');
+  return '<h4>'+titulo+' · '+list.length+' órdenes</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Ingreso</th><th>Entregado</th><th>Equipo / descripción</th><th class="num">Total cobrado</th><th class="num">Repuestos</th><th class="num">Mano de obra</th><th>Concepto</th><th class="num">A pagar</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4">Subtotal</td><td class="num">'+money(sum(list,function(t){return t.total;}))+'</td><td class="num">'+money(sum(list,function(t){return t.repuesto;}))+'</td><td class="num">'+money(sum(list,function(t){return t.mo;}))+'</td><td></td><td class="num">'+money(sum(list,pagoTrab))+'</td></tr></tfoot></table></div>';}
 function flTable(list,pid){if(!list.length)return '';
   var rows=list.map(function(f){var sh=fleteShares(f);var rol=f.fleteroId===pid?'Dueño camioneta ('+DB.cfg.pctFletero+' %)':'Ayudante';return '<tr><td>'+fdate(f.fecha)+'</td><td>'+esc(f.orden||'—')+'</td><td>'+esc(f.cliente)+'</td><td>'+esc(f.zona)+(f.modo==='ida'?' · solo ida/vuelta':'')+'</td><td>'+rol+'</td><td class="num">'+money(f.monto)+'</td><td class="num"><b>'+money(sh[pid])+'</b></td></tr>';}).join('');
   return '<h4>Fletes · '+list.length+'</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Fecha</th><th>Orden</th><th>Cliente</th><th>Zona</th><th>Participación</th><th class="num">Monto flete</th><th class="num">A pagar</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="5">Subtotal</td><td class="num">'+money(sum(list,function(f){return f.monto;}))+'</td><td class="num">'+money(sum(list,function(f){return fleteShares(f)[pid];}))+'</td></tr></tfoot></table></div>';}
@@ -612,9 +642,10 @@ function docHTML(pid,desde,hasta,d,liq){var p=persona(pid)||{nombre:'—'},c=DB.
     '<p class="decl">'+esc(c.decl)+'</p>'+
     '<div class="firmas"><div class="firma"><b>Firma del prestador/a</b><span>Aclaración: '+esc(p.nombre)+'</span><span>DNI/CUIT: '+esc(p.doc||'..............................')+'</span><span>Fecha: ...... / ...... / ............</span></div><div class="firma"><b>Por '+esc(c.razon)+'</b><span>Aclaración: ..............................</span><span>Fecha: ...... / ...... / ............</span></div></div></article>';}
 var lqView=null; // liquidación del historial que se está viendo
-function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete $('lqPers').dataset.want;optPersonal($('lqPers'),{keep:cur});if(cur&&persona(cur))$('lqPers').value=cur;
+function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete $('lqPers').dataset.want;optPersonal($('lqPers'),{keep:cur});$('lqPers').insertAdjacentHTML('afterbegin','<option value="__all">Resumen de todos</option>');if(cur&&(persona(cur)||cur==='__all'))$('lqPers').value=cur;else if(DB.personal.length)$('lqPers').value=DB.personal[0].id;
   if(!DB.personal.length){$('docWrap').innerHTML='<div class="card empty">Cargá técnicos y trabajos para armar una liquidación.</div>';$('lqStats').innerHTML='';$('lqHist').innerHTML='';return;}
   var pid=$('lqPers').value,de=$('lqDesde').value,ha=$('lqHasta').value,mo=$('lqEstado').value;
+  if(pid==='__all'&&!lqView){renderResumen(de,ha,mo);return;}
   var d,liq=null;
   if(lqView){liq=DB.liquidaciones.find(function(l){return l.id===lqView;});pid=liq.personaId;de=liq.desde;ha=liq.hasta;
     d={sin:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='sin';}),con:DB.trabajos.filter(function(t){return t.liqId===liq.id&&t.tipo==='con';}),fl:DB.fletes.filter(function(f){return (f.liq||{})[pid]===liq.id;})};}
@@ -623,13 +654,33 @@ function renderLiq(){var cur=$('lqPers').dataset.want||$('lqPers').value;delete 
   $('lqStats').innerHTML=(lqView?'<div class="stat" style="grid-column:1/-1;background:#FFF3D6"><span>Estás viendo la liquidación pagada N° '+esc(liq.numero)+'.</span> <button class="btn btn-sm" id="lqBack">Volver a liquidar</button></div>':'')+
     '<div class="stat"><span>Sin garantía · '+d.sin.length+'</span><b>'+money(tS)+'</b></div><div class="stat"><span>Con garantía · '+d.con.length+'</span><b>'+money(tC)+'</b></div><div class="stat"><span>Fletes · '+d.fl.length+'</span><b>'+money(tF)+'</b></div><div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total a pagar</span><b style="color:#fff">'+money(tS+tC+tF)+'</b></div>';
   if(lqView)$('lqBack').addEventListener('click',function(){lqView=null;renderLiq();});
+  var sr=lqView?[]:sinRevisar(pid,de,ha);
+  if(sr.length)$('lqStats').insertAdjacentHTML('afterbegin','<div class="warn" style="grid-column:1/-1;margin:0"><b>'+sr.length+' órdenes de este técnico sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>');
+  if($('lqGoRev'))$('lqGoRev').addEventListener('click',function(){$('trTec').dataset.want=pid;$('trEst').value='rev';show('vTrab');});
   $('lqMark').hidden=!!lqView||mo==='todos';
   $('docWrap').innerHTML=docHTML(pid,de,ha,d,liq);
+  renderHist();
+}
+function renderHist(){
   var H=DB.liquidaciones.slice().sort(function(a,b){return b.fecha.localeCompare(a.fecha)||b.numero-a.numero;});
   $('lqHist').innerHTML=H.length?'<div class="tbl-wrap"><table class="t"><thead><tr><th>N°</th><th>Fecha</th><th>Prestador/a</th><th>Período</th><th class="num">Total</th><th></th></tr></thead><tbody>'+H.map(function(l){return '<tr><td>'+l.numero+'</td><td>'+fdate(l.fecha)+'</td><td>'+esc(pname(l.personaId))+'</td><td>'+(l.desde?fdate(l.desde):'inicio')+' al '+(l.hasta?fdate(l.hasta):fdate(l.fecha))+'</td><td class="num">'+money(l.total)+'</td><td><button class="btn btn-sm" data-lv="'+l.id+'">Ver / imprimir</button> <button class="btn btn-sm btn-danger" data-la="'+l.id+'">Anular</button></td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Todavía no hay liquidaciones pagadas.</p>';
 }
+function renderResumen(de,ha,mo){var per=(de?fdate(de):'inicio')+' al '+(ha?fdate(ha):fdate(hoy()));var G={s:0,c:0,f:0},blocks='',srTot=0;
+  DB.personal.forEach(function(p){var d=liqData(p.id,de,ha,mo);var n=d.sin.length+d.con.length+d.fl.length;srTot+=sinRevisar(p.id,de,ha).length;if(!n)return;
+    var tS=sum(d.sin,pagoTrab),tC=sum(d.con,pagoTrab),tF=sum(d.fl,function(f){return fleteShares(f)[p.id];});G.s+=tS;G.c+=tC;G.f+=tF;
+    var lst=function(L,f){return L.map(function(x){return '<tr><td>'+esc(x.orden||'—')+'</td><td>'+esc(f?(x.zona||''):(x.desc||''))+(x.obs?' · <i>'+esc(x.obs)+'</i>':'')+'</td><td>'+esc(f?'Flete':conceptoTxt(x))+'</td><td class="num">'+money(f?fleteShares(x)[p.id]:pagoTrab(x))+'</td></tr>';}).join('');};
+    var part=function(t,L,tot,f){return L.length?'<tr class="rs-h"><td colspan="3">'+t+' · '+L.length+'</td><td class="num">'+money(tot)+'</td></tr>'+lst(L,f):'';};
+    blocks+='<h4>'+esc(p.nombre)+' · '+money(tS+tC+tF)+'</h4><div class="tbl-wrap"><table class="t"><thead><tr><th>Orden</th><th>Equipo / detalle</th><th>Concepto</th><th class="num">A pagar</th></tr></thead><tbody>'+part('Con garantía',d.con,tC)+part('Sin garantía',d.sin,tS)+part('Fletes',d.fl,tF,true)+'</tbody><tfoot><tr><td colspan="3">Total '+esc(p.nombre)+'</td><td class="num">'+money(tS+tC+tF)+'</td></tr></tfoot></table></div>';});
+  var T=G.s+G.c+G.f;
+  $('lqStats').innerHTML=(srTot?'<div class="warn" style="grid-column:1/-1;margin:0"><b>'+srTot+' órdenes sin revisar</b> no están incluidas. <button class="btn btn-sm" id="lqGoRev">Revisarlas en Trabajos</button></div>':'')+'<div class="stat"><span>Con garantía</span><b>'+money(G.c)+'</b></div><div class="stat"><span>Sin garantía</span><b>'+money(G.s)+'</b></div><div class="stat"><span>Fletes</span><b>'+money(G.f)+'</b></div><div class="stat" style="background:var(--navy)"><span style="color:#B9C9DD">Total del período</span><b style="color:#fff">'+money(T)+'</b></div>';
+  if($('lqGoRev'))$('lqGoRev').addEventListener('click',function(){$('trEst').value='rev';show('vTrab');});
+  $('lqMark').hidden=true;
+  $('docWrap').innerHTML='<article class="doc"><div class="doc-h"><span class="logo"><svg viewBox="0 0 682 212"><use href="#logo"/></svg></span><div class="meta"><b>Resumen de liquidaciones</b>Período '+per+'<br>Emitido el '+fdate(hoy())+'</div></div>'+(blocks||'<p class="empty">No hay órdenes revisadas ni fletes en este período.</p>')+
+    '<div class="tot"><div><span>Con garantía</span><span class="num">'+money(G.c)+'</span></div><div><span>Sin garantía</span><span class="num">'+money(G.s)+'</span></div><div><span>Fletes</span><span class="num">'+money(G.f)+'</span></div><div><span>Total a pagar</span><span class="num">'+money(T)+'</span></div></div><p class="hint" style="margin-top:12px">Resumen interno. Para que cada técnico firme, elegí su nombre e imprimí su liquidación.</p></article>';
+  renderHist();}
 ['lqPers','lqDesde','lqHasta','lqEstado'].forEach(function(id){$(id).addEventListener('change',function(){lqView=null;renderLiq();});});
 $('lqPrint').addEventListener('click',function(){window.print();});
+$('docWrap').addEventListener('click',function(e){if(lqView)return;var r=e.target.closest('[data-open]');if(r)openTrab(r.dataset.open);});
 $('lqMark').addEventListener('click',async function(){var pid=$('lqPers').value,de=$('lqDesde').value,ha=$('lqHasta').value;var d=liqData(pid,de,ha,'pend');
   var n=d.sin.length+d.con.length+d.fl.length;if(!n){toast('No hay nada pendiente para pagar');return;}
   var total=sum(d.sin,pagoTrab)+sum(d.con,pagoTrab)+sum(d.fl,function(f){return fleteShares(f)[pid];});
@@ -646,10 +697,15 @@ $('lqHist').addEventListener('click',async function(e){var v=e.target.closest('[
     DB.liquidaciones=DB.liquidaciones.filter(function(l){return l.id!==L.id;});if(lqView===L.id)lqView=null;save();renderLiq();toast('Liquidación anulada');}});
 
 /* Ajustes */
-function renderAjustes(){var c=DB.cfg;
+function renderTarTec(){$('tarTec').innerHTML=DB.cfg.tarifasTec.map(function(t,i){return '<div class="row" style="flex-wrap:nowrap"><label class="f" style="flex:2">Nombre<input class="i" data-tt="n'+i+'" value="'+esc(t.nombre)+'"></label><label class="f" style="flex:1">Monto<input class="i n" type="number" step="500" min="0" data-tt="m'+i+'" value="'+t.monto+'"></label><button class="btn btn-sm btn-danger" data-ttdel="'+i+'" title="Quitar">✕</button></div>';}).join('');}
+function readTarTec(){return DB.cfg.tarifasTec.map(function(t,i){return {nombre:(document.querySelector('[data-tt="n'+i+'"]').value||'').trim(),monto:+document.querySelector('[data-tt="m'+i+'"]').value||0};});}
+function renderAjustes(){var c=DB.cfg;renderTarTec();
   $('tarifas').innerHTML=c.tarifas.map(function(t,i){return '<label class="f">'+esc(t.zona)+'<input class="i n" type="number" step="1000" min="0" data-tar="'+i+'" value="'+t.monto+'"></label>';}).join('');
   $('cfgFletero').value=c.pctFletero;$('cfgAyud').value=c.pctAyud;$('cfgExtra').value=c.extraIda;$('cfgDecl').value=c.decl;$('cfgRazon').value=c.razon;$('cfgCuit').value=c.cuit;$('cfgDom').value=c.dom;
   var last=localStorage.getItem('villguz_panel_bk');$('bkInfo').textContent=last?'Última copia descargada: '+new Date(+last).toLocaleString('es-AR'):'Todavía no descargaste ninguna copia.';}
+$('ttAdd').addEventListener('click',function(){DB.cfg.tarifasTec=readTarTec();DB.cfg.tarifasTec.push({nombre:'Nueva tarifa',monto:0});renderTarTec();});
+$('tarTec').addEventListener('click',function(e){var b=e.target.closest('[data-ttdel]');if(!b)return;DB.cfg.tarifasTec=readTarTec();DB.cfg.tarifasTec.splice(+b.dataset.ttdel,1);renderTarTec();});
+$('ttSave').addEventListener('click',function(){DB.cfg.tarifasTec=readTarTec().filter(function(t){return t.nombre;});save();renderTarTec();toast('Tarifas de técnicos guardadas');});
 $('cfgSave').addEventListener('click',function(){[].forEach.call(document.querySelectorAll('[data-tar]'),function(i){DB.cfg.tarifas[+i.dataset.tar].monto=+i.value||0;});
   var a=+$('cfgFletero').value||0,b=+$('cfgAyud').value||0;if(a+b!==100){toast('Los porcentajes del flete tienen que sumar 100 %');return;}
   DB.cfg.pctFletero=a;DB.cfg.pctAyud=b;DB.cfg.extraIda=+$('cfgExtra').value||0;save();toast('Tarifas guardadas');});
