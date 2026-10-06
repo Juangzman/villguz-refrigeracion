@@ -63,6 +63,9 @@ input.i.n{text-align:right;font-variant-numeric:tabular-nums}
 .tab{background:none;border:0;color:#B9C9DD;padding:.7em 1em;border-radius:8px;font-weight:600;cursor:pointer;white-space:nowrap}
 .tab:hover{color:#fff;background:rgba(255,255,255,.07)}
 .tab[aria-selected="true"]{color:#fff;background:rgba(255,255,255,.12);box-shadow:inset 0 -3px 0 var(--green)}
+.cloud{font-size:.75rem;font-weight:600;padding:.35em .8em;border-radius:999px;white-space:nowrap}
+.cs-ok{background:rgba(118,183,42,.2);color:#CFF0A6}.cs-wait{background:rgba(255,255,255,.12);color:#fff}.cs-err{background:#B3261E;color:#fff}
+@media (max-width:760px){.top-in{flex-wrap:wrap;height:auto;padding-top:8px;padding-bottom:6px;gap:8px 12px}.top .logo{width:100px}.tabs{order:3;flex-basis:100%}#logout{margin-left:auto}.cloud{font-size:.68rem}main{padding:16px 12px 48px}.card{padding:14px}}
 .top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
 /* Ayudantes */
 .ay-card{border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-bottom:14px}
@@ -185,6 +188,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
   tr{break-inside:avoid}
   .firmas{break-inside:avoid}
 }
+@media (max-width:760px){.weekbar{position:static}.weekbar-in{display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center}.wk-lbl{min-width:0;text-align:center}.wk-lbl b{font-size:1.25rem}#wkHoy{grid-column:1/2;grid-row:2}.wk-info{grid-column:2/4;grid-row:2;font-size:.78rem}}
 </style>
 </head>
 <body>
@@ -220,6 +224,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
         <button class="tab" data-v="vPers" role="tab">Técnicos y personal</button>
         <button class="tab" data-v="vAjustes" role="tab">Ajustes</button>
       </nav>
+      <span class="cloud" id="cloudSt" hidden></span>
       <button class="btn btn-sm" id="logout">Salir</button>
     </div>
   </header>
@@ -339,7 +344,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
         <div class="row" style="margin-top:14px"><button class="btn btn-primary" id="cfgSave2">Guardar textos</button></div>
       </div>
       <div class="card">
-        <div class="card-h"><div><h2>Copia de seguridad</h2><p>Los datos se guardan solo en este navegador. Descargá una copia seguido y guardala en la nube o en un pendrive.</p></div></div>
+        <div class="card-h"><div><h2>Copia de seguridad</h2><p id="bkTxt">Los datos se guardan solo en este navegador. Descargá una copia seguido y guardala en la nube o en un pendrive.</p></div></div>
         <div class="row">
           <button class="btn btn-primary" id="bkDown">Descargar copia</button>
           <label class="btn"><input type="file" id="bkUp" accept=".json" hidden>Restaurar copia</label>
@@ -454,16 +459,48 @@ var DB;
 function load(){try{DB=JSON.parse(localStorage.getItem(KEY))||null;}catch(e){DB=null;}
   if(!DB)DB=JSON.parse(JSON.stringify(DEFAULT));
   DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones','asistencias'].forEach(function(k){DB[k]=DB[k]||[];});}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true;}catch(e){toast('No se pudo guardar en este navegador');return false;}}
+var CLOUD='{{CLOUD_URL}}';if(CLOUD.indexOf('{{')===0)CLOUD='';
+var CPW='',CVER=0,pushT=null,pushing=false,pending=false;
+function norm(){DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones','asistencias'].forEach(function(k){DB[k]=DB[k]||[];});}
+function cleanDB(){var d=JSON.parse(JSON.stringify(DB));if(d.cfg)delete d.cfg.pwHash;return d;}
+async function api(action,extra){var body=Object.assign({action:action,pw:CPW},extra||{});
+  var r=await fetch(CLOUD,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'});return await r.json();}
+function cstat(st,msg){var el=$('cloudSt');if(!el)return;el.hidden=false;el.className='cloud cs-'+st;el.textContent=msg;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){if(!CLOUD){toast('No se pudo guardar en este navegador');return false;}}
+  if(CLOUD&&CPW){pending=true;cstat('wait','Guardando…');clearTimeout(pushT);pushT=setTimeout(push,700);}return true;}
+async function push(){if(pushing){pushT=setTimeout(push,500);return;}pushing=true;pending=false;
+  try{var r=await api('save',{data:cleanDB(),base:CVER});
+    if(r.ok){CVER=r.version;cstat(pending?'wait':'ok',pending?'Guardando…':'Guardado en Drive');}
+    else if(r.error==='conflicto'){DB=r.data;norm();CVER=r.version;try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}cstat('ok','Guardado en Drive');render(curView());setWeekInfo();toast('Otra persona guardó cambios al mismo tiempo: se cargaron sus datos. Revisá tu último cambio.');}
+    else if(r.error==='clave'){cstat('err','Contraseña cambiada: volvé a entrar');}
+    else {cstat('err','No se pudo guardar');pending=true;pushT=setTimeout(push,6000);}
+  }catch(e){cstat('err','Sin conexión · reintentando');pending=true;pushT=setTimeout(push,6000);}
+  pushing=false;}
+window.addEventListener('beforeunload',function(e){if(CLOUD&&(pending||pushing)){e.preventDefault();e.returnValue='';}});
 load();
 
 async function sha(t){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('villguz::'+t));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join('');}
 
 /* ---------- Login ---------- */
-var firstRun=!DB.cfg.pwHash;
+var firstRun=!CLOUD&&!DB.cfg.pwHash;
+if(CLOUD){$('loginSub').textContent='Ingresá la contraseña del equipo VILLGUZ. Los datos se guardan en Google Drive.';}
+function cloudSetupUI(){firstRun=true;$('loginTitle').textContent='Crear contraseña';$('loginSub').textContent='Primera vez que se usa el panel en Drive. Elegí la contraseña del equipo (sirve en todos los dispositivos).';$('pw2wrap').hidden=false;$('loginBtn').textContent='Crear y entrar';}
 if(firstRun){$('loginTitle').textContent='Crear contraseña';$('loginSub').textContent='Es la primera vez que se usa el panel en este navegador. Elegí una contraseña para el equipo.';$('pw2wrap').hidden=false;$('loginBtn').textContent='Crear y entrar';$('pw1').setAttribute('autocomplete','new-password');}
+async function cloudLogin(p,silent){var err=$('loginErr');err.hidden=true;$('loginBtn').disabled=true;$('loginBtn').textContent='Conectando…';
+  try{CPW=p;
+    if(firstRun){if(p.length<6){throw 'Usá al menos 6 caracteres.';}if(p!==$('pw2').value){throw 'Las contraseñas no coinciden.';}
+      var s1=await api('setup');if(!s1.ok&&s1.error!=='ya_configurado')throw 'No se pudo crear la contraseña.';}
+    var r=await api('load');
+    if(!r.ok){if(r.error==='sin_clave'){cloudSetupUI();throw silent?'':'Todavía no hay contraseña: creala abajo.';}if(r.error==='clave')throw 'Contraseña incorrecta.';throw 'No se pudo conectar con Drive ('+r.error+').';}
+    if(r.data){DB=r.data;norm();CVER=r.version;try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+    else{CVER=0;var hay=DB.personal.length||DB.trabajos.length||DB.fletes.length;try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}var up=await api('save',{data:cleanDB(),base:0});if(up.ok)CVER=up.version;if(hay)setTimeout(function(){toast('Se subieron a Drive los datos que había en esta computadora');},600);}
+    try{sessionStorage.setItem('vg_pw',p);}catch(e){}
+    enter();cstat('ok','Guardado en Drive');
+  }catch(m){CPW='';if(m){err.textContent=typeof m==='string'?m:'Sin conexión. Revisá internet y probá de nuevo.';err.hidden=false;}}
+  $('loginBtn').disabled=false;$('loginBtn').textContent=firstRun?'Crear y entrar':'Ingresar';}
 $('loginForm').addEventListener('submit',async function(e){
   e.preventDefault();var err=$('loginErr');err.hidden=true;var p=$('pw1').value;
+  if(CLOUD){cloudLogin(p);return;}
   if(firstRun){
     if(p.length<6){err.textContent='Usá al menos 6 caracteres.';err.hidden=false;return;}
     if(p!==$('pw2').value){err.textContent='Las contraseñas no coinciden.';err.hidden=false;return;}
@@ -472,7 +509,7 @@ $('loginForm').addEventListener('submit',async function(e){
   try{sessionStorage.setItem('vg_ok',DB.cfg.pwHash);}catch(e){}
   enter();
 });
-$('logout').addEventListener('click',function(){try{sessionStorage.removeItem('vg_ok');}catch(e){}location.reload();});
+$('logout').addEventListener('click',function(){try{sessionStorage.removeItem('vg_ok');sessionStorage.removeItem('vg_pw');}catch(e){}location.reload();});
 function enter(){$('vLogin').hidden=true;$('vApp').hidden=false;$('pw1').value='';initApp();}
 
 /* ---------- Navegación ---------- */
@@ -787,7 +824,7 @@ $('lqHist').addEventListener('click',async function(e){var v=e.target.closest('[
 /* Ajustes */
 function renderTarTec(){$('tarTec').innerHTML=DB.cfg.tarifasTec.map(function(t,i){return '<div class="row" style="flex-wrap:nowrap"><label class="f" style="flex:2">Nombre<input class="i" data-tt="n'+i+'" value="'+esc(t.nombre)+'"></label><label class="f" style="flex:1">Monto<input class="i n" type="number" step="500" min="0" data-tt="m'+i+'" value="'+t.monto+'"></label><button class="btn btn-sm btn-danger" data-ttdel="'+i+'" title="Quitar">✕</button></div>';}).join('');}
 function readTarTec(){return DB.cfg.tarifasTec.map(function(t,i){return {nombre:(document.querySelector('[data-tt="n'+i+'"]').value||'').trim(),monto:+document.querySelector('[data-tt="m'+i+'"]').value||0};});}
-function renderAjustes(){var c=DB.cfg;renderTarTec();
+function renderAjustes(){var c=DB.cfg;if(CLOUD){$('bkTxt').textContent='Los datos se guardan en Google Drive (planilla “Panel VILLGUZ - Liquidaciones”). Igual podés descargar una copia extra cuando quieras.';}renderTarTec();
   $('tarifas').innerHTML=c.tarifas.map(function(t,i){return '<label class="f">'+esc(t.zona)+'<input class="i n" type="number" step="1000" min="0" data-tar="'+i+'" value="'+t.monto+'"></label>';}).join('');
   $('cfgFletero').value=c.pctFletero;$('cfgAyud').value=c.pctAyud;$('cfgExtra').value=c.extraIda;$('cfgVisita').value=c.visitaMonto;$('cfgDecl').value=c.decl;$('cfgRazon').value=c.razon;$('cfgCuit').value=c.cuit;$('cfgDom').value=c.dom;
   var last=localStorage.getItem('villguz_panel_bk');$('bkInfo').textContent=last?'Última copia descargada: '+new Date(+last).toLocaleString('es-AR'):'Todavía no descargaste ninguna copia.';}
@@ -802,6 +839,7 @@ function download(name,text,type){var b=new Blob([text],{type:type});var a=docum
 $('bkDown').addEventListener('click',function(){download('panel-villguz-'+hoy()+'.json',JSON.stringify(DB,null,1),'application/json');try{localStorage.setItem('villguz_panel_bk',Date.now());}catch(e){}renderAjustes();});
 $('bkUp').addEventListener('change',function(e){var f=e.target.files[0];e.target.value='';if(!f)return;var r=new FileReader();r.onload=async function(){try{var d=JSON.parse(r.result);if(!d||!d.cfg||!Array.isArray(d.trabajos))throw 0;
     if(!await confirmar('Restaurar copia','Se reemplazan todos los datos de este navegador por los de la copia ('+d.trabajos.length+' trabajos, '+(d.fletes||[]).length+' fletes). La contraseña pasa a ser la de la copia.','Restaurar'))return;
+    if(CLOUD){DB=d;norm();save();renderAjustes();setWeekInfo();toast('Copia restaurada y subida a Drive');return;}
     DB=d;load.call(null);localStorage.setItem(KEY,JSON.stringify(d));load();try{sessionStorage.setItem('vg_ok',DB.cfg.pwHash);}catch(e){}renderAjustes();toast('Copia restaurada');}catch(err){toast('El archivo no es una copia válida del panel');}};r.readAsText(f);});
 $('csvDown').addEventListener('click',function(){var h=['Orden','Fecha','Tipo','Cliente','Descripción','Técnico','Total cobrado','Repuestos','Mano de obra','%','Pago técnico','Visita cobrada por técnico','Estado'];
   var q=function(v){v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};var n=function(x){return String(Math.round((+x||0)*100)/100).replace('.',',');};
@@ -809,6 +847,8 @@ $('csvDown').addEventListener('click',function(){var h=['Orden','Fecha','Tipo','
   download('trabajos-villguz-'+hoy()+'.csv','﻿'+[h.join(';')].concat(rows).join('\r\n'),'text/csv;charset=utf-8');});
 $('wipe').addEventListener('click',async function(){if(!await confirmar('Empezar de cero','Se borran '+DB.trabajos.length+' órdenes, '+DB.fletes.length+' fletes y '+DB.liquidaciones.length+' liquidaciones de este navegador. Si querés conservarlas, descargá antes una copia.','Borrar todo'))return;DB.trabajos=[];DB.fletes=[];DB.liquidaciones=[];DB.asistencias=[];save();setWeekInfo();toast('Listo, panel vacío');});
 $('pwSave').addEventListener('click',async function(){var e=$('pwErr');e.hidden=true;
+  if(CLOUD){if($('pwOld').value!==CPW){e.textContent='La contraseña actual no es correcta.';e.hidden=false;return;}if($('pwNew').value.length<6){e.textContent='La nueva contraseña necesita al menos 6 caracteres.';e.hidden=false;return;}if($('pwNew').value!==$('pwNew2').value){e.textContent='Las contraseñas nuevas no coinciden.';e.hidden=false;return;}
+    try{var r=await api('clave',{nueva:$('pwNew').value});if(!r.ok)throw 0;CPW=$('pwNew').value;try{sessionStorage.setItem('vg_pw',CPW);}catch(x){}['pwOld','pwNew','pwNew2'].forEach(function(i){$(i).value='';});toast('Contraseña cambiada para todos los dispositivos');}catch(x){e.textContent='No se pudo cambiar. Revisá la conexión.';e.hidden=false;}return;}
   if(await sha($('pwOld').value)!==DB.cfg.pwHash){e.textContent='La contraseña actual no es correcta.';e.hidden=false;return;}
   if($('pwNew').value.length<6){e.textContent='La nueva contraseña necesita al menos 6 caracteres.';e.hidden=false;return;}
   if($('pwNew').value!==$('pwNew2').value){e.textContent='Las contraseñas nuevas no coinciden.';e.hidden=false;return;}
@@ -868,7 +908,8 @@ $('wkNext').addEventListener('click',function(){setWeek(addD(WK,7));});
 $('wkHoy').addEventListener('click',function(){setWeek(hoy());});
 var started=false;
 function initApp(){if(started)return;setWeek(hoy());started=true;show('vLiq');return;var d=new Date();$('lqDesde').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';$('lqHasta').value=hoy();show('vLiq');}
-try{if(sessionStorage.getItem('vg_ok')===DB.cfg.pwHash&&DB.cfg.pwHash)enter();}catch(e){}
+if(CLOUD){var sp='';try{sp=sessionStorage.getItem('vg_pw')||'';}catch(e){}if(sp)cloudLogin(sp,true);}
+else{try{if(sessionStorage.getItem('vg_ok')===DB.cfg.pwHash&&DB.cfg.pwHash)enter();}catch(e){}}
 })();
 </script>
 </body>
