@@ -459,7 +459,7 @@ var DB;
 function load(){try{DB=JSON.parse(localStorage.getItem(KEY))||null;}catch(e){DB=null;}
   if(!DB)DB=JSON.parse(JSON.stringify(DEFAULT));
   DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones','asistencias'].forEach(function(k){DB[k]=DB[k]||[];});}
-var CLOUD='{{CLOUD_URL}}';if(CLOUD.indexOf('{{')===0)CLOUD='';
+var CLOUD='https://script.google.com/macros/s/AKfycbx3BuzDzg7ajB1wrC5hK58FqTYy_gaoo9Cw7vzXW7ThSS5u1-GoCSoJjucgWrPWzlyksA/exec';if(CLOUD.indexOf('{{')===0)CLOUD='';
 var CPW='',CVER=0,pushT=null,pushing=false,pending=false;
 function norm(){DB.cfg=Object.assign({},DEFAULT.cfg,DB.cfg||{});['personal','trabajos','fletes','liquidaciones','asistencias'].forEach(function(k){DB[k]=DB[k]||[];});}
 function cleanDB(){var d=JSON.parse(JSON.stringify(DB));if(d.cfg)delete d.cfg.pwHash;return d;}
