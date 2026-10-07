@@ -688,7 +688,13 @@ FALLAS.FREEZER=FALLAS.HEL;FALLAS.LAVASECA=FALLAS.LAV;
 var DONDE=['Cocina','Lavadero','Patio / exterior','Balcón','Habitación','Garage','Comercio / empresa','Piso alto sin ascensor'];
 var DESDE=['Hoy','Esta semana','Más de una semana','Más de un mes'];
 var PASOS=['Buscar','Cliente','Garantía','Equipo y falla','Día'];
-function proceso(o){var W={paso:1,canal:o.canal||'',atendio:YO,cli:o.cli||null,c:{},t:{tipo:'',modo:'visita',fallas:[],visita:DB.cfg.costos[DB.cfg.costos.length-1]||0},found:[],tec:'',dia:'',agendar:''};
+function saludo(canal,yo){var y=yo||'(tu nombre)';
+  if(!canal)return 'Primero tocá por dónde llegó el cliente y quién atiende.';
+  if(canal==='Teléfono')return '“Buen día, VillGuz Refrigeración, le habla '+esc(y)+'. ¿En qué lo puedo ayudar?”<br>Después preguntale: <b>“¿Es la primera vez que nos llama o ya lo atendimos alguna vez / nos trajo algún equipo?”</b>';
+  if(canal==='WhatsApp')return 'Respondé: “¡Hola, buen día! Le escribe '+esc(y)+' de VillGuz Refrigeración. ¿En qué lo podemos ayudar?”<br>Y preguntale: <b>“¿Es la primera vez que nos consulta o ya lo atendimos antes?”</b>';
+  if(canal==='Presencial')return '“Buen día, bienvenido a VillGuz Refrigeración. ¿En qué lo puedo ayudar?”<br>Y preguntale: <b>“¿Es la primera vez que viene o ya nos trajo algún equipo?”</b>';
+  return 'Caso derivado por fábrica (Samsung, LG, Whirlpool…). Tené a mano la <b>orden de fábrica</b>. Buscá al cliente por nombre, dirección o teléfono: si no está en la base, cargalo como nuevo.';}
+function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli:o.cli||null,c:{},t:{tipo:'',modo:'visita',fallas:[],visita:DB.cfg.costos[DB.cfg.costos.length-1]||0},found:[],tec:'',dia:'',agendar:''};
   if(W.cli){W.c={nombre:W.cli.nombre,telefono:W.cli.telefono,tel2:W.cli.tel2||'',domicilio:W.cli.domicilio,ref:W.cli.ref||'',zona:W.cli.zona||'',flag:W.cli.flag||'',motivo:W.cli.motivo||''};W.paso=2;}
   if(W.canal==='Fábrica')W.t.tipo='GT';
   var o2=modal('Atender cliente','<div id="pz"></div>','<span class="left"><button class="btn" data-a="back">← Atrás</button></span><button class="btn btn-green btn-big" data-a="next">Siguiente →</button>','<div class="pasos" id="pasos"></div>');o2._ask=true;
@@ -698,10 +704,13 @@ function proceso(o){var W={paso:1,canal:o.canal||'',atendio:YO,cli:o.cli||null,c
   o2.querySelector('#pasos').onclick=function(e){var b=e.target.closest('[data-p]');if(b&&!b.disabled){leer();W.paso=+b.dataset.p;draw();}};
   function decile(t){return '<div class="decile"><b>📢 Decile / preguntale</b>'+t+'</div>';}
   function draw(){hdr();var h='';
-    if(W.paso===1){h=decile('“Buen día, VillGuz Refrigeración. ¿Con quién hablo?” Escribí el nombre y apellido, la dirección o el teléfono para ver si ya es cliente.')+
-        '<label class="f buscar"><span>🔎 Buscar cliente: nombre, apellido, dirección o teléfono</span><input class="i" id="b-q" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234"></label>'+
-        '<div class="rowq"><div class="q">¿Por dónde llegó?</div>'+opts('canal',[['Teléfono','📞 Teléfono'],['WhatsApp','💬 WhatsApp'],['Presencial','🏪 Local'],['Fábrica','🏭 Fábrica']],W.canal,'wide ',false)+'</div>'+
-        '<div class="rowq"><div class="q">¿Quién atiende?</div>'+opts('atendio',DB.cfg.empleados.map(function(e){return [e,e];}),W.atendio,'wide ')+'</div><div id="bRes"></div>';}
+    if(W.paso===1){var fab=W.canal==='Fábrica',ver=fab||W.prev==='si';
+      h='<div class="rowq"><div class="q">¿Por dónde llegó?</div>'+opts('canal',[['Teléfono','📞 Teléfono'],['WhatsApp','💬 WhatsApp'],['Presencial','🏪 Local'],['Fábrica','🏭 Fábrica']],W.canal,'wide ',false)+'</div>'+
+        '<div class="rowq"><div class="q">¿Quién atiende?</div>'+opts('atendio',DB.cfg.empleados.map(function(e){return [e,e];}),W.atendio,'wide ')+'</div>'+
+        decile(saludo(W.canal,W.atendio))+
+        (W.canal&&!fab?'<div class="rowq"><div class="q">¿Ya es cliente?</div>'+opts('prev',[['si','✔ Sí, ya lo atendimos<small>ya nos trajo o fuimos a su casa</small>'],['no','✨ No, es la primera vez<small>cliente nuevo</small>']],W.prev,'wide ')+'</div>':'')+
+        (ver?'<label class="f buscar"><span>🔎 Buscalo por nombre, apellido, dirección o teléfono</span><input class="i" id="b-q" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234" value="'+esc(W.bq||'')+'"></label>':'')+
+        '<div id="bRes">'+(W.prev==='no'&&!fab?'<div class="tip">Cliente nuevo: en el paso siguiente cargás sus datos. Si el teléfono ya estaba en la base, te avisamos.</div><div><button type="button" class="btn btn-green btn-big" data-new="1">Cargar cliente nuevo →</button></div>':'')+'</div>';}
     else if(W.paso===2){var fl=W.c.flag;h=(W.cli?'<div class="tip good">✔ Cliente de la base: '+esc(W.cli.nombre)+'. Revisá que los datos sigan siendo los mismos.</div>':'<div class="tip">Cliente nuevo: completá sus datos.</div>')+(fl?'<div class="tip bad">'+(fl==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(W.c.motivo?': '+esc(W.c.motivo):'')+'. Consultá con Juan antes de seguir.</div>':'')+
         decile('Nombre y apellido · teléfono (y otro de respaldo) · dirección exacta con barrio · entre qué calles o una referencia (color de casa, piso, depto, portero).')+
         '<div class="g2"><label class="f req"><span>Nombre y apellido</span><input class="i" id="c-nombre" value="'+esc(W.c.nombre||'')+'" autocapitalize="words"></label><label class="f req"><span>Teléfono</span><input class="i" id="c-telefono" inputmode="tel" value="'+esc(W.c.telefono||'')+'"></label></div>'+
@@ -720,18 +729,23 @@ function proceso(o){var W={paso:1,canal:o.canal||'',atendio:YO,cli:o.cli||null,c
     else if(W.paso===5){h=resumenHTML()+(W.t.modo==='taller'?'<div class="tip good">El cliente trae el equipo al taller. Se guarda en <b>Taller</b> como “Esperando”.</div>':W.t.modo==='piensa'?'<div class="tip">El cliente lo va a pensar. Se guardan sus datos en Clientes, sin turno.</div>':
         '<div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
     pz.innerHTML=h;bindOpts(pz,onOpt);after();}
-  function after(){if(W.paso===1){var bq=pz.querySelector('#b-q'),tm;function look(){var v=bq.value.trim(),dig=v.replace(/[\s-]/g,''),q={};if(/^\d+$/.test(dig)){q.telefono=dig;q.orden=dig;}else q.txt=v;W.found=buscarCli(q);
+  function after(){if(W.paso===1){var bq=pz.querySelector('#b-q')||{value:''},tm;function look(){var v=bq.value.trim(),dig=v.replace(/[\s-]/g,''),q={};if(/^\d+$/.test(dig)){q.telefono=dig;q.orden=dig;}else q.txt=v;W.found=buscarCli(q);
         var r=pz.querySelector('#bRes');var any=dig.length>=6||v.length>=3;
         r.innerHTML=(W.found.length?'<div class="step"><div class="q">¿Es alguno de estos?</div>'+W.found.map(function(c,i){return cliCard(c,'<button type="button" class="btn btn-primary" data-pick="'+i+'">Es este cliente →</button>');}).join('')+'</div>':any?'<div class="tip">No lo encontramos en la base: es un cliente nuevo.</div>':'')+
           (any?'<div><button type="button" class="btn btn-green btn-big" data-new="1">+ Es un cliente nuevo →</button></div>':'');}
-      bq.oninput=function(){clearTimeout(tm);tm=setTimeout(look,250);};bq.focus();
+      if(bq.focus){bq.oninput=function(){W.bq=bq.value;clearTimeout(tm);tm=setTimeout(look,250);};bq.focus();if(bq.value)look();}
       pz.querySelector('#bRes').onclick=function(e){var b=e.target.closest('[data-pick]');if(b){var c=W.found[+b.dataset.pick];W.cli=c;W.c={nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona||'',flag:c.flag||'',motivo:c.motivo||''};
           var ab=turnos().filter(function(t){return t.clienteId===c.id&&(t.estado==='pendiente'||t.estado==='asignado');});if(ab.length&&!confirm('Este cliente ya tiene un turno abierto ('+(ab[0].estado==='pendiente'?'esperando día':'el '+fL(ab[0].fecha))+'). ¿Cargar otro igual?'))return;
           if(!val1())return;W.paso=2;draw();return;}
         if(e.target.closest('[data-new]')){if(!val1())return;W.cli=null;var v=bq.value.trim(),dig=v.replace(/[\s-]/g,'');W.c=/^\d+$/.test(dig)?{telefono:v}:/\d/.test(v)?{domicilio:v}:{nombre:v};W.paso=2;draw();}};}
+    if(W.paso===2&&!W.cli){var ct=pz.querySelector('#c-telefono'),cn=pz.querySelector('#c-nombre'),box=document.createElement('div'),tm2;ct.parentNode.parentNode.after(box);
+      var chk=function(){var f=buscarCli({telefono:ct.value.replace(/\D/g,'')});if(!f.length&&cn.value.trim().split(' ').length>=2)f=buscarCli({nombre:cn.value}).slice(0,2);
+        box.innerHTML=f.length?'<div class="tip warn">Ojo: puede que ya esté en la base.</div>'+f.map(function(c,i){return cliCard(c,'<button type="button" class="btn btn-primary btn-sm" data-dup="'+i+'">Es este, usar sus datos</button>');}).join(''):'';box._f=f;};
+      [ct,cn].forEach(function(i){i.addEventListener('input',function(){clearTimeout(tm2);tm2=setTimeout(chk,300);});});chk();
+      box.onclick=function(e){var b=e.target.closest('[data-dup]');if(!b)return;var c=box._f[+b.dataset.dup];W.cli=c;W.c={nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona||'',flag:c.flag||'',motivo:c.motivo||''};draw();};}
     if(W.paso===3)tipoBox();if(W.paso===4)fallasBox();if(W.paso===5&&W.agendar==='ahora')agBox();}
   function val1(){W.canal=ov(pz,'canal');W.atendio=ov(pz,'atendio');if(!W.canal){toast('Elegí por dónde llegó el cliente');return false;}if(!W.atendio){toast('Tocá tu nombre en “¿Quién atiende?”');return false;}YO=W.atendio;try{localStorage.setItem('vt_yo',YO);}catch(e){}return true;}
-  function onOpt(n,v){if(n==='tipo'){W.t.tipo=v;tipoBox();}if(n==='modo'){W.t.modo=v;tipoBox();}if(n==='producto'){W.t.producto=v;W.t.fallas=[];fallasBox();}if(n==='marca'){pz.querySelector('#t-marcaOtra').value='';}
+  function onOpt(n,v){if(W.paso===1&&(n==='canal'||n==='atendio'||n==='prev')){W[n]=v;var q=pz.querySelector('#b-q');if(q)W.bq=q.value;draw();return;}if(n==='tipo'){W.t.tipo=v;tipoBox();}if(n==='modo'){W.t.modo=v;tipoBox();}if(n==='producto'){W.t.producto=v;W.t.fallas=[];fallasBox();}if(n==='marca'){pz.querySelector('#t-marcaOtra').value='';}
     if(n==='agendar'){W.agendar=v;agBox();}if(n==='visita'){var vo=pz.querySelector('#t-visOtro');if(vo)vo.hidden=v!=='otro';}}
   function tipoBox(){var b=pz.querySelector('#tipoBox');if(!b)return;var t=W.t,h='';
     if(t.tipo==='GT')h=decile('“¿Tiene el número de orden que le dio la fábrica (Samsung, LG, Whirlpool…)?” Cargá la orden en TS y anotá los dos números. Avisale que para confirmar el turno va a tener que mandar la <b>factura de compra</b>.')+
