@@ -107,6 +107,7 @@ main{max-width:1600px;margin:auto;padding:16px 16px 60px;display:grid;gap:14px}
 @media (max-width:760px){.canales{grid-template-columns:1fr 1fr}}
 .canal{background:#fff;color:var(--navy);border:0;border-radius:16px;padding:16px 10px;font-weight:800;font-size:1.05rem;cursor:pointer;display:grid;gap:4px;justify-items:center;min-height:96px;box-shadow:0 4px 0 rgba(0,0,0,.18)}
 .canal:hover{background:#F1F8E8;transform:translateY(-1px)}
+.hq span{color:#fff}.hq .i{min-height:56px;font-size:1.05rem;background:#fff}.hres{display:grid;gap:8px}.hres .hc{color:var(--ink)}.hres .tip{color:var(--ink)}
 .canal span{font-size:1.8rem;line-height:1}
 .canal small{font-weight:600;color:var(--muted);font-size:.78rem}
 
@@ -449,7 +450,7 @@ function alerts(){var h='';var v=L_sin().concat(L_fue()).filter(function(t){retu
 function render(){if($('app').hidden)return;counts();var m=$('main'),q=$('q').value.trim();
   if(q.length>=2){m.innerHTML=vBuscar(q);return;}
   m.innerHTML=alerts()+({inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,clientes:vClientes,ajustes:vAjustes}[VIEW])();
-  if(VIEW==='ajustes')bindAjustes();if(VIEW==='agenda')bindAgenda();if(VIEW==='clientes')bindClientes();}
+  if(VIEW==='inicio')bindInicio();if(VIEW==='ajustes')bindAjustes();if(VIEW==='agenda')bindAgenda();if(VIEW==='clientes')bindClientes();}
 
 /* ---------- Clientes ---------- */
 function phones(s){return (String(s||'').match(/\d[\d\s-]{5,}\d/g)||[]).map(function(x){return x.replace(/\D/g,'').slice(-8);}).filter(function(x){return x.length>=7;});}
@@ -550,12 +551,18 @@ function chipsF(key,opts){return '<div class="chips">'+opts.map(function(o){retu
 function vInicio(){var all=L_sin(),l=all;if(FILT.tipo!=='todos')l=l.filter(function(t){return FILT.tipo==='venc'?sem(t)==='venc':t.tipo===FILT.tipo;});if(FILT.zona!=='todas')l=l.filter(function(t){return (t.zona||'')===FILT.zona;});l.sort(sortPl);
   var zs={};all.forEach(function(t){zs[t.zona||'']=(zs[t.zona||'']||0)+1;});var cnt=function(k){return all.filter(function(t){return t.tipo===k;}).length;};
   var h='<section class="hero"><div><h2>¿Llama o escribe un cliente?</h2><p>Tocá por dónde llegó y seguí los pasos. El sistema te va diciendo qué preguntar.</p></div><div class="canales">'+
-    '<button class="canal" data-canal="Teléfono"><span>📞</span>Teléfono<small>llamada</small></button><button class="canal" data-canal="WhatsApp"><span>💬</span>WhatsApp<small>mensaje</small></button><button class="canal" data-canal="Presencial"><span>🏪</span>En el local<small>vino al taller</small></button><button class="canal" data-canal="Fábrica"><span>🏭</span>Caso de fábrica<small>Samsung, LG, Whirlpool…</small></button></div></section>';
+    '<button class="canal" data-canal="Teléfono"><span>📞</span>Teléfono<small>llamada</small></button><button class="canal" data-canal="WhatsApp"><span>💬</span>WhatsApp<small>mensaje</small></button><button class="canal" data-canal="Presencial"><span>🏪</span>En el local<small>vino al taller</small></button><button class="canal" data-canal="Fábrica"><span>🏭</span>Caso de fábrica<small>Samsung, LG, Whirlpool…</small></button></div>'+
+    '<label class="f hq"><span>🔎 Buscar cliente en la base (nombre, apellido, dirección o teléfono)</span><input class="i" id="hq" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234"></label><div id="hres" class="hres"></div></section>';
   h+='<div class="vh"><div><h2>Esperan día de turno</h2><p>Primero los más urgentes. <b>S/G:</b> en la misma semana · <b>GTIA y ACEPTADO:</b> como mucho la semana siguiente. Filtrá por zona para armar el recorrido.</p></div></div>';
   h+=chipsF('tipo',[['todos','Todos ('+all.length+')'],['venc','⚠ Vencidos ('+all.filter(function(t){return sem(t)==='venc';}).length+')'],['GT','GTIA ('+cnt('GT')+')'],['SG','S/G ('+cnt('SG')+')'],['AC','ACEPTADO ('+cnt('AC')+')'],['GTT','GTIA TALLER ('+cnt('GTT')+')']]);
   if(Object.keys(zs).length>1)h+=chipsF('zona',[['todas','Todas las zonas']].concat(Object.keys(zs).sort().map(function(z){return [z,(z||'Sin zona')+' ('+zs[z]+')'];})));
   if(!l.length)return h+'<div class="empty">'+(all.length?'No hay clientes con este filtro.':'No hay clientes esperando día. 🎉')+'</div>';
   return h+tabla(l,'plazo','Plazo');}
+
+function bindInicio(){var i=$('hq'),r=$('hres'),t;if(!i)return;
+  i.oninput=function(){clearTimeout(t);t=setTimeout(function(){var v=i.value.trim(),dig=v.replace(/[\s-]/g,''),q=/^\d+$/.test(dig)?{telefono:dig,orden:dig}:{txt:v},f=buscarCli(q);
+    r.innerHTML=(dig.length>=6||v.length>=3)?(f.length?f.map(function(c){return cliCard(c,'<span class="tecrow"><button type="button" class="btn btn-sm" data-hver="'+c.id+'">Ver ficha</button><button type="button" class="btn btn-sm btn-green" data-hat="'+c.id+'">📞 Atender a este cliente</button></span>');}).join(''):'<div class="tip">No está en la base. Tocá por dónde llegó para cargarlo como nuevo.</div>'):'';},250);};
+  r.onclick=function(e){var b=e.target.closest('[data-hver]');if(b){verCliente(byId[b.dataset.hver]);return;}b=e.target.closest('[data-hat]');if(b)proceso({cli:byId[b.dataset.hat]});};}
 
 /* ---------- Turnos de técnicos ---------- */
 function dayItems(tec,d){return DB.items.filter(function(t){return t.tecnico===tec&&t.fecha===d&&t.estado!=='cancelado'&&(t.kind==='turno'&&t.estado!=='repuesto'||t.kind==='taller');});}
@@ -695,7 +702,7 @@ function saludo(canal,yo){var y=yo||'(tu nombre)';
   if(canal==='Presencial')return '“Buen día, bienvenido a VillGuz Refrigeración. ¿En qué lo puedo ayudar?”<br>Y preguntale: <b>“¿Es la primera vez que viene o ya nos trajo algún equipo?”</b>';
   return 'Caso derivado por fábrica (Samsung, LG, Whirlpool…). Tené a mano la <b>orden de fábrica</b>. Buscá al cliente por nombre, dirección o teléfono: si no está en la base, cargalo como nuevo.';}
 function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli:o.cli||null,c:{},t:{tipo:'',modo:'visita',fallas:[],visita:DB.cfg.costos[DB.cfg.costos.length-1]||0},found:[],tec:'',dia:'',agendar:''};
-  if(W.cli){W.c={nombre:W.cli.nombre,telefono:W.cli.telefono,tel2:W.cli.tel2||'',domicilio:W.cli.domicilio,ref:W.cli.ref||'',zona:W.cli.zona||'',flag:W.cli.flag||'',motivo:W.cli.motivo||''};W.paso=2;}
+  if(W.cli){W.prev='si';W.bq=(String(W.cli.telefono||'').match(/\d[\d\s-]{5,}\d/)||[W.cli.nombre||''])[0].replace(/[\s-]/g,'')||W.cli.nombre;W.cli=null;}
   if(W.canal==='Fábrica')W.t.tipo='GT';
   var o2=modal('Atender cliente','<div id="pz"></div>','<span class="left"><button class="btn" data-a="back">← Atrás</button></span><button class="btn btn-green btn-big" data-a="next">Siguiente →</button>','<div class="pasos" id="pasos"></div>');o2._ask=true;
   var pz=o2.querySelector('#pz');
@@ -708,9 +715,9 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
       h='<div class="rowq"><div class="q">¿Por dónde llegó?</div>'+opts('canal',[['Teléfono','📞 Teléfono'],['WhatsApp','💬 WhatsApp'],['Presencial','🏪 Local'],['Fábrica','🏭 Fábrica']],W.canal,'wide ',false)+'</div>'+
         '<div class="rowq"><div class="q">¿Quién atiende?</div>'+opts('atendio',DB.cfg.empleados.map(function(e){return [e,e];}),W.atendio,'wide ')+'</div>'+
         decile(saludo(W.canal,W.atendio))+
-        (W.canal&&!fab?'<div class="rowq"><div class="q">¿Ya es cliente?</div>'+opts('prev',[['si','✔ Sí, ya lo atendimos<small>ya nos trajo o fuimos a su casa</small>'],['no','✨ No, es la primera vez<small>cliente nuevo</small>']],W.prev,'wide ')+'</div>':'')+
+        ('<div class="rowq"><div class="q">¿Ya es cliente?</div>'+opts('prev',[['si','✔ Sí, ya lo atendimos<small>ya nos trajo o fuimos a su casa</small>'],['no','✨ No, es la primera vez<small>cliente nuevo</small>']],W.prev,'wide ')+'</div>')+
         (ver?'<label class="f buscar"><span>🔎 Buscalo por nombre, apellido, dirección o teléfono</span><input class="i" id="b-q" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234" value="'+esc(W.bq||'')+'"></label>':'')+
-        '<div id="bRes">'+(W.prev==='no'&&!fab?'<div class="tip">Aunque diga que es la primera vez, buscalo igual por las dudas. Si no aparece, cargalo como nuevo.</div><div><button type="button" class="btn btn-green btn-big" data-new="1">+ Cargar cliente nuevo →</button></div>':'')+'</div>';}
+        '<div id="bRes">'+(W.prev==='no'?'<div class="tip">Aunque diga que es la primera vez, buscalo igual por las dudas. Si no aparece, cargalo como nuevo.</div><div><button type="button" class="btn btn-green btn-big" data-new="1">+ Cargar cliente nuevo →</button></div>':'')+'</div>';}
     else if(W.paso===2){var fl=W.c.flag;h=(W.cli?'<div class="tip good">✔ Cliente de la base: '+esc(W.cli.nombre)+'. Revisá que los datos sigan siendo los mismos.</div>':'<div class="tip">Cliente nuevo: completá sus datos.</div>')+(fl?'<div class="tip bad">'+(fl==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(W.c.motivo?': '+esc(W.c.motivo):'')+'. Consultá con Juan antes de seguir.</div>':'')+
         decile('Nombre y apellido · teléfono (y otro de respaldo) · dirección exacta con barrio · entre qué calles o una referencia (color de casa, piso, depto, portero).')+
         '<div class="g2"><label class="f req"><span>Nombre y apellido</span><input class="i" id="c-nombre" value="'+esc(W.c.nombre||'')+'" autocapitalize="words"></label><label class="f req"><span>Teléfono</span><input class="i" id="c-telefono" inputmode="tel" value="'+esc(W.c.telefono||'')+'"></label></div>'+
