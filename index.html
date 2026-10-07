@@ -115,7 +115,7 @@ p{margin:0}
 .interno summary::-webkit-details-marker{display:none}
 .interno summary:hover,.interno[open] summary{border-color:var(--navy);background:var(--mist)}
 .interno summary svg{width:1.05em;height:1.05em}
-.interno-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,34,77,.18);padding:8px;min-width:270px;display:grid;gap:4px;z-index:60}
+.interno-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,34,77,.18);padding:6px;min-width:190px;display:grid;gap:4px;z-index:60}
 .interno-menu p{margin:4px 10px 6px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .interno-menu a{display:grid;gap:2px;text-decoration:none;color:var(--ink);padding:.7em .8em;border-radius:10px}
 .interno-menu a:hover{background:var(--mist)}
@@ -627,11 +627,10 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
       <a href="#contacto">Contacto</a>
     </nav>
     <details class="interno" id="interno">
-      <summary aria-label="Ingreso interno del personal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Ingreso interno</span></summary>
+      <summary aria-label="Equipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Equipo</span></summary>
       <div class="interno-menu" role="menu">
-        <p>Solo personal de VILLGUZ</p>
-        <a href="turnos/" rel="nofollow" role="menuitem"><b>Turnos</b><small>Atender clientes y asignar turnos</small></a>
-        <a href="panel/" rel="nofollow" role="menuitem"><b>Liquidaciones</b><small>Pago semanal a técnicos y fletes</small></a>
+        <a href="turnos/" rel="nofollow" role="menuitem"><b>Agenda</b></a>
+        <a href="panel/" rel="nofollow" role="menuitem"><b>Administración</b></a>
       </div>
     </details>
     <a class="btn btn-green" href="#turnos"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg>Pedir turno</a>
@@ -1128,7 +1127,7 @@ a.c-item:hover{border-color:var(--green);box-shadow:var(--shadow)}
     </div>
     <div class="f-bottom">
       <span>© <span id="yr">2026</span> VILLGUZ Refrigeración. Todos los derechos reservados.</span>
-      <span>Diseño UX/UI y desarrollo web por <strong>Juan Guzmán</strong> · Ingreso interno: <a href="turnos/" rel="nofollow">Turnos</a> · <a href="panel/" rel="nofollow">Liquidaciones</a></span>
+      <span>Diseño UX/UI y desarrollo web por <strong>Juan Guzmán</strong> · <a href="turnos/" rel="nofollow">Agenda</a> · <a href="panel/" rel="nofollow">Administración</a></span>
     </div>
   </div>
 </footer>
