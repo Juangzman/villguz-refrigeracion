@@ -590,18 +590,17 @@ function visitas90(c){if(!c)return 0;var lim=addD(today(),-90),n=0;(c.hist||[]).
   turnos().forEach(function(t){if(t.clienteId===c.id&&t.estado==='hecho'&&t.fecha>=lim)n++;});return n;}
 function urgTag(c){var n=visitas90(c);return n>=3?'<span class="flag urg" title="'+n+' visitas en los últimos 3 meses">🔥 URGENTE · '+n+' visitas en 3 meses</span>':'';}
 function urgTip(c){var n=visitas90(c);return n>=3?'<div class="tip bad">🔥 Cliente URGENTE: ya fuimos '+n+' veces en los últimos 3 meses. Atendelo con prioridad y con mucha paciencia (puede estar molesto).</div>':'';}
-function picker(x){var ds=[],d=today();while(ds.length<12){if(dow(d)!==0)ds.push(d);d=addD(d,1);}
-  var h='<div class="days-pick dt">'+ds.map(function(d){var late=x.p&&d>x.p;
-    return '<div class="dcard'+(late?' late':'')+(d===today()?' hoy':'')+'"><div class="dh"><b>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+'</b>'+(late?'<small>después del plazo</small>':'')+'</div>'+
-      x.ts.map(function(n){var its=dayItems(n,d).filter(function(i){return i.id!==x.excl;}),zs=zonasDia(n,d,x.excl),dn=dayNote(n,d),misma=x.zona&&zs.indexOf(x.zona)>=0,on=x.sel.tec===n&&x.sel.dia===d;
-        return '<button type="button" class="tb'+(on?' on':'')+(x.esp(n)?' esp':'')+'" data-dt="'+esc(n)+'|'+d+'"><b>'+esc(n)+(x.esp(n)?' ✔':'')+(misma?' ⭐':'')+'</b><small>'+(its.length?its.length+(its.length===1?' turno':' turnos'):'libre')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+'</small></button>';}).join('')+'</div>';}).join('')+'</div>';
+function picker(x){if(!x.sel.tec&&x.ts.length&&x.esp(x.ts[0]))x.sel.tec=x.ts[0];
+  var ds=[],d=today();while(ds.length<12){if(dow(d)!==0)ds.push(d);d=addD(d,1);}var T=x.sel.tec;
+  var h='<div class="step"><div class="q">1. Técnico</div><div class="opts">'+x.ts.map(function(n){return '<button type="button" class="opt wide'+(x.esp(n)?' esp':'')+(T===n?' on':'')+'" data-ptec="'+esc(n)+'">'+esc(n)+'<small>'+(x.esp(n)?'✔ especialista':'')+'</small></button>';}).join('')+'</div></div>';
+  h+='<div class="step"><div class="q">2. Día <small class="muted">(cuántos turnos tiene '+(T?esc(T):'el técnico')+' y por qué zonas anda · ⭐ misma zona)</small></div><div class="days-pick">'+ds.map(function(d){
+      var its=T?dayItems(T,d).filter(function(i){return i.id!==x.excl;}):[],zs=T?zonasDia(T,d,x.excl):[],dn=T?dayNote(T,d):null,late=x.p&&d>x.p,misma=x.zona&&zs.indexOf(x.zona)>=0;
+      return '<button type="button" class="opt'+(late?' late':'')+(x.sel.dia===d?' on':'')+'" data-pdia="'+d+'"><span>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+(misma?' ⭐':'')+'</span><small>'+(T?(its.length?its.length+(its.length===1?' turno':' turnos'):'libre'):'elegí técnico')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+(late?' · después del plazo':'')+'</small></button>';}).join('')+'</div>';
   if(x.sel.dia&&x.p&&x.sel.dia>x.p)h+='<div class="tip warn">⚠ Ese día queda después del plazo ('+fD(x.p)+'). Es solo un aviso: podés darle el turno igual.</div>';
-  if(x.sel.tec&&x.sel.dia)h+='<div class="tip good">Elegido: <b>'+esc(x.sel.tec)+'</b> el <b>'+fL(x.sel.dia)+'</b></div>';
-  h+='<p class="muted" style="margin:0;font-size:.82rem">Tocá el técnico dentro del día que querés. ✔ = especialista en ese equipo · ⭐ = ese día ya va a la misma zona.</p>'+
-    '<div class="tecrow"><label class="f" style="max-width:220px"><span>Otra fecha</span><input class="i" type="date" id="f-dia" value="'+esc(x.sel.dia||'')+'"></label><label class="f" style="max-width:220px"><span>Técnico</span><select class="i" id="f-tec"><option value="">—</option>'+x.ts.map(function(n){return '<option'+(n===x.sel.tec?' selected':'')+'>'+esc(n)+'</option>';}).join('')+'</select></label></div>';
+  h+='<label class="f" style="max-width:260px"><span>Otra fecha</span><input class="i" type="date" id="f-dia" value="'+esc(x.sel.dia||'')+'"></label></div>';
   return h;}
-function bindPicker(box,sel,redraw){box.onclick=function(e){var x=e.target.closest('[data-dt]');if(!x)return;var v=x.dataset.dt.split('|');sel.tec=v[0];sel.dia=v[1];redraw();};
-  var fd=box.querySelector('#f-dia'),ft=box.querySelector('#f-tec');if(fd)fd.onchange=function(){sel.dia=this.value;redraw();};if(ft)ft.onchange=function(){sel.tec=this.value;redraw();};}
+function bindPicker(box,sel,redraw){box.onclick=function(e){var x=e.target.closest('[data-ptec]');if(x){sel.tec=x.dataset.ptec;redraw();return;}x=e.target.closest('[data-pdia]');if(x){sel.dia=x.dataset.pdia;redraw();}};
+  var fd=box.querySelector('#f-dia');if(fd)fd.onchange=function(){sel.dia=this.value;redraw();};}
 function zonasDia(tec,d,excl){var z={};dayItems(tec,d).forEach(function(t){if(t.id!==excl&&t.zona)z[t.zona]=1;});return Object.keys(z);}
 function vAgenda(){var days=[];for(var i=0;i<6;i++)days.push(addD(WK,i));var ts=tecs();if(FILT.ag!=='todos'&&ts.indexOf(FILT.ag)>=0)ts=[FILT.ag];
   var h='<div class="vh"><div><h2>Turnos de técnicos</h2><p>Como las hojas de cada técnico, de a una semana. Tocá una fila para ver todo. Con 📝 anotás si el técnico queda en taller, feriado, etc. Con 🖨 imprimís la hoja de un día (la lista puede cambiar día a día).</p></div>'+
@@ -830,7 +829,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
     var tmp={tipo:W.t.tipo,ingreso:today()};var p=plazo(tmp),esp=function(n){return lista(DB.cfg.esp[n]).indexOf(W.t.producto)>=0;};
     var ts=tecsPara({flete:W.t.modo==='flete'}).slice().sort(function(a,b){return esp(b)-esp(a);});var sel={tec:W.tec,dia:W.dia};
     b.innerHTML='<div class="tip warn">Plazo sugerido: hasta el <b>'+fL(p)+'</b> ('+(W.t.tipo==='SG'?'S/G: en la semana':'como mucho la semana siguiente')+'). Zona del cliente: <b>'+esc(W.c.zona)+'</b>.</div>'+
-      '<div class="step"><div class="q">¿Qué día y qué técnico?</div>'+picker({ts:ts,esp:esp,sel:sel,p:p,zona:W.c.zona})+'</div>';
+      picker({ts:ts,esp:esp,sel:sel,p:p,zona:W.c.zona});
     bindPicker(b,sel,function(){W.tec=sel.tec;W.dia=sel.dia;agBox();});}
   function guardar(){var c=W.c,t=W.t,cli=W.cli;
     if(cli){['nombre','telefono','tel2','domicilio','ref','zona','codTS'].forEach(function(k){cli[k]=c[k]||'';});touch(cli);}
@@ -907,12 +906,12 @@ function asignar(t){if(!t)return;var tal=t.kind==='taller';var ts0=tecsPara(t,ta
   var b=(fl?'<div class="tip bad">'+(fl.flag==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(fl.motivo?': '+esc(fl.motivo):'')+'</div>':'')+(cli?urgTip(cli):'')+
     '<div class="tip"><b>'+esc(tal?'Orden '+(t.orden||''):t.nombre||'')+'</b>'+(tal?(t.equipo?' · '+esc(t.equipo):'')+(t.cliente?' · '+esc(t.cliente):''):' · '+(t.tipo?TIPO[t.tipo]:'')+(t.flete?' · FLETE '+esc(t.flete.toUpperCase()):'')+' · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' · '))+'<br>📍 '+esc(t.domicilio||'')+' · <b>'+esc(t.zona||'sin zona')+'</b>')+'</div>'+
     (p&&t.estado==='pendiente'?'<div class="tip '+(diff(today(),p)<0?'bad':'warn')+'">'+(diff(today(),p)<0?'⚠ Ya se pasó el plazo ('+fD(p)+'). Conviene darle el primer día que puedas.':'Plazo sugerido: hasta el <b>'+fL(p)+'</b>.')+'</div>':'')+
-    '<div class="step"><div class="q">'+(tal?'¿Qué día y qué técnico lo repara en el taller?':t.flete?'¿Qué día y quién hace el flete?':'¿Qué día y qué técnico?')+'</div><div id="pick"></div></div>';
+    '<div id="pick"></div>';
   var o=modal(tal?'Asignar día de taller':'Dar día',b,'<button class="btn" data-a="x">Cancelar</button><button class="btn btn-green btn-big" data-a="ok">Confirmar</button>');
   function paint(){var box=o.querySelector('#pick');box.innerHTML=picker({ts:ts,esp:esp,sel:sel,p:t.estado==='pendiente'?p:'',zona:tal?'':t.zona,excl:t.id});bindPicker(box,sel,paint);}
   paint();
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();
-    if(!sel.tec||!sel.dia){toast('Tocá el técnico dentro del día que querés');return;}
+    if(!sel.tec){toast('Tocá el técnico');return;}if(!sel.dia){toast('Tocá un día');return;}
     if(fl&&fl.flag==='no'&&!confirm('Este cliente está marcado “NO ATENDER”. ¿Dar el día igual?'))return;
     var cambio=t.fecha!==sel.dia;t.tecnico=sel.tec;t.fecha=sel.dia;if(!tal){t.estado='asignado';if(cambio)t.conf='';}else if(t.estado==='esperando')t.estado='en_reparacion';touch(t);closeM();
     if(tal){toast('Orden '+(t.orden||'')+' asignada a '+t.tecnico+' para el '+fL(t.fecha));return;}if(t.flete){toast('Flete asignado a '+t.tecnico+' para el '+fL(t.fecha));listo(t);return;}listo(t);};}
