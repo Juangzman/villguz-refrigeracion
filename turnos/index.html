@@ -387,17 +387,22 @@ function applyDelta(dl){if(!dl)return;var pos={};DB.items.forEach(function(it,i)
   if(dl.cfg)DB.cfg=dl.cfg;norm();reapply();cache();if(!OV)render();else counts();}
 
 /* ---------- Drive ---------- */
-async function api(action,extra){var r=await fetch(CLOUD,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action,pw:CPW},extra||{})),redirect:'follow'});return r.json();}
+async function api(action,extra){var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ac)ac.abort();},90000);
+  try{var r=await fetch(CLOUD,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action,pw:CPW},extra||{})),redirect:'follow',signal:ac?ac.signal:undefined});
+    var txt=await r.text();try{return JSON.parse(txt);}catch(e){return {ok:false,error:/ocupad|lock|Lock/i.test(txt)?'ocupado':'respuesta'};}}finally{clearTimeout(to);}}
 function cstat(st,m){var el=$('cloudSt');el.className='cloud cs-'+st;el.textContent=m;}
 function sched(){cstat('wait','Guardando…');clearTimeout(pushT);pushT=setTimeout(push,800);}
 async function push(){if(!CLOUD||!CPW)return;if(pushing){clearTimeout(pushT);pushT=setTimeout(push,600);return;}
   if(qEmpty()){cstat('ok','Guardado en Drive');return;}
-  pushing=true;var snap=Q,have=CVER;Q={ch:{},del:{},cfg:null};
+  // se sube de a partes para que una carga grande no trabe a los demás
+  pushing=true;var have=CVER,ck=Object.keys(Q.ch).slice(0,600),dk=Object.keys(Q.del).slice(0,3000),snap={ch:{},del:{},cfg:Q.cfg};
+  ck.forEach(function(k){snap.ch[k]=Q.ch[k];delete Q.ch[k];});dk.forEach(function(k){snap.del[k]=1;delete Q.del[k];});Q.cfg=null;
+  var falta=Object.keys(Q.ch).length;if(falta)cstat('wait','Subiendo… faltan '+falta.toLocaleString('es-AR'));
   try{var r=await api('save',{changes:Object.keys(snap.ch).map(function(k){return snap.ch[k];}),deletes:Object.keys(snap.del),cfg:snap.cfg,have:have});
     if(r.ok){CVER=r.version;storeQ();if(r.delta)applyDelta(r.delta);else if(r.data)adopt(r.data);else cache();}
     else{restore(snap);if(r.error==='clave'){cstat('err','La contraseña cambió: volvé a entrar');pushing=false;return;}throw 0;}
   }catch(e){restore(snap);pushing=false;cstat('err','Sin conexión · reintentando');clearTimeout(pushT);pushT=setTimeout(push,6000);return;}
-  pushing=false;if(!qEmpty())sched();else cstat('ok','Guardado en Drive');}
+  pushing=false;if(!qEmpty()){clearTimeout(pushT);pushT=setTimeout(push,300);}else cstat('ok','Guardado en Drive');}
 function restore(s){Object.keys(s.ch).forEach(function(id){if(!Q.ch[id]&&!Q.del[id])Q.ch[id]=s.ch[id];});Object.keys(s.del).forEach(function(id){Q.del[id]=1;});if(s.cfg&&!Q.cfg)Q.cfg=s.cfg;storeQ();}
 async function poll(){if(!CLOUD||!CPW||document.hidden||pushing||!qEmpty())return;
   try{var r=await api('load',{have:CVER});if(!r.ok||r.same)return;CVER=r.version;if(r.delta)applyDelta(r.delta);else if(r.data)adopt(r.data);}catch(e){}}
@@ -414,7 +419,7 @@ async function login(p,silent){var err=$('loginErr');err.hidden=true;
     if(firstRun){if(p.length<6)throw 'Usá al menos 6 letras o números.';if(p!==$('pw2').value)throw 'Las dos contraseñas no son iguales.';var s=await api('setup');if(!s.ok&&s.error!=='ya_configurado')throw 'No se pudo crear la contraseña.';}
     var c=null;try{c=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
     var r=await api('load',{have:c&&c.v||0});
-    if(!r.ok){if(r.error==='sin_clave'){setupUI();throw silent?'':'Todavía no hay contraseña: creala abajo.';}if(r.error==='clave')throw 'Contraseña incorrecta.';throw 'No se pudo conectar con Drive ('+r.error+').';}
+    if(!r.ok){if(r.error==='sin_clave'){setupUI();throw silent?'':'Todavía no hay contraseña: creala abajo.';}if(r.error==='clave')throw 'Contraseña incorrecta.';if(r.error==='ocupado')throw 'Drive está guardando una carga grande. Esperá un minuto y volvé a tocar Ingresar.';throw 'No se pudo conectar con Drive ('+r.error+'). Probá de nuevo en un minuto.';}
     try{var q=JSON.parse(localStorage.getItem(QK)||'null');if(q&&q.ch)Q=q;}catch(e){}
     CVER=r.version||0;
     if(r.same&&c){DB=c.d;norm();reapply();}
@@ -423,7 +428,7 @@ async function login(p,silent){var err=$('loginErr');err.hidden=true;
     cache();
     try{sessionStorage.setItem('vt_pw',p);}catch(e){}
     enter();if(!qEmpty())push();else cstat('ok','Guardado en Drive');
-  }catch(m){CPW='';if(m){err.textContent=typeof m==='string'?m:'Sin conexión. Revisá internet y probá de nuevo.';err.hidden=false;}}
+  }catch(m){CPW='';if(m){err.textContent=typeof m==='string'?m:(m&&m.name==='AbortError'?'Drive tardó demasiado en responder. Esperá un minuto y probá de nuevo.':m&&m.message&&!/fetch|network/i.test(m.message)?'Error al abrir: '+m.message:'Sin conexión con Google Drive. Probá de nuevo en un minuto.');err.hidden=false;if(m&&m.stack)console.error(m);}}
   $('loginBtn').disabled=false;$('loginBtn').textContent=firstRun?'Crear y entrar':'Ingresar';}
 $('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('pw1').value);});
 $('logout').addEventListener('click',function(){if(!qEmpty()&&!confirm('Todavía se están guardando cambios. ¿Salir igual?'))return;try{sessionStorage.removeItem('vt_pw');}catch(e){}location.reload();});
