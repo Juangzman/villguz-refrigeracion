@@ -704,13 +704,13 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
   o2.querySelector('#pasos').onclick=function(e){var b=e.target.closest('[data-p]');if(b&&!b.disabled){leer();W.paso=+b.dataset.p;draw();}};
   function decile(t){return '<div class="decile"><b>📢 Decile / preguntale</b>'+t+'</div>';}
   function draw(){hdr();var h='';
-    if(W.paso===1){var fab=W.canal==='Fábrica',ver=fab||W.prev==='si';
+    if(W.paso===1){var fab=W.canal==='Fábrica',ver=true;
       h='<div class="rowq"><div class="q">¿Por dónde llegó?</div>'+opts('canal',[['Teléfono','📞 Teléfono'],['WhatsApp','💬 WhatsApp'],['Presencial','🏪 Local'],['Fábrica','🏭 Fábrica']],W.canal,'wide ',false)+'</div>'+
         '<div class="rowq"><div class="q">¿Quién atiende?</div>'+opts('atendio',DB.cfg.empleados.map(function(e){return [e,e];}),W.atendio,'wide ')+'</div>'+
         decile(saludo(W.canal,W.atendio))+
         (W.canal&&!fab?'<div class="rowq"><div class="q">¿Ya es cliente?</div>'+opts('prev',[['si','✔ Sí, ya lo atendimos<small>ya nos trajo o fuimos a su casa</small>'],['no','✨ No, es la primera vez<small>cliente nuevo</small>']],W.prev,'wide ')+'</div>':'')+
         (ver?'<label class="f buscar"><span>🔎 Buscalo por nombre, apellido, dirección o teléfono</span><input class="i" id="b-q" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234" value="'+esc(W.bq||'')+'"></label>':'')+
-        '<div id="bRes">'+(W.prev==='no'&&!fab?'<div class="tip">Cliente nuevo: en el paso siguiente cargás sus datos. Si el teléfono ya estaba en la base, te avisamos.</div><div><button type="button" class="btn btn-green btn-big" data-new="1">Cargar cliente nuevo →</button></div>':'')+'</div>';}
+        '<div id="bRes">'+(W.prev==='no'&&!fab?'<div class="tip">Aunque diga que es la primera vez, buscalo igual por las dudas. Si no aparece, cargalo como nuevo.</div><div><button type="button" class="btn btn-green btn-big" data-new="1">+ Cargar cliente nuevo →</button></div>':'')+'</div>';}
     else if(W.paso===2){var fl=W.c.flag;h=(W.cli?'<div class="tip good">✔ Cliente de la base: '+esc(W.cli.nombre)+'. Revisá que los datos sigan siendo los mismos.</div>':'<div class="tip">Cliente nuevo: completá sus datos.</div>')+(fl?'<div class="tip bad">'+(fl==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(W.c.motivo?': '+esc(W.c.motivo):'')+'. Consultá con Juan antes de seguir.</div>':'')+
         decile('Nombre y apellido · teléfono (y otro de respaldo) · dirección exacta con barrio · entre qué calles o una referencia (color de casa, piso, depto, portero).')+
         '<div class="g2"><label class="f req"><span>Nombre y apellido</span><input class="i" id="c-nombre" value="'+esc(W.c.nombre||'')+'" autocapitalize="words"></label><label class="f req"><span>Teléfono</span><input class="i" id="c-telefono" inputmode="tel" value="'+esc(W.c.telefono||'')+'"></label></div>'+
@@ -730,9 +730,9 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
         '<div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
     pz.innerHTML=h;bindOpts(pz,onOpt);after();}
   function after(){if(W.paso===1){var bq=pz.querySelector('#b-q')||{value:''},tm;function look(){var v=bq.value.trim(),dig=v.replace(/[\s-]/g,''),q={};if(/^\d+$/.test(dig)){q.telefono=dig;q.orden=dig;}else q.txt=v;W.found=buscarCli(q);
-        var r=pz.querySelector('#bRes');var any=dig.length>=6||v.length>=3;
+        var r=pz.querySelector('#bRes');var any=dig.length>=6||v.length>=3||W.prev==='no';
         r.innerHTML=(W.found.length?'<div class="step"><div class="q">¿Es alguno de estos?</div>'+W.found.map(function(c,i){return cliCard(c,'<button type="button" class="btn btn-primary" data-pick="'+i+'">Es este cliente →</button>');}).join('')+'</div>':any?'<div class="tip">No lo encontramos en la base: es un cliente nuevo.</div>':'')+
-          (any?'<div><button type="button" class="btn btn-green btn-big" data-new="1">+ Es un cliente nuevo →</button></div>':'');}
+          (any?'<div><button type="button" class="btn btn-green btn-big" data-new="1">+ Cargar cliente nuevo →</button></div>':'');}
       if(bq.focus){bq.oninput=function(){W.bq=bq.value;clearTimeout(tm);tm=setTimeout(look,250);};bq.focus();if(bq.value)look();}
       pz.querySelector('#bRes').onclick=function(e){var b=e.target.closest('[data-pick]');if(b){var c=W.found[+b.dataset.pick];W.cli=c;W.c={nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona||'',flag:c.flag||'',motivo:c.motivo||''};
           var ab=turnos().filter(function(t){return t.clienteId===c.id&&(t.estado==='pendiente'||t.estado==='asignado');});if(ab.length&&!confirm('Este cliente ya tiene un turno abierto ('+(ab[0].estado==='pendiente'?'esperando día':'el '+fL(ab[0].fecha))+'). ¿Cargar otro igual?'))return;
