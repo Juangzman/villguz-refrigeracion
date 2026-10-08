@@ -460,6 +460,7 @@ function alerts(){var h='';var v=L_sin().concat(L_fue()).filter(function(t){retu
   var man=addD(today(),1),c=L_conf().filter(function(t){return t.fecha<=man;}).length,a=pasados().length;
   if(v&&VIEW!=='inicio')h+='<button class="alert red" data-go="inicio"><b>'+v+'</b> '+(v===1?'cliente espera':'clientes esperan')+' día de turno y ya se pasó el plazo.</button>';
   if(c&&VIEW!=='confirmar')h+='<button class="alert amber" data-go="confirmar"><b>'+c+'</b> '+(c===1?'turno de hoy o mañana':'turnos de hoy o mañana')+' sin confirmar. Mandá el WhatsApp o llamalos.</button>';
+  if(VIEW==='inicio'&&DB.items.length>12000&&pesoMB()>5)h+='<button class="alert amber" data-go="ajustes"><b>📦</b> La base está pesada ('+pesoMB().toFixed(1)+' MB). Archivá los turnos del año anterior en Ajustes → Archivo anual.</button>';
   if(a)h+='<button class="alert amber" data-go="agenda" data-past="1"><b>'+a+'</b> '+(a===1?'turno de días anteriores':'turnos de días anteriores')+' sin cerrar. Anotá cómo terminó cada visita.</button>';return h;}
 function render(){if($('app').hidden)return;counts();var m=$('main'),q=$('q').value.trim();
   if(q.length>=2){m.innerHTML=vBuscar(q);return;}
@@ -472,7 +473,7 @@ var FLG=null;
 function flagOf(t){if(!FLG)FLG=clientes().filter(function(c){return c.flag;});if(!FLG.length)return null;if(t.clienteId){var c0=byId[t.clienteId];return c0&&c0.flag?c0:null;}
   var ps=phones(t.telefono),r=null;FLG.some(function(c){var cp=phones(c.telefono+' '+(c.tel2||''));if(ps.some(function(p){return cp.indexOf(p)>=0;})){r=c;return true;}return false;});return r;}
 function flagTag(c){return c&&c.flag?'<span class="flag '+c.flag+'" title="'+esc(c.motivo||'')+'">'+(c.flag==='no'?'⛔ NO ATENDER':'⚠ COMPLICADO')+'</span>':'';}
-function visitasDe(c){var v=(c.hist||[]).map(function(h){return {f:h.f,t:h.t,o:h.o,tp:TIPO[h.tp]||h.tp||'',p:h.p,fa:h.fa,r:h.r,sol:null,viejo:true};});
+function visitasDe(c){var v=(c.hist||[]).map(function(h){return {f:h.f,t:h.t,o:h.o,tp:TIPO[h.tp]||h.tp||'',p:h.p,fa:h.fa,r:h.r,sol:h.sol||null,viejo:true};});
   turnos().forEach(function(t){if(t.clienteId===c.id)v.push({f:t.fecha||t.alta,t:t.tecnico,o:[t.ordenFab,t.ordenTS].filter(Boolean).join(' / '),tp:TIPO[t.tipo]||'',p:[t.producto,t.marca].filter(Boolean).join(' '),fa:t.falla,r:t.resultado,sol:t.sol,estado:t.estado,id:t.id});});
   return v.sort(function(a,b){return (b.f||'')>(a.f||'')?1:-1;});}
 function resumenCli(c){var v=visitasDe(c),hechas=v.filter(function(x){return x.viejo||x.estado==='hecho';}),u=hechas[0];
@@ -684,7 +685,25 @@ function vAjustes(){var c=DB.cfg;var h='<div class="vh"><div><h2>Ajustes</h2></d
   h+='<div class="card"><h3>Mensajes de confirmación por WhatsApp</h3><p class="muted" style="margin:0">{DIA} se reemplaza por el día del turno, {COSTO} por el costo de la visita y {SALUDO} por “Buenos días” o “Buenas tardes” según la hora.</p><label class="f">Sin garantía<textarea class="i" id="cfgMsgSG" style="min-height:220px">'+esc(c.msgSG)+'</textarea></label><label class="f">Garantía<textarea class="i" id="cfgMsgGT" style="min-height:220px">'+esc(c.msgGT)+'</textarea></label><div><button class="btn btn-primary" id="saveMsg">Guardar mensajes</button></div></div>';
   h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0"><b>S/G:</b> en la misma semana que entró el pedido (hasta el viernes).<br><b>GTIA, GTIA TALLER y ACEPTADO:</b> como mucho hasta el viernes de la semana siguiente.</p></div>';
   h+='<div class="card"><h3>Contraseña de turnos</h3><div class="g3"><label class="f">Actual<input class="i" type="password" id="pwO"></label><label class="f">Nueva<input class="i" type="password" id="pwN"></label><label class="f">Repetir nueva<input class="i" type="password" id="pwN2"></label></div><p class="err" id="pwE" hidden></p><div><button class="btn btn-primary" id="pwS">Cambiar contraseña</button></div></div>';
+  h+=archivoCard();
   h+='<div class="card"><h3>Copia de seguridad</h3><p class="muted" style="margin:0">Todo se guarda solo en Google Drive (planilla “Turnos VILLGUZ”).</p><div class="tecrow"><button class="btn" id="bk">Descargar copia</button><label class="btn">Cargar una copia<input type="file" id="rs" accept=".json,application/json" hidden></label></div><p class="muted" style="margin:0;font-size:.85rem">“Cargar una copia” <b>borra todo</b> lo que hay y lo reemplaza por el archivo.</p></div>';return h;}
+/* ---------- Archivo anual ---------- */
+function pesoMB(){try{return JSON.stringify(DB).length/1048576;}catch(e){return 0;}}
+function archivables(hasta){return DB.items.filter(function(it){return (it.kind==='turno'&&it.estado==='hecho'&&it.fecha&&it.fecha<hasta)||(it.kind==='taller'&&it.estado==='entregado'&&(it.fecha||it.ingreso||'')<hasta)||(it.kind==='dia'&&it.fecha&&it.fecha<hasta);});}
+function archivoCard(){var mb=pesoMB(),y=+today().slice(0,4),ops=[];
+  for(var a=y;a>=y-5;a--){var hasta=a+'-01-01',n=archivables(hasta).filter(function(i){return i.kind!=='dia';}).length;if(n||a===y)ops.push([hasta,'Todo lo terminado antes del 1/1/'+a+' ('+n+' registros)',n]);}
+  var seis=addD(today(),-183),n6=archivables(seis).filter(function(i){return i.kind!=='dia';}).length;ops.push([seis,'Todo lo terminado hace más de 6 meses, antes del '+ddy(seis)+' ('+n6+' registros)',n6]);
+  return '<div class="card"><h3>Archivo anual</h3><p style="margin:0">Para que el sistema siga rápido con los años, una vez por año (por ejemplo en enero) archivá los turnos <b>terminados</b> del año anterior. '+
+    'Pasan a la pestaña <b>“ARCHIVO &lt;año&gt;”</b> de la planilla de Drive y en la ficha de cada cliente queda igual el historial (cuándo fuimos, qué se hizo y si se solucionó). Los turnos abiertos no se tocan.</p>'+
+    '<div class="tip'+(mb>4?' warn':'')+'">Tamaño actual de la base: <b>'+mb.toFixed(1)+' MB</b>'+(mb>4?' — conviene archivar.':' — está bien.')+'</div>'+
+    '<div class="tecrow"><select class="i" id="arcHasta" style="max-width:560px">'+ops.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join('')+'</select><button class="btn btn-primary" id="arcGo">Archivar</button></div></div>';}
+async function archivar(){var hasta=$('arcHasta').value,n=archivables(hasta).filter(function(i){return i.kind!=='dia';}).length;
+  if(!n){toast('No hay nada para archivar con esa fecha');return;}
+  if(!qEmpty()||pushing){toast('Esperá a que diga “Guardado en Drive” y probá de nuevo');return;}
+  if(!confirm('Se van a archivar '+n+' registros terminados antes del '+ddy(hasta)+'. Pasan a la pestaña ARCHIVO de la planilla y quedan en el historial de cada cliente. ¿Seguir?'))return;
+  var b=$('arcGo');b.disabled=true;b.textContent='Archivando…';cstat('wait','Archivando…');
+  try{var r=await api('archivar',{hasta:hasta,have:CVER});if(!r.ok)throw r.error||'error';CVER=r.version;if(r.delta)applyDelta(r.delta);cstat('ok','Guardado en Drive');toast('Listo: se archivaron '+r.archivados+' registros',6000);render();}
+  catch(e){cstat('err','No se pudo archivar');toast(e==='accion'?'Falta actualizar el código del Apps Script (Nueva versión) para usar el archivo.':'No se pudo archivar. Probá de nuevo en un rato.',7000);b.disabled=false;b.textContent='Archivar';}}
 function lista(s){return String(s||'').split(',').map(function(x){return x.trim();}).filter(Boolean);}
 function bindAjustes(){var c=DB.cfg;
   document.querySelectorAll('[data-tn]').forEach(function(inp){inp.onchange=function(){var i=+inp.dataset.tn,old=c.tecnicos[i],nu=inp.value.trim();if(!nu||nu===old){inp.value=old;return;}
@@ -699,6 +718,7 @@ function bindAjustes(){var c=DB.cfg;
   $('saveCos').onclick=function(){c.costos=lista($('cfgCos').value).map(function(x){return +x.replace(/\D/g,'');}).filter(Boolean);c.revisionLocal=+String($('cfgRev').value).replace(/\D/g,'')||0;saveCfg();toast('Guardado');};
   $('saveFle').onclick=function(){c.fleteros=lista($('cfgFle').value);saveCfg();toast('Guardado');};
   $('saveMsg').onclick=function(){c.msgSG=$('cfgMsgSG').value;c.msgGT=$('cfgMsgGT').value;saveCfg();toast('Mensajes guardados');};
+  $('arcGo').onclick=archivar;
   $('bk').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));a.download='turnos-villguz-'+today()+'.json';a.click();};
   $('rs').onchange=function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){var d;try{d=JSON.parse(rd.result);if(!d||!Array.isArray(d.items))throw 0;}catch(e){toast('Ese archivo no es una copia de turnos');return;}
     if(!confirm('Se BORRA todo lo que hay ahora y se cargan '+d.items.length+' registros del archivo. ¿Seguir?'))return;var nuevos={};d.items.forEach(function(it){nuevos[it.id]=1;});
