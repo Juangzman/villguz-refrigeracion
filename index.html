@@ -598,6 +598,48 @@ main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
 @media (max-width:900px){.vidrio > .wrap,.vidrio-azul > .wrap{-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border-radius:22px}.hero{border-radius:0 0 22px 22px}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.vidrio > .wrap{background:rgba(255,255,255,.9)}}
 @media (prefers-reduced-transparency: reduce){.vidrio > .wrap{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+/* ===== Liquid glass: bordes luminosos y cortes difuminados ===== */
+.vidrio,.vidrio-azul,.brands.vidrio{overflow:visible!important}
+.vidrio > .wrap,.vidrio-azul > .wrap,.turnos-box{isolation:isolate;border:0!important}
+.vidrio > .wrap{
+  background:linear-gradient(135deg,rgba(255,255,255,.46) 0%,rgba(255,255,255,.22) 45%,rgba(255,255,255,.14) 100%);
+  -webkit-backdrop-filter:blur(28px) saturate(1.9) brightness(1.05);backdrop-filter:blur(28px) saturate(1.9) brightness(1.05);
+  box-shadow:0 40px 90px -30px rgba(0,34,77,.22),0 8px 24px -12px rgba(0,34,77,.10),inset 0 1px 1px rgba(255,255,255,.75),inset 0 -1px 1px rgba(255,255,255,.22)}
+.brands.vidrio > .wrap{overflow:hidden}
+/* aro de luz en el borde (más fuerte arriba a la izquierda, se pierde en el medio) */
+.vidrio > .wrap::before,.vidrio-azul > .wrap::before,.turnos-box::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.25px;pointer-events:none;z-index:2;
+  background:linear-gradient(140deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.35) 22%,rgba(255,255,255,0) 45%,rgba(255,255,255,0) 62%,rgba(255,255,255,.45) 85%,rgba(255,255,255,.85) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+/* brillo especular */
+.vidrio > .wrap::after,.vidrio-azul > .wrap::after,.turnos-box::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:radial-gradient(70% 55% at 12% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%),radial-gradient(50% 45% at 100% 100%,rgba(255,255,255,.22),rgba(255,255,255,0) 65%)}
+.vidrio > .wrap > *,.vidrio-azul > .wrap > *,.turnos-box > *{position:relative;z-index:1}
+/* azules: vidrio oscuro */
+.vidrio-azul > .wrap,.turnos-box{
+  background:linear-gradient(140deg,rgba(0,62,138,.78) 0%,rgba(0,40,92,.84) 55%,rgba(0,30,70,.88) 100%)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);
+  box-shadow:0 40px 90px -30px rgba(0,22,49,.45),inset 0 1px 1px rgba(255,255,255,.25)!important}
+.vidrio-azul > .wrap::before,.turnos-box::before{opacity:.55}
+.vidrio-azul > .wrap::after,.turnos-box::after{background:radial-gradient(70% 55% at 12% 0%,rgba(120,180,255,.25),rgba(255,255,255,0) 60%)}
+.turnos-box{position:relative}
+/* modo oscuro: vidrio más denso para leer bien */
+:root[data-theme="dark"] .vidrio > .wrap{background:linear-gradient(135deg,rgba(255,255,255,.86),rgba(236,242,250,.70))}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .vidrio > .wrap{background:linear-gradient(135deg,rgba(255,255,255,.86),rgba(236,242,250,.70))}}
+/* cortes difuminados: portada y pie se funden con el fondo */
+.hero{border-radius:0!important;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 150px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 150px),transparent)}
+.hero .slide{padding-bottom:clamp(120px,12vw,170px)}
+.hero + .vidrio{margin-top:-90px;padding-top:0!important;position:relative;z-index:2}
+.footer{margin-top:0;padding-top:120px;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 110px);mask-image:linear-gradient(180deg,transparent 0,#000 110px)}
+.header{border-bottom-color:transparent;box-shadow:0 10px 30px -18px rgba(0,34,77,.25)}
+@media (max-width:900px){
+  .vidrio > .wrap,.vidrio-azul > .wrap,.turnos-box{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7)}
+  .vidrio > .wrap{background:linear-gradient(135deg,rgba(255,255,255,.58),rgba(255,255,255,.30))}
+  .hero{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 90px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 90px),transparent)}
+  .hero .slide{padding-bottom:90px}
+  .hero + .vidrio{margin-top:-50px}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.vidrio > .wrap{background:rgba(255,255,255,.9)}}
 /* Barra fija inferior en el celular */
 .mbar{display:none}
 @media (max-width:920px){
