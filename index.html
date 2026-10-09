@@ -640,6 +640,43 @@ main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
   .hero + .vidrio{margin-top:-50px}
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.vidrio > .wrap{background:rgba(255,255,255,.9)}}
+/* ===== Intercalado: paneles de vidrio azul ===== */
+.vidrio.tono-azul{--ink:#FFFFFF;--muted:rgba(222,234,250,.84);--line:rgba(255,255,255,.16);--green-ink:#A6DB63;color:#fff;color-scheme:dark}
+.vidrio.tono-azul > .wrap{
+  background:linear-gradient(140deg,rgba(0,62,138,.78) 0%,rgba(0,40,92,.84) 55%,rgba(0,30,70,.88) 100%)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6);
+  box-shadow:0 40px 90px -30px rgba(0,22,49,.45),inset 0 1px 1px rgba(255,255,255,.25)!important}
+.vidrio.tono-azul > .wrap::before{opacity:.55}
+.vidrio.tono-azul > .wrap::after{background:radial-gradient(70% 55% at 12% 0%,rgba(120,180,255,.25),rgba(255,255,255,0) 60%)}
+.vidrio.tono-azul h2,.vidrio.tono-azul .sec-head h2,.vidrio.tono-azul .intro h2{color:#fff!important}
+.vidrio.tono-azul .sub,.vidrio.tono-azul .intro p{color:var(--muted)}
+.vidrio.tono-azul .intro strong{color:#fff}
+/* tarjetas dentro del azul: siguen claras para leer bien */
+.vidrio.tono-azul :is(.cat:not(.cat-air),.panel,.mv article){--ink:#0C1624;--muted:#4A5A70;--line:rgba(0,51,112,.12);--green-ink:#4E8A14;color:var(--ink);color-scheme:light}
+.vidrio.tono-azul :is(.cat-hel,.cat-vaj,.panel,.mv article){background:rgba(255,255,255,.92)!important;border-color:rgba(255,255,255,.9)!important}
+.vidrio.tono-azul .panel{border-radius:22px;overflow:hidden}
+.vidrio.tono-azul .cat-lav{background:rgba(234,244,222,.94)!important}
+.vidrio.tono-azul :is(.cat:not(.cat-air),.mv article) h3{color:var(--navy)!important}
+.vidrio.tono-azul .cat-air{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.28)!important}
+.vidrio.tono-azul .tab{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.06)}
+.vidrio.tono-azul .tab[aria-selected="true"]{background:#fff;color:var(--navy);border-color:#fff}
+.vidrio.tono-azul > .wrap > .ctas .btn-navy{background:#fff;color:var(--navy)}
+/* el lema queda flotando sobre el fondo, sin panel */
+.claim-band.vidrio > .wrap{background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-block:clamp(24px,4vw,48px)}
+.claim-band.vidrio > .wrap::before,.claim-band.vidrio > .wrap::after{display:none}
+:root[data-theme="dark"] .claim-band.vidrio .claim{color:#fff}
+:root[data-theme="dark"] .claim-band.vidrio p{color:rgba(222,234,250,.8)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .claim-band.vidrio .claim{color:#fff}:root:not([data-theme="light"]) .claim-band.vidrio p{color:rgba(222,234,250,.8)}}
+
+/* ===== Escritorio: paneles anchos, sin aire vacío a los costados ===== */
+@media (min-width:1100px){
+  .vidrio,.vidrio-azul,.vidrio-libre{padding-inline:clamp(16px,1.8vw,32px)}
+  .vidrio > .wrap,.vidrio-azul > .wrap{max-width:1760px;padding-inline:max(56px,calc((min(100%,1760px) - var(--maxw))/2 + var(--gutter)))}
+  .vidrio-libre > .wrap{max-width:1760px}
+  .turnos-box{padding-inline:max(56px,calc((min(100%,1760px) - var(--maxw))/2 + var(--gutter)))!important}
+}
+@media (min-width:1500px){:root{--maxw:1380px}}
+
 /* Barra fija inferior en el celular */
 .mbar{display:none}
 @media (max-width:920px){
@@ -892,7 +929,7 @@ main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
   </div>
 </section>
 
-<section class="quick vidrio" aria-labelledby="q-title">
+<section class="quick vidrio tono-azul" aria-labelledby="q-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -932,7 +969,7 @@ main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
   </div>
 </section>
 
-<section class="services vidrio" id="servicios" aria-labelledby="s-title">
+<section class="services vidrio tono-azul" id="servicios" aria-labelledby="s-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -1091,7 +1128,7 @@ main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
   </div>
 </section>
 
-<section class="about vidrio" id="nosotros" aria-labelledby="a-title">
+<section class="about vidrio tono-azul" id="nosotros" aria-labelledby="a-title">
   <div class="wrap about-grid">
     <div class="intro">
       <h2 id="a-title">Una empresa familiar tucumana, con oficio de verdad</h2>
