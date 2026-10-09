@@ -184,6 +184,10 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .mini.ask{border-color:#F2B8B8;background:var(--red-bg)}
 .fi-tag{display:inline-block;background:var(--red);color:#fff;font-size:.66rem;font-weight:800;padding:.15em .5em;border-radius:5px;letter-spacing:.04em}
 .hr-tag{display:inline-block;background:#E7F0FB;color:var(--navy);font-size:.74rem;font-weight:800;padding:.15em .5em;border-radius:5px;margin-top:3px}
+.opt.c5{border-color:#E0A100;background:var(--amber-bg)}.opt.c5.on{background:#C07A00;border-color:#C07A00}
+.opt.c7{border-color:var(--red);background:var(--red-bg)}.opt.c7.on{background:var(--red);border-color:var(--red)}
+.cg{display:inline-block;font-weight:800;font-size:.72rem;padding:.12em .5em;border-radius:5px;margin-left:6px}.cg.c5{background:var(--amber-bg);color:var(--amber)}.cg.c7{background:var(--red);color:#fff}
+.walist{display:grid;gap:8px}.walist .btn{justify-content:flex-start;text-align:left;width:100%}.walist .btn.sent{opacity:.6}
 .hrbox{border:2px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
 .chk{display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px}
 .mini.tal{border-left-color:var(--violet);background:var(--violet-bg)}
@@ -372,8 +376,8 @@ function fL(s){return s?DL[dow(s)]+' '+dd(s):'';}
    GTIA, GTIA TALLER y ACEPTADO: como mucho hasta el viernes de la semana siguiente.
    Si entra sábado o domingo, cuenta desde la semana que empieza. */
 var TIPO={GT:'GTIA',SG:'S/G',GTT:'GTIA TALLER',AC:'ACEPTADO'};
-var SOL={ok:'✔ Solucionado',volver:'🔁 Hay que volver',presu:'💲 Presupuestado',acepto:'👍 Aceptó presupuesto',repuesto:'🔩 Necesita repuesto',taller:'🔧 Se lleva al taller',ausente:'🚪 No estaba',retirado:'✔ Retiro realizado',entregado:'✔ Entrega realizada',externo:'🚚 Flete externo del cliente'};
-var SOL_VISITA=['ok','volver','presu','acepto','repuesto','taller','ausente'];
+var SOL={ok:'✔ Solucionado',volver:'🔁 Hay que volver',presu:'💲 Presupuestado',acepto:'👍 Aceptó presupuesto',repuesto:'🔩 Necesita repuesto',taller:'🔧 Se lleva al taller',ausente:'🚪 No estaba',nofue:'🚫 El técnico no fue',retirado:'✔ Retiro realizado',entregado:'✔ Entrega realizada',externo:'🚚 Flete externo del cliente'};
+var SOL_VISITA=['ok','volver','presu','acepto','repuesto','taller','ausente','nofue'];
 function base(t){return t.ingreso||t.alta||'';}
 // días hábiles (lunes a viernes)
 function habil(s){var w=dow(s);return w!==0&&w!==6;}
@@ -613,6 +617,14 @@ function horarioBox(h,av){return '<div class="hrbox"><div class="q">🕘 Horario
 function horarioLeer(root,t){var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;t.horario=ov(root,'horario');var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
 function horarioTxt(t){return (t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
 
+/* ---------- Carga del día ---------- */
+var CARGA_AMAR=5,CARGA_ROJO=7;
+function nDom(tec,d,excl){return dayItems(tec,d).filter(function(i){return i.kind==='turno'&&i.id!==excl;}).length;}
+function cargaCls(n){return n>=CARGA_ROJO?'c7':n>=CARGA_AMAR?'c5':'';}
+function cargaTag(n){var c=cargaCls(n);return c?'<span class="cg '+c+'">'+(c==='c7'?'⚠ '+n+' turnos · son muchos':n+' turnos · día completo')+'</span>':'';}
+function okCarga(tec,d,excl){var n=nDom(tec,d,excl)+1;if(n<CARGA_ROJO)return true;
+  return confirm(tec+' ya tiene '+(n-1)+' turnos a domicilio el '+fL(d)+'. Con este quedan '+n+', son muchos para un día.\n\n¿Asignarlo igual?');}
+
 /* ---------- Turnos de técnicos ---------- */
 function dayItems(tec,d){return DB.items.filter(function(t){return t.tecnico===tec&&t.fecha===d&&t.estado!=='cancelado'&&(t.kind==='turno'&&t.estado!=='repuesto'||t.kind==='taller');});}
 function dayNote(tec,d){var r=null;DB.items.some(function(t){if(t.kind==='dia'&&t.tecnico===tec&&t.fecha===d){r=t;return true;}return false;});return r;}
@@ -628,7 +640,9 @@ function picker(x){if(!x.sel._init){x.sel._init=1;if(!x.sel.tec&&x.pref&&x.ts.in
     (x.pref&&x.ts.indexOf(x.pref)>=0?(x.sel.otro?'<button type="button" class="btn btn-sm" data-potro="0">Volver a '+esc(x.pref)+'</button>':'<button type="button" class="btn btn-sm" data-potro="1">👤 Otro técnico (si '+esc(x.pref)+' no puede)</button>'):'')+'</div><p class="hint-un">Tocá de nuevo para desmarcar.</p></div>';
   h+='<div class="step"><div class="q">2. Día <small class="muted">(cuántos turnos tiene '+(T?esc(T):'el técnico')+' y por qué zonas anda · ⭐ misma zona)</small></div><div class="days-pick">'+ds.map(function(d){
       var its=T?dayItems(T,d).filter(function(i){return i.id!==x.excl;}):[],zs=T?zonasDia(T,d,x.excl):[],dn=T?dayNote(T,d):null,late=x.p&&d>x.p,misma=x.zona&&zs.indexOf(x.zona)>=0;
-      return '<button type="button" class="opt'+(late?' late':'')+(x.sel.dia===d?' on':'')+'" data-pdia="'+d+'"><span>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+(misma?' ⭐':'')+'</span><small>'+(T?(its.length?its.length+(its.length===1?' turno':' turnos'):'libre'):'elegí técnico')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+(late?' · después del plazo':'')+'</small></button>';}).join('')+'</div>';
+      var nd=T?its.filter(function(i){return i.kind==='turno';}).length:0,cc=cargaCls(nd+(x.sel.dia===d?0:0));
+      return '<button type="button" class="opt'+(late?' late':'')+(cc?' '+cc:'')+(x.sel.dia===d?' on':'')+'" data-pdia="'+d+'"><span>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+(misma?' ⭐':'')+'</span><small>'+(T?(its.length?its.length+(its.length===1?' turno':' turnos')+(cc==='c7'?' · ¡muchos!':cc==='c5'?' · completo':''):'libre'):'elegí técnico')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+(late?' · después del plazo':'')+'</small></button>';}).join('')+'</div>';
+  if(x.sel.dia&&T){var ns=nDom(T,x.sel.dia,x.excl)+1;if(ns>=CARGA_ROJO)h+='<div class="tip bad">⚠ Con este, '+esc(T)+' queda con <b>'+ns+' turnos</b> ese día. Son muchos para un día: se puede asignar igual, pero conviene repartir.</div>';else if(ns>=CARGA_AMAR)h+='<div class="tip warn">'+esc(T)+' queda con '+ns+' turnos ese día (día completo).</div>';}
   if(x.sel.dia&&x.p&&x.sel.dia>x.p)h+='<div class="tip warn">⚠ Ese día queda después del plazo ('+fD(x.p)+'). Es solo un aviso: podés darle el turno igual.</div>';
   h+='<label class="f" style="max-width:260px"><span>Otra fecha</span><input class="i" type="date" id="f-dia" value="'+esc(x.sel.dia||'')+'"></label></div>';
   return h;}
@@ -644,9 +658,9 @@ function vAgenda(){var days=[];for(var i=0;i<6;i++)days.push(addD(WK,i));var ts=
   ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=dayItems(tec,d).filter(function(t){return t.kind==='turno';}).length;});
     h+='<section class="ag-tec"><div class="ag-h"><h3>'+esc(tec)+' · '+tot+(tot===1?' turno':' turnos')+'</h3></div>';
     if(AGMODO==='semana'){h+='<div class="ag-days">'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
-        return '<div class="ag-day'+(d===today()?' today':'')+'"><div class="ag-dh"><b>'+fD(d)+(d===today()?' · HOY':'')+'</b><span class="cnt">'+(its.length?its.length+(its.length===1?' turno':' turnos'):'')+'</span><span><button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'" title="Nota del día">📝</button>'+(its.length?' <button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'" title="Imprimir el día">🖨 Imprimir el día</button> <button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'" title="Mandar la lista al técnico">📲 Enviar por WhatsApp</button>':'')+'</span></div><div class="ag-cell">'+(dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(mini).join('')+'</div></div>';}).join('')+'</div>';}
+        return '<div class="ag-day'+(d===today()?' today':'')+'"><div class="ag-dh"><b>'+fD(d)+(d===today()?' · HOY':'')+'</b><span class="cnt">'+(its.length?its.length+(its.length===1?' turno':' turnos'):'')+cargaTag(its.filter(function(i){return i.kind==='turno';}).length)+'</span><span><button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'" title="Nota del día">📝</button>'+(its.length?' <button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'" title="Imprimir el día">🖨 Imprimir el día</button> <button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'" title="Mandar la lista al técnico">📲 Enviar por WhatsApp</button>':'')+'</span></div><div class="ag-cell">'+(dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(mini).join('')+'</div></div>';}).join('')+'</div>';}
     else{h+='<div class="xl-wrap" style="border:0;border-radius:0;max-height:none"><table class="xl"><thead><tr><th>Estado</th>'+HEAD+'</tr></thead><tbody>'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
-        return '<tr class="day'+(d===today()?' today':'')+'"><td colspan="13">'+fL(d)+(d===today()?' · HOY':'')+(dn?'<span class="dnote">'+esc(dn.texto)+'</span>':'')+'<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota</button>'+(its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button><button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'">📲 Enviar por WhatsApp</button>':'')+'</td></tr>'+
+        return '<tr class="day'+(d===today()?' today':'')+'"><td colspan="13">'+fL(d)+(d===today()?' · HOY':'')+cargaTag(its.filter(function(i){return i.kind==='turno';}).length)+(dn?'<span class="dnote">'+esc(dn.texto)+'</span>':'')+'<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota</button>'+(its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button><button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'">📲 Enviar por WhatsApp</button>':'')+'</td></tr>'+
           (its.length?its.map(function(t){if(t.kind==='taller')return '<tr class="tal" data-ed="'+t.id+'"><td class="lead">🔧 TALLER</td><td class="nw">'+ddy(t.ingreso)+'</td><td><span class="pill p-tal">TALLER</span></td><td class="ord">'+esc(t.orden)+'</td><td class="nm">'+esc(t.cliente||'')+'</td><td></td><td colspan="2">'+esc(t.nota||'')+'</td><td>'+esc(t.equipo||'')+'</td><td class="fa">'+esc(t.falla||'')+'</td><td>'+esc(TST[t.estado]||'')+'</td><td></td><td></td></tr>';
             var ask=t.estado==='asignado'&&t.fecha<today();return '<tr class="'+(t.estado==='hecho'?'done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'"><td class="lead">'+(t.estado==='hecho'?'✔ HECHO':ask?'<span class="fi-tag">FALTA INFORME</span>':'TURNO')+'<div class="act">'+actCell(t)+'</div></td>'+cols(t)+'</tr>';}).join(''):'<tr class="empty-day"><td colspan="13">Sin turnos</td></tr>');}).join('')+'</tbody></table></div>';}
     h+='</section>';});
@@ -923,6 +937,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
       horario:t.horario||'',avisar:!!t.avisar,producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
       estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:''};
     if(t.tipo==='AC'&&cli)n.tecPref=tecPresu(cli.id);
+    if(W.agendar==='ahora'&&W.tec&&W.dia&&!okCarga(W.tec,W.dia))return;
     if(W.agendar==='ahora'&&W.tec&&W.dia){n.estado='asignado';n.tecnico=W.tec;n.fecha=W.dia;}else if(W.agendar==='ahora'&&W.tec){n.tecPref=W.tec;}
     touch(n);closeM();if(n.estado==='asignado')listo(n);else{go('inicio');toast('Guardado en pendientes: queda en “Esperan día” para darle fecha después.',4500);}}
   o2.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;
@@ -970,13 +985,13 @@ function tecPresu(cliId){var r='';turnos().filter(function(t){return t.clienteId
 /* ---------- Cerrar visita ---------- */
 function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega';
   var lst=fle?[[ent?'entregado':'retirado',SOL[ent?'entregado':'retirado']+'<small>'+(ent?'el equipo volvió al cliente':'el equipo entra al Taller')+'</small>'],['rep_nos','🔁 Se reprograma<small>por un problema nuestro</small>'],['rep_cli','🔁 Se reprograma<small>por un problema del cliente</small>'],['externo',SOL.externo+'<small>lo gestiona el cliente, no hacemos nada</small>']]:
-    SOL_VISITA.map(function(k){return [k,SOL[k]+'<small>'+{ok:'listo, no hay que volver',volver:'se crea otro turno',presu:'esperamos respuesta del cliente',acepto:'se crea turno ACEPTADO',repuesto:'va a “Esperan repuesto”',taller:'nueva orden TS, se repara en taller',ausente:'vuelve a “Esperan día”'}[k]+'</small>'];});
+    SOL_VISITA.map(function(k){return [k,SOL[k]+'<small>'+{ok:'listo, no hay que volver',volver:'se crea otro turno',presu:'esperamos respuesta del cliente',acepto:'se crea turno ACEPTADO',repuesto:'va a “Esperan repuesto”',taller:'nueva orden TS, se repara en taller',ausente:'vuelve a “Esperan día”',nofue:'vuelve a “Esperan día” con prioridad'}[k]+'</small>'];});
   var o=modal(fle?'¿Cómo terminó el flete?':'¿Cómo terminó la visita?','<div class="tip"><b>'+esc(t.nombre)+'</b> · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' '))+' · '+fL(t.fecha)+' con '+esc(t.tecnico)+'</div>'+
   opts('sol',lst,'','wide ')+'<label class="f"><span>'+(fle?'Nota (opcional)':'¿Qué se hizo / qué tiene el equipo?')+'</span><textarea class="i" id="s-res">'+esc(t.resultado||'')+'</textarea></label><div id="s-rep"></div>','<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
   bindOpts(o,function(n,v){if(n!=='sol')return;var bx=o.querySelector('#s-rep');bx.innerHTML=v==='repuesto'?repForm(t):'';bindOpts(bx);});
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();var s=ov(o,'sol'),res=o.querySelector('#s-res').value.trim();if(!s){toast('Elegí cómo terminó');return;}
     t.resultado=res;var copia=function(extra){var n=JSON.parse(JSON.stringify(t));Object.assign(n,{id:uid(),estado:'pendiente',tecnico:'',tecPref:t.tecnico||t.tecPref||'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',atendio:YO||t.atendio,flete:'',fleteMonto:0,rep:null},extra);delete n.v;delete n.mod;return n;};
-    if(s==='ausente'||s==='rep_nos'||s==='rep_cli'){var why=s==='ausente'?'No estaba el ':s==='rep_nos'?'Reprogramado (problema nuestro) el ':'Reprogramado (problema del cliente) el ';
+    if(s==='ausente'||s==='nofue'||s==='rep_nos'||s==='rep_cli'){var why=s==='nofue'?'⚠ NO FUE EL TÉCNICO el ':s==='ausente'?'No estaba el ':s==='rep_nos'?'Reprogramado (problema nuestro) el ':'Reprogramado (problema del cliente) el ';
       t.estado='pendiente';t.nota=((t.nota||'')+' · '+why+dd(t.fecha)+(res?': '+res:'')).replace(/^ · /,'');t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Vuelve a esperar día');return;}
     t.estado='hecho';t.sol=s;touch(t);
     if(s==='retirado'||s==='externo'){touch({id:uid(),kind:'taller',orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:t.nombre,clienteId:t.clienteId||'',telefono:t.telefono||'',falla:fallaTxt(t),tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:s==='retirado'?'Retirado por flete':'Lo trae un flete externo del cliente'});closeM();toast(s==='retirado'?'Retiro hecho. El equipo quedó en Taller.':'Anotado: flete externo. Queda en Taller esperando el equipo.');return;}
@@ -1003,6 +1018,7 @@ function asignar(t){if(!t)return;var tal=t.kind==='taller';var ts0=tecsPara(t,ta
     if(!tal)horarioLeer(o,t);
     if(!sel.tec){toast('Tocá el técnico');return;}if(!sel.dia){toast('Tocá un día');return;}
     if(fl&&fl.flag==='no'&&!confirm('Este cliente está marcado “NO ATENDER”. ¿Dar el día igual?'))return;
+    if(!tal&&(sel.tec!==t.tecnico||sel.dia!==t.fecha)&&!okCarga(sel.tec,sel.dia,t.id))return;
     var cambio=t.fecha!==sel.dia;t.tecnico=sel.tec;t.fecha=sel.dia;if(!tal){t.estado='asignado';if(cambio)t.conf='';}else if(t.estado==='esperando')t.estado='en_reparacion';touch(t);closeM();
     if(tal){toast('Orden '+(t.orden||'')+' asignada a '+t.tecnico+' para el '+fL(t.fecha));return;}if(t.flete){toast('Flete asignado a '+t.tecnico+' para el '+fL(t.fecha));listo(t);return;}listo(t);};}
 function telWA(s){var n=(String(s||'').match(/\d[\d\s-]{5,}\d/)||[''])[0].replace(/\D/g,'');if(n.indexOf('549')===0)return n;if(n.indexOf('54')===0)n=n.slice(2);n=n.replace(/^0/,'');
@@ -1038,26 +1054,46 @@ function editTaller(t,pre,cb,ordenReq){var nuevo=!t;t=t?JSON.parse(JSON.stringif
     if(!t.clienteId&&t.cliente){var cn={id:uid(),kind:'cliente',nombre:t.cliente,telefono:t.telefono||'',alta:today()};touch(cn);t.clienteId=cn.id;}
     var cur=byId[t.id];if(cur){Object.assign(cur,t);touch(cur);}else touch(t);closeM();toast('Guardado');if(cb)cb(t);};}
 
-/* ---------- Lista del día al técnico por WhatsApp ---------- */
-function listaTxt(tec,d){var its=dayItems(tec,d),dom=its.filter(function(t){return t.kind==='turno';}),tal=its.filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
-  var cuando=d===today()?'hoy':d===addD(today(),1)?'mañana':'el '+fL(d);
-  var m='Hola '+tec+', '+cuando+' tenés '+(dom.length?(dom.length===1?'este turno':'estos '+dom.length+' turnos')+' para realizar en domicilio:':'estos trabajos:')+'\n';
+/* ---------- Lista del día al técnico por WhatsApp ----------
+   Para que no sea un mensaje gigante: primero un resumen corto (un renglón por cliente)
+   y después un mensaje chico por cada turno, fácil de encontrar en el chat. */
+var NUM=['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+function nro(i){return NUM[i]||(i+1)+')';}
+function cuandoTxt(d){return d===today()?'hoy':d===addD(today(),1)?'mañana':'el '+fL(d);}
+function domDe(tec,d){return dayItems(tec,d).filter(function(t){return t.kind==='turno';});}
+function resumenTxt(tec,d){var dom=domDe(tec,d),tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
+  var m='Hola '+tec+' 👋 '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(dom.length===1?' turno':' turnos')+'* a domicilio:\n';
   if(dn)m+='📝 '+dn.texto+'\n';
-  dom.forEach(function(t,i){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' ');
-    m+='\n*'+(i+1)+') '+(t.nombre||'')+'*\n';
-    m+='📍 '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';
-    if(t.telefono)m+='📞 '+t.telefono+'\n';
-    m+='🔧 '+(eq||'Equipo')+' — '+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' · cobrar visita '+money(t.visita):'')+(t.flete?' · FLETE '+t.flete.toUpperCase():'')+'\n';
-    if(fallaTxt(t))m+='⚠ Falla: '+fallaTxt(t)+'\n';
-    m+='🕘 Horario: '+(t.horario?t.horario+' hs':'sin horario fijo (9 a 14 hs)')+(t.avisar?' · *avisarle 30 min antes*':'')+'\n';
-    var ords=[t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='🧾 Orden: '+ords+'\n';
-    if(t.nota)m+='📝 '+t.nota+'\n';
-    if(t.conf!=='confirmada')m+='❗ Todavía no confirmó el cliente\n';});
-  if(tal.length){m+='\n*En el taller:*\n';tal.forEach(function(t){m+='• Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'')+'\n';});}
-  m+='\nCualquier cosa avisanos. ¡Buen trabajo! 💪\nVILLGUZ Refrigeración';return m;}
+  dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+(t.horario?' · 🕘 '+t.horario:'');});
+  if(tal.length)m+='\n\n🔧 Taller: '+tal.length+(tal.length===1?' orden':' órdenes');
+  if(dom.length)m+='\n\nAhora te mando cada turno por separado con todos los datos 👇';
+  return m;}
+function turnoTxt(t,i,n){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' ');
+  var m=nro(i)+' *TURNO '+(i+1)+' de '+n+' · '+(t.nombre||'')+'*\n';
+  m+='📍 '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';
+  if(t.telefono)m+='📞 '+t.telefono+'\n';
+  m+='🔧 '+(eq||'Equipo')+' — '+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' · *cobrar visita '+money(t.visita)+'*':'')+(t.flete?' · FLETE '+t.flete.toUpperCase():'')+'\n';
+  if(fallaTxt(t))m+='⚠ '+fallaTxt(t)+'\n';
+  m+='🕘 '+(t.horario?t.horario+' hs':'Sin horario fijo')+(t.avisar?' · *avisale 30 min antes*':'')+'\n';
+  var ords=[t.ordenFab?'Fáb. '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='🧾 '+ords+'\n';
+  if(t.nota)m+='📝 '+t.nota+'\n';
+  if(t.conf!=='confirmada')m+='❗ Todavía no confirmó\n';
+  return m.replace(/\n$/,'');}
+function tallerTxt(tec,d){var tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';});if(!tal.length)return '';
+  return '🔧 *En el taller '+cuandoTxt(d)+':*\n'+tal.map(function(t){return '• Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'');}).join('\n');}
+var WASENT={};
 function listaWA(tec,d){var tel=(DB.cfg.tecTel||{})[tec]||'';
   if(!tel){toast('Falta el número de WhatsApp de '+tec+'. Cargalo en Ajustes → Técnicos.',5000);return;}
-  window.open('https://wa.me/'+telWA(tel)+'?text='+encodeURIComponent(listaTxt(tec,d)),'_blank','noopener');toast('Lista abierta en WhatsApp para '+tec+'. Solo tocá enviar.',4000);}
+  var dom=domDe(tec,d),key=tec+'|'+d,sent=WASENT[key]=WASENT[key]||{},msgs=[['res','📋 Resumen del día',resumenTxt(tec,d)]];
+  dom.forEach(function(t,i){msgs.push([t.id,nro(i)+' Turno '+(i+1)+' · '+esc(t.nombre||''),turnoTxt(t,i,dom.length)]);});
+  var tt=tallerTxt(tec,d);if(tt)msgs.push(['tal','🔧 Órdenes del taller',tt]);
+  function body(){return '<div class="tip">Mandale los mensajes <b>en orden</b>: primero el resumen y después cada turno. Cada botón abre WhatsApp con el mensaje listo; solo tocá enviar y volvé acá para el siguiente.</div><div class="walist">'+
+    msgs.map(function(m,i){return '<button class="btn '+(sent[m[0]]?'sent':'btn-wa')+'" data-wam="'+i+'">'+(sent[m[0]]?'✔ ':'')+m[1]+(sent[m[0]]?' <small>(enviado)</small>':'')+'</button>';}).join('')+'</div>'+
+    '<details style="margin-top:6px"><summary class="muted" style="cursor:pointer">Ver cómo le llega el resumen</summary><pre style="white-space:pre-wrap;font:inherit;font-size:.85rem;background:#F3F6FA;border-radius:10px;padding:10px;margin:8px 0 0">'+esc(msgs[0][2])+'</pre></details>';}
+  var o=modal('Enviar a '+esc(tec)+' · '+fL(d),body(),'<button class="btn btn-primary btn-big" data-a="x">Listo</button>');
+  o.querySelector('.md-b').onclick=function(e){var b=e.target.closest('[data-wam]');if(!b)return;var m=msgs[+b.dataset.wam];
+    window.open('https://wa.me/'+telWA(tel)+'?text='+encodeURIComponent(m[2]),'_blank','noopener');sent[m[0]]=1;o.querySelector('.md-b').innerHTML=body();};
+  o.querySelector('.md-f').onclick=function(e){if(e.target.closest('[data-a]'))closeM();};}
 
 /* ---------- Imprimir hoja del técnico ---------- */
 function imprimir(tec,days){var h='<div class="pr-h"><svg viewBox="0 0 682 212"><use href="#logo"/></svg><h1>Turnos · '+esc(tec)+'</h1><span>Impreso '+dd(today())+'</span></div>';
