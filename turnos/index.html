@@ -132,7 +132,7 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .xl tr.ok td.lead{border-left-color:var(--green);color:var(--green-ink)}
 .xl tr.done td{color:#6B7A8E}
 .xl tr.done td.lead{border-left-color:#9AA7B6}
-.xl tr.ask td.lead{border-left-color:#E0A100;background:var(--amber-bg)!important;color:var(--amber)}
+.xl tr.ask td.lead{border-left-color:var(--red);background:var(--red-bg)!important;color:var(--red)}
 .xl tr.no td{background:#FFF3F2!important}
 .xl tr.day td{background:#E3F3D0!important;font-weight:800;color:var(--navy);cursor:default;font-size:.88rem;text-transform:capitalize;border-bottom:1px solid #BFDDA0}
 .xl tr.day.today td{background:#C9E8A6!important}
@@ -181,7 +181,11 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .mini .sub{color:var(--muted);word-break:break-word}
 .mini.GT{border-left-color:var(--green)}.mini.GTT{border-left-color:var(--violet)}.mini.AC{border-left-color:var(--orange)}
 .mini.done{background:#F7F9FC;opacity:.75}
-.mini.ask{border-color:#EED79A;background:var(--amber-bg)}
+.mini.ask{border-color:#F2B8B8;background:var(--red-bg)}
+.fi-tag{display:inline-block;background:var(--red);color:#fff;font-size:.66rem;font-weight:800;padding:.15em .5em;border-radius:5px;letter-spacing:.04em}
+.hr-tag{display:inline-block;background:#E7F0FB;color:var(--navy);font-size:.74rem;font-weight:800;padding:.15em .5em;border-radius:5px;margin-top:3px}
+.hrbox{border:2px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
+.chk{display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px}
 .mini.tal{border-left-color:var(--violet);background:var(--violet-bg)}
 @media (max-width:1000px){.ag-days{grid-template-columns:1fr}.ag-day{border-right:0;border-bottom:1px solid var(--line)}.ag-cell{min-height:0}.ag-cell:empty::after{content:"Sin turnos";color:var(--muted);font-size:.85rem}}
 
@@ -319,6 +323,7 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
     <button class="tab" role="tab" data-v="fletes">Fletes <span class="n" id="n-fletes"></span></button>
     <button class="tab" role="tab" data-v="fuera">Fuera de zona <span class="n" id="n-fuera"></span></button>
     <button class="tab" role="tab" data-v="taller">Taller <span class="n" id="n-taller"></span></button>
+    <button class="tab" role="tab" data-v="informe">Falta informe <span class="n" id="n-informe"></span></button>
     <button class="tab" role="tab" data-v="clientes">Clientes</button>
     <button class="tab" role="tab" data-v="ajustes">Ajustes</button>
   </div></nav>
@@ -330,7 +335,7 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 'use strict';
 var CLOUD='https://script.google.com/macros/s/AKfycbwxcZ1uYbEzdZW_BlP0alWrk3eYNXqFeoERjm2Ew4Z5Rbf11xYvPV2rfitZXLqHsMK_uQ/exec';if(CLOUD.indexOf('{{')===0)CLOUD='';
 var KEY='villguz_turnos_v3',QK='villguz_turnos_q3';
-var DEF={tecnicos:['Marcelo','Gabi','Jorge'],inactivos:[],
+var DEF={tecnicos:['Marcelo','Gabi','Jorge'],inactivos:[],tecTel:{},
   esp:{Marcelo:'HEL, FREEZER',Gabi:'LAV, HEL, AIRE',Jorge:'LAV, LAVAVAJ, LAVASECA, SEC'},
   empleados:['Melina','Griselda','Inés','Juan'],
   zonas:['SMT Centro','SMT Norte','SMT Sur','SMT Este','SMT Oeste','Yerba Buena','Tafí Viejo','Las Talitas','Banda del Río Salí','Alderetes','El Manantial','San Pablo','Lules','Otra localidad'],
@@ -370,9 +375,17 @@ var TIPO={GT:'GTIA',SG:'S/G',GTT:'GTIA TALLER',AC:'ACEPTADO'};
 var SOL={ok:'✔ Solucionado',volver:'🔁 Hay que volver',presu:'💲 Presupuestado',acepto:'👍 Aceptó presupuesto',repuesto:'🔩 Necesita repuesto',taller:'🔧 Se lleva al taller',ausente:'🚪 No estaba',retirado:'✔ Retiro realizado',entregado:'✔ Entrega realizada',externo:'🚚 Flete externo del cliente'};
 var SOL_VISITA=['ok','volver','presu','acepto','repuesto','taller','ausente'];
 function base(t){return t.ingreso||t.alta||'';}
-function plazo(t){var b=base(t);if(!b)return '';var m=monday(b);if(dow(b)===6||dow(b)===0)m=addD(m,7);return addD(m,t.tipo==='SG'?4:11);}
-function sem(t){var p=plazo(t);if(!p)return 'sin';var d=diff(today(),p);return d<0?'venc':d<=1?'hoy':'ok';}
-function plazoCorto(t){var p=plazo(t);if(!p)return 'Sin fecha';var d=diff(today(),p);if(d<0)return 'VENCIDO '+(-d)+'d';if(d===0)return 'HOY';if(d===1)return 'Mañana';return 'hasta '+fD(p);}
+// días hábiles (lunes a viernes)
+function habil(s){var w=dow(s);return w!==0&&w!==6;}
+function addBD(s,n){var d=s;while(n>0){d=addD(d,1);if(habil(d))n--;}return d;}
+function bdiff(a,b){var n=0,d=a;while(d<b){d=addD(d,1);if(habil(d))n++;}return n;}
+var SG_AMAR=3,SG_ROJO=5; // S/G: a los 3 días hábiles amarillo, a los 5 rojo
+function plazo(t){var b=base(t);if(!b)return '';if(t.tipo==='SG')return addBD(b,SG_ROJO);var m=monday(b);if(dow(b)===6||dow(b)===0)m=addD(m,7);return addD(m,11);}
+function sem(t){var b=base(t);if(!b)return 'sin';if(t.tipo==='SG'){var n=bdiff(b,today());return n>=SG_ROJO?'venc':n>=SG_AMAR?'hoy':'ok';}
+  var p=plazo(t),d=diff(today(),p);return d<0?'venc':d<=1?'hoy':'ok';}
+function plazoCorto(t){var b=base(t);if(!b)return 'Sin fecha';
+  if(t.tipo==='SG'){var n=bdiff(b,today());return n>=SG_ROJO?'VENCIDO · '+n+' días háb.':n>=SG_AMAR?'⚠ '+n+' días háb.':(n===0?'Entró hoy':n+(n===1?' día háb.':' días háb.'))+' · rojo a los 5';}
+  var p=plazo(t),d=diff(today(),p);if(d<0)return 'VENCIDO '+(-d)+'d';if(d===0)return 'HOY';if(d===1)return 'Mañana';return 'hasta '+fD(p);}
 function esFuera(t){return DB.cfg.zonasFuera.indexOf(t.zona)>=0;}
 
 /* ---------- Datos ---------- */
@@ -447,7 +460,7 @@ async function login(p,silent){var err=$('loginErr');err.hidden=true;
   $('loginBtn').disabled=false;$('loginBtn').textContent=firstRun?'Crear y entrar':'Ingresar';}
 $('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('pw1').value);});
 $('logout').addEventListener('click',function(){if(!qEmpty()&&!confirm('Todavía se están guardando cambios. ¿Salir igual?'))return;try{sessionStorage.removeItem('vt_pw');}catch(e){}location.reload();});
-var VIEWS=['inicio','agenda','confirmar','repuesto','fletes','fuera','taller','clientes','ajustes'];
+var VIEWS=['inicio','agenda','confirmar','repuesto','fletes','fuera','taller','informe','clientes','ajustes'];
 function enter(){$('login').hidden=true;$('app').hidden=false;WK=monday(today());var h=(location.hash||'').slice(1);go(VIEWS.indexOf(h)>=0?h:'inicio');}
 
 /* ---------- Navegación ---------- */
@@ -460,17 +473,17 @@ function setN(id,n,hot){$(id).textContent=n?n:'';$(id).classList.toggle('hot',!!
 function counts(){var s=L_sin();setN('n-inicio',s.length,s.some(function(t){return sem(t)==='venc';}));
   var c=L_conf(),man=addD(today(),1);setN('n-confirmar',c.length,c.some(function(t){return t.fecha<=man;}));
   setN('n-repuesto',L_rep().length);setN('n-fletes',L_fle().filter(function(t){return t.estado==='pendiente';}).length);
-  var f=L_fue().filter(function(t){return t.estado==='pendiente';});setN('n-fuera',f.length,f.some(function(t){return sem(t)==='venc';}));setN('n-taller',L_tal().length);}
-function pasados(){var t0=today(),lim=addD(t0,-45);return turnos().filter(function(t){return t.estado==='asignado'&&t.fecha&&t.fecha<t0&&t.fecha>=lim;});}
+  var f=L_fue().filter(function(t){return t.estado==='pendiente';});setN('n-fuera',f.length,f.some(function(t){return sem(t)==='venc';}));setN('n-taller',L_tal().length);setN('n-informe',pasados().length,pasados().length>0);}
+function pasados(){var t0=today();return turnos().filter(function(t){return t.estado==='asignado'&&t.fecha&&t.fecha<t0;});}
 function alerts(){var h='';var v=L_sin().concat(L_fue()).filter(function(t){return t.estado==='pendiente'&&sem(t)==='venc';}).length;
   var man=addD(today(),1),c=L_conf().filter(function(t){return t.fecha<=man;}).length,a=pasados().length;
   if(v&&VIEW!=='inicio')h+='<button class="alert red" data-go="inicio"><b>'+v+'</b> '+(v===1?'cliente espera':'clientes esperan')+' día de turno y ya se pasó el plazo.</button>';
   if(c&&VIEW!=='confirmar')h+='<button class="alert amber" data-go="confirmar"><b>'+c+'</b> '+(c===1?'turno de hoy o mañana':'turnos de hoy o mañana')+' sin confirmar. Mandá el WhatsApp o llamalos.</button>';
   if(VIEW==='inicio'&&DB.items.length>12000&&pesoMB()>5)h+='<button class="alert amber" data-go="ajustes"><b>📦</b> La base está pesada ('+pesoMB().toFixed(1)+' MB). Archivá los turnos del año anterior en Ajustes → Archivo anual.</button>';
-  if(a)h+='<button class="alert amber" data-go="agenda" data-past="1"><b>'+a+'</b> '+(a===1?'turno de días anteriores':'turnos de días anteriores')+' sin cerrar. Anotá cómo terminó cada visita.</button>';return h;}
+  if(a&&VIEW!=='informe')h+='<button class="alert red" data-go="informe"><b>'+a+'</b> '+(a===1?'visita de días anteriores':'visitas de días anteriores')+' sin informe. Preguntale al técnico cómo terminó y cerralas.</button>';return h;}
 function render(){if($('app').hidden)return;counts();var m=$('main'),q=$('q').value.trim();
   if(q.length>=2){m.innerHTML=vBuscar(q);return;}
-  m.innerHTML=alerts()+({inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,clientes:vClientes,ajustes:vAjustes}[VIEW])();
+  m.innerHTML=alerts()+({inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,informe:vInforme,clientes:vClientes,ajustes:vAjustes}[VIEW])();
   if(VIEW==='inicio')bindInicio();if(VIEW==='ajustes')bindAjustes();if(VIEW==='agenda')bindAgenda();if(VIEW==='clientes')bindClientes();}
 
 /* ---------- Clientes ---------- */
@@ -533,13 +546,14 @@ function tipoCell(t){return (t.tipo?'<span class="pill p-'+t.tipo+'">'+TIPO[t.ti
   (t.flete?' <span class="pill p-fl">'+esc(t.flete.toUpperCase())+(t.fleteMonto?' '+money(t.fleteMonto):'')+'</span>':'')+(esFuera(t)?' <span class="pill p-fz">FUERA ZONA</span>':'');}
 function confCell(t){if(t.estado!=='asignado')return t.estado==='hecho'&&t.sol?'<b>'+SOL[t.sol]+'</b>':'';return t.conf==='confirmada'?'<span class="pill p-ok">✔ Confirmó</span>':t.conf==='enviada'?'<span class="pill p-warn">WhatsApp enviado</span>':'<span class="pill p-bad">Sin confirmar</span>';}
 var HEAD='<th>Ingresó</th><th>Tipo</th><th>Orden fábrica / TS</th><th>Cliente</th><th>Zona</th><th>Domicilio</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Confirmación / cierre</th><th>Resultado</th><th>Atendió</th>';
-function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><td>'+tipoCell(t)+'</td><td class="ord">'+esc(t.ordenFab||'')+(t.ordenFab&&t.ordenTS?'<br>':'')+(t.ordenTS?'<span class="muted">TS '+esc(t.ordenTS)+'</span>':'')+'</td><td class="nm">'+flagTag(fl)+(t.clienteId&&visitas90(byId[t.clienteId])>=3?'<span class="flag urg" title="3 o más visitas en 3 meses">🔥</span>':'')+esc(t.nombre||'')+'</td><td class="nw">'+esc(t.zona||'')+'</td><td class="dom">'+esc(t.domicilio||'')+(t.ref?'<div class="muted" style="font-size:.76rem">'+esc(t.ref)+'</div>':'')+(t.nota?'<div class="muted" style="font-size:.76rem">📝 '+esc(t.nota)+'</div>':'')+'</td><td>'+telLink(t)+'</td><td class="nw">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</td><td class="fa">'+esc(fallaTxt(t))+'</td><td>'+confCell(t)+'</td><td class="res">'+esc(t.resultado||'')+'</td><td class="nw muted">'+esc(t.atendio||'')+(t.canal?'<br>'+esc(t.canal):'')+'</td>';}
+function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><td>'+tipoCell(t)+'</td><td class="ord">'+esc(t.ordenFab||'')+(t.ordenFab&&t.ordenTS?'<br>':'')+(t.ordenTS?'<span class="muted">TS '+esc(t.ordenTS)+'</span>':'')+'</td><td class="nm">'+flagTag(fl)+(t.clienteId&&visitas90(byId[t.clienteId])>=3?'<span class="flag urg" title="3 o más visitas en 3 meses">🔥</span>':'')+esc(t.nombre||'')+'</td><td class="nw">'+esc(t.zona||'')+'</td><td class="dom">'+esc(t.domicilio||'')+(t.ref?'<div class="muted" style="font-size:.76rem">'+esc(t.ref)+'</div>':'')+(t.nota?'<div class="muted" style="font-size:.76rem">📝 '+esc(t.nota)+'</div>':'')+(t.horario||t.avisar?'<div class="hr-tag">🕘 '+esc(horarioTxt(t))+'</div>':'')+'</td><td>'+telLink(t)+'</td><td class="nw">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</td><td class="fa">'+esc(fallaTxt(t))+'</td><td>'+confCell(t)+'</td><td class="res">'+esc(t.resultado||'')+'</td><td class="nw muted">'+esc(t.atendio||'')+(t.canal?'<br>'+esc(t.canal):'')+'</td>';}
 function fallaTxt(t){return [(t.fallas||[]).join(', '),t.falla].filter(Boolean).join(' — ');}
-function rowCls(t,lead){var fl=flagOf(t);return (lead==='plazo'?(t.estado==='pendiente'?sem(t):''):'')+(t.estado==='hecho'?' done':'')+(fl&&fl.flag==='no'?' no':'');}
+function rowCls(t,lead){var fl=flagOf(t);return (t.estado==='asignado'&&t.fecha&&t.fecha<today()?' ask':'')+(lead==='plazo'?(t.estado==='pendiente'?sem(t):''):'')+(t.estado==='hecho'?' done':'')+(fl&&fl.flag==='no'?' no':'');}
 function leadCell(t,lead){var x='';
   if(lead==='plazo')x=plazoCorto(t);
   else if(lead==='dia')x=t.estado==='pendiente'?'SIN DÍA':(t.estado==='hecho'?'✔ ':'')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):'');
   else if(lead==='estado')x=t.estado==='pendiente'?'SIN DÍA':t.estado==='repuesto'?'ESPERA REPUESTO':(t.estado==='hecho'?'✔ HECHO ':'TURNO ')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):'');
+  else if(lead==='informe')x='<span class="fi-tag">FALTA INFORME</span><br>'+fD(t.fecha)+' · hace '+diff(t.fecha,today())+(diff(t.fecha,today())===1?' día':' días');
   else if(lead==='rep')x='desde '+ddy(t.alta)+(t.tecPref?'<br><span class="muted">vio: '+esc(t.tecPref)+'</span>':'')+'<div style="margin-top:6px;text-align:left">'+repResumen(t)+'</div>';
   return '<td class="lead">'+x+'<div class="act">'+actCell(t)+'</div></td>';}
 function actCell(t){if(t.estado==='pendiente')return '<button class="btn btn-sm btn-green" data-asg="'+t.id+'">Dar día</button>';
@@ -563,6 +577,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-llego]'))){var r=byId[b.dataset.llego];r.rep=Object.assign(repDe(r),{pedido:'llego'});r.estado='pendiente';r.ingreso=today();r.nota=((r.nota||'')+' · Llegó repuesto '+dd(today())).replace(/^ · /,'');touch(r);render();asignar(r);return;}
   if((b=e.target.closest('[data-st]'))){var x=byId[b.dataset.id];x.estado=b.dataset.st;touch(x);render();toast('Orden '+(x.orden||'')+': '+TST[x.estado]);return;}
   if((b=e.target.closest('[data-dn]'))){var y=b.dataset.dn.split('|');notaDia(y[0],y[1]);return;}
+  if((b=e.target.closest('[data-watec]'))){var w=b.dataset.watec.split('|');listaWA(w[0],w[1]);return;}
   if((b=e.target.closest('[data-pr]'))){var x2=b.dataset.pr.split('|');imprimir(x2[0],x2[1].split(','));return;}
   if((b=e.target.closest('[data-canal]'))){proceso({canal:b.dataset.canal});return;}
   if((b=e.target.closest('[data-ed]'))){openItem(b.dataset.ed);return;}
@@ -579,7 +594,7 @@ function vInicio(){var all=L_sin(),l=all;if(FILT.tipo!=='todos')l=l.filter(funct
   var h='<section class="hero"><div><h2>¿Llama o escribe un cliente?</h2><p>Tocá por dónde llegó y seguí los pasos. El sistema te va diciendo qué preguntar.</p></div><div class="canales">'+
     '<button class="canal" data-canal="Teléfono"><span>📞</span>Teléfono<small>llamada</small></button><button class="canal" data-canal="WhatsApp"><span>💬</span>WhatsApp<small>mensaje</small></button><button class="canal" data-canal="Presencial"><span>🏪</span>En el local<small>vino al taller</small></button><button class="canal" data-canal="Fábrica"><span>🏭</span>Caso de fábrica<small>Samsung, LG, Whirlpool…</small></button></div>'+
     '<label class="f hq"><span>🔎 Buscar cliente en la base (nombre, apellido, dirección o teléfono)</span><input class="i" id="hq" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234"></label><div id="hres" class="hres"></div></section>';
-  h+='<div class="vh"><div><h2>Esperan día de turno</h2><p>Primero los más urgentes. <b>S/G:</b> en la misma semana · <b>GTIA y ACEPTADO:</b> como mucho la semana siguiente. Filtrá por zona para armar el recorrido.</p></div></div>';
+  h+='<div class="vh"><div><h2>Esperan día de turno</h2><p>Primero los más urgentes. <b>S/G:</b> amarillo a los 3 días hábiles y rojo a los 5 · <b>GTIA y ACEPTADO:</b> como mucho la semana siguiente. Filtrá por zona para armar el recorrido.</p></div></div>';
   h+=chipsF('tipo',[['todos','Todos ('+all.length+')'],['venc','⚠ Vencidos ('+all.filter(function(t){return sem(t)==='venc';}).length+')'],['GT','GTIA ('+cnt('GT')+')'],['SG','S/G ('+cnt('SG')+')'],['AC','ACEPTADO ('+cnt('AC')+')'],['GTT','GTIA TALLER ('+cnt('GTT')+')']]);
   if(Object.keys(zs).length>1)h+=chipsF('zona',[['todas','Todas las zonas']].concat(Object.keys(zs).sort().map(function(z){return [z,(z||'Sin zona')+' ('+zs[z]+')'];})));
   if(!l.length)return h+'<div class="empty">'+(all.length?'No hay clientes con este filtro.':'No hay clientes esperando día. 🎉')+'</div>';
@@ -589,6 +604,14 @@ function bindInicio(){var i=$('hq'),r=$('hres'),t;if(!i)return;
   i.oninput=function(){clearTimeout(t);t=setTimeout(function(){var v=i.value.trim(),dig=v.replace(/[\s-]/g,''),q=/^\d+$/.test(dig)?{telefono:dig,orden:dig}:{txt:v},f=buscarCli(q);
     r.innerHTML=(dig.length>=6||v.length>=3)?(f.length?f.map(function(c){return cliCard(c,'<span class="tecrow"><button type="button" class="btn btn-sm" data-hver="'+c.id+'">Ver ficha</button><button type="button" class="btn btn-sm btn-green" data-hat="'+c.id+'">📞 Atender a este cliente</button></span>');}).join(''):'<div class="tip">No está en la base. Tocá por dónde llegó para cargarlo como nuevo.</div>'):'';},250);};
   r.onclick=function(e){var b=e.target.closest('[data-hver]');if(b){verCliente(byId[b.dataset.hver]);return;}b=e.target.closest('[data-hat]');if(b)proceso({cli:byId[b.dataset.hat]});};}
+
+/* ---------- Horario que pide el cliente ---------- */
+var HORARIOS=['8 a 11','9 a 12','10 a 13','11 a 14','12 a 15','13 a 16','14 a 17'];
+function horarioBox(h,av){return '<div class="hrbox"><div class="q">🕘 Horario que pide el cliente <small class="muted">(opcional · rango de 3 horas · tocá de nuevo para sacarlo)</small></div>'+
+  opts('horario',HORARIOS.map(function(x){return [x,x+' hs'];}),h||'','')+
+  '<label class="chk"><input type="checkbox" id="h-avisar"'+(av?' checked':'')+'> 📲 Avisarle al cliente media hora antes de llegar</label></div>';}
+function horarioLeer(root,t){var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;t.horario=ov(root,'horario');var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
+function horarioTxt(t){return (t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
 
 /* ---------- Turnos de técnicos ---------- */
 function dayItems(tec,d){return DB.items.filter(function(t){return t.tecnico===tec&&t.fecha===d&&t.estado!=='cancelado'&&(t.kind==='turno'&&t.estado!=='repuesto'||t.kind==='taller');});}
@@ -621,18 +644,18 @@ function vAgenda(){var days=[];for(var i=0;i<6;i++)days.push(addD(WK,i));var ts=
   ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=dayItems(tec,d).filter(function(t){return t.kind==='turno';}).length;});
     h+='<section class="ag-tec"><div class="ag-h"><h3>'+esc(tec)+' · '+tot+(tot===1?' turno':' turnos')+'</h3></div>';
     if(AGMODO==='semana'){h+='<div class="ag-days">'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
-        return '<div class="ag-day'+(d===today()?' today':'')+'"><div class="ag-dh"><b>'+fD(d)+(d===today()?' · HOY':'')+'</b><span class="cnt">'+(its.length?its.length+(its.length===1?' turno':' turnos'):'')+'</span><span><button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'" title="Nota del día">📝</button>'+(its.length?' <button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'" title="Imprimir el día">🖨 Imprimir el día</button>':'')+'</span></div><div class="ag-cell">'+(dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(mini).join('')+'</div></div>';}).join('')+'</div>';}
+        return '<div class="ag-day'+(d===today()?' today':'')+'"><div class="ag-dh"><b>'+fD(d)+(d===today()?' · HOY':'')+'</b><span class="cnt">'+(its.length?its.length+(its.length===1?' turno':' turnos'):'')+'</span><span><button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'" title="Nota del día">📝</button>'+(its.length?' <button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'" title="Imprimir el día">🖨 Imprimir el día</button> <button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'" title="Mandar la lista al técnico">📲 Enviar por WhatsApp</button>':'')+'</span></div><div class="ag-cell">'+(dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(mini).join('')+'</div></div>';}).join('')+'</div>';}
     else{h+='<div class="xl-wrap" style="border:0;border-radius:0;max-height:none"><table class="xl"><thead><tr><th>Estado</th>'+HEAD+'</tr></thead><tbody>'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
-        return '<tr class="day'+(d===today()?' today':'')+'"><td colspan="13">'+fL(d)+(d===today()?' · HOY':'')+(dn?'<span class="dnote">'+esc(dn.texto)+'</span>':'')+'<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota</button>'+(its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button>':'')+'</td></tr>'+
+        return '<tr class="day'+(d===today()?' today':'')+'"><td colspan="13">'+fL(d)+(d===today()?' · HOY':'')+(dn?'<span class="dnote">'+esc(dn.texto)+'</span>':'')+'<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota</button>'+(its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button><button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'">📲 Enviar por WhatsApp</button>':'')+'</td></tr>'+
           (its.length?its.map(function(t){if(t.kind==='taller')return '<tr class="tal" data-ed="'+t.id+'"><td class="lead">🔧 TALLER</td><td class="nw">'+ddy(t.ingreso)+'</td><td><span class="pill p-tal">TALLER</span></td><td class="ord">'+esc(t.orden)+'</td><td class="nm">'+esc(t.cliente||'')+'</td><td></td><td colspan="2">'+esc(t.nota||'')+'</td><td>'+esc(t.equipo||'')+'</td><td class="fa">'+esc(t.falla||'')+'</td><td>'+esc(TST[t.estado]||'')+'</td><td></td><td></td></tr>';
-            var ask=t.estado==='asignado'&&t.fecha<today();return '<tr class="'+(t.estado==='hecho'?'done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'"><td class="lead">'+(t.estado==='hecho'?'✔ HECHO':ask?'¿CÓMO TERMINÓ?':'TURNO')+'<div class="act">'+actCell(t)+'</div></td>'+cols(t)+'</tr>';}).join(''):'<tr class="empty-day"><td colspan="13">Sin turnos</td></tr>');}).join('')+'</tbody></table></div>';}
+            var ask=t.estado==='asignado'&&t.fecha<today();return '<tr class="'+(t.estado==='hecho'?'done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'"><td class="lead">'+(t.estado==='hecho'?'✔ HECHO':ask?'<span class="fi-tag">FALTA INFORME</span>':'TURNO')+'<div class="act">'+actCell(t)+'</div></td>'+cols(t)+'</tr>';}).join(''):'<tr class="empty-day"><td colspan="13">Sin turnos</td></tr>');}).join('')+'</tbody></table></div>';}
     h+='</section>';});
   return h;}
 function bindAgenda(){$('wkP').onclick=function(){WK=addD(WK,-7);render();};$('wkN').onclick=function(){WK=addD(WK,7);render();};$('wkH').onclick=function(){WK=monday(today());render();};
   document.querySelectorAll('[data-modo]').forEach(function(b){b.onclick=function(){AGMODO=b.dataset.modo;try{localStorage.setItem('vt_agmodo',AGMODO);}catch(e){}render();};});}
 function mini(t){if(t.kind==='taller')return '<button class="mini tal" data-ed="'+t.id+'"><b>🔧 Taller · '+esc(t.orden||'')+'</b><span class="sub">'+esc([t.equipo,t.cliente].filter(Boolean).join(' · '))+' — '+esc(TST[t.estado]||'')+'</span></button>';
   var ask=t.estado==='asignado'&&t.fecha<today();
-  return '<div class="mini '+(t.tipo||'')+(t.estado==='hecho'?' done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'" role="button" tabindex="0"><b>'+(t.estado==='hecho'?'✔ ':'')+flagTag(flagOf(t))+esc(t.nombre||'')+'</b><span class="sub">'+(t.tipo?TIPO[t.tipo]:'')+(t.zona?' · '+esc(t.zona):'')+'</span><span class="sub">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</span>'+(t.estado==='asignado'?'<span class="sub">'+confCell(t)+'</span>':'')+'</div>';}
+  return '<div class="mini '+(t.tipo||'')+(t.estado==='hecho'?' done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'" role="button" tabindex="0"><b>'+(t.estado==='hecho'?'✔ ':'')+flagTag(flagOf(t))+esc(t.nombre||'')+'</b><span class="sub">'+(t.tipo?TIPO[t.tipo]:'')+(t.zona?' · '+esc(t.zona):'')+'</span><span class="sub">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</span>'+(t.horario||t.avisar?'<span class="sub">🕘 '+esc(horarioTxt(t))+'</span>':'')+(ask?'<span class="fi-tag">FALTA INFORME</span>':'')+(t.estado==='asignado'?'<span class="sub">'+confCell(t)+'</span>':'')+'</div>';}
 function notaDia(tec,d){var dn=dayNote(tec,d);var pre=['QUEDA EN TALLER','FERIADO','NO VINO','CURSO','CERRADO'];
   var o=modal('Nota del día · '+esc(tec),'<div class="tip"><b>'+fL(d)+'</b> — '+esc(tec)+'</div><div class="opts" id="dnOpts">'+pre.map(function(p){return '<button type="button" class="opt wide'+(dn&&dn.texto===p?' on':'')+'" data-p="'+p+'">'+p+'</button>';}).join('')+'</div><label class="f">Otra nota<input class="i" id="dnT" value="'+esc(dn&&pre.indexOf(dn.texto)<0?dn.texto:'')+'"></label>',
     (dn?'<span class="left"><button class="btn btn-danger" data-a="del">Quitar nota</button></span>':'')+'<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
@@ -680,6 +703,13 @@ function hechosDe(f){return turnos().filter(function(t){return t.estado==='hecho
 function vFletes(){return vLista('Fletes','Equipos que retiramos o entregamos. Se cargan desde “Atender cliente” eligiendo “Lo retiramos (flete)”.',L_fle(),hechosDe(function(t){return t.flete;}));}
 function vFuera(){return vLista('Fuera de zona','Clientes de zonas marcadas como “fuera de zona” en Ajustes.',L_fue(),hechosDe(function(t){return esFuera(t)&&!t.flete;}));}
 
+/* ---------- Falta informe ---------- */
+function vInforme(){var l=pasados().sort(function(a,b){return a.fecha<b.fecha?-1:a.fecha>b.fecha?1:0;});
+  var h='<div class="vh"><div><h2>Falta informe</h2><p>Visitas de días anteriores que todavía no tienen informe. Preguntale al técnico cómo le fue y tocá <b>¿Cómo terminó?</b>: según lo que elijas pasa sola a su sección (solucionado, volver, presupuesto, repuesto, taller o esperan día).</p></div></div>';
+  if(!l.length)return h+'<div class="empty">No falta ningún informe. 🎉</div>';
+  var g={};l.forEach(function(t){var k=t.tecnico||'Sin técnico';(g[k]=g[k]||[]).push(t);});
+  Object.keys(g).sort().forEach(function(k){h+='<div class="sect">'+esc(k)+' ('+g[k].length+')</div>'+tabla(g[k],'informe','Visita');});return h;}
+
 /* ---------- Taller ---------- */
 var TST={esperando:'Esperando',en_reparacion:'En reparación',repuesto:'Esperando repuesto',listo:'Listo',entregado:'Entregado'};
 function vTaller(){var all=DB.items.filter(function(t){return t.kind==='taller';}),f=FILT.tal;
@@ -706,15 +736,15 @@ document.addEventListener('click',function(e){if(e.target.closest('#qClose')){$(
 
 /* ---------- Ajustes ---------- */
 function vAjustes(){var c=DB.cfg;var h='<div class="vh"><div><h2>Ajustes</h2></div></div>';
-  h+='<div class="card"><h3>Técnicos y especialidad</h3><p class="muted" style="margin:0">La especialidad (productos separados por coma) sirve para recomendar el técnico al dar el día.</p>';
-  c.tecnicos.forEach(function(n,i){var off=c.inactivos.indexOf(n)>=0;h+='<div class="tecrow"><input class="i" data-tn="'+i+'" value="'+esc(n)+'" style="max-width:220px"><input class="i" data-te="'+esc(n)+'" value="'+esc(c.esp[n]||'')+'" placeholder="HEL, LAV, AIRE…"><button class="btn" data-toff="'+i+'">'+(off?'Activar':'Desactivar')+'</button>'+(off?'<span class="pill p-x">Inactivo</span>':'')+'</div>';});
+  h+='<div class="card"><h3>Técnicos y especialidad</h3><p class="muted" style="margin:0">La especialidad (productos separados por coma) sirve para recomendar el técnico al dar el día. El WhatsApp sirve para mandarle la lista de turnos del día.</p>';
+  c.tecnicos.forEach(function(n,i){var off=c.inactivos.indexOf(n)>=0;h+='<div class="tecrow"><input class="i" data-tn="'+i+'" value="'+esc(n)+'" style="max-width:220px"><input class="i" data-te="'+esc(n)+'" value="'+esc(c.esp[n]||'')+'" placeholder="HEL, LAV, AIRE…"><input class="i" data-tt="'+esc(n)+'" inputmode="tel" value="'+esc((c.tecTel||{})[n]||'')+'" placeholder="📲 WhatsApp (381…)" style="max-width:200px"><button class="btn" data-toff="'+i+'">'+(off?'Activar':'Desactivar')+'</button>'+(off?'<span class="pill p-x">Inactivo</span>':'')+'</div>';});
   h+='<div class="tecrow"><input class="i" id="newTec" placeholder="Nombre del técnico nuevo"><button class="btn btn-primary" id="addTec">Agregar</button></div></div>';
   h+='<div class="card"><h3>Quiénes atienden</h3><div class="tecrow"><input class="i" id="cfgEmp" value="'+esc(c.empleados.join(', '))+'"><button class="btn btn-primary" id="saveEmp">Guardar</button></div></div>';
   h+='<div class="card"><h3>Zonas</h3><p class="muted" style="margin:0">Separadas por coma. Marcá cuáles son “fuera de zona” (van a su propia lista).</p><textarea class="i" id="cfgZon">'+esc(c.zonas.join(', '))+'</textarea><div class="chips">'+c.zonas.map(function(z){return '<button class="chip sm'+(c.zonasFuera.indexOf(z)>=0?' on':'')+'" data-zf="'+esc(z)+'">'+esc(z)+(c.zonasFuera.indexOf(z)>=0?' · fuera':'')+'</button>';}).join('')+'</div><div><button class="btn btn-primary" id="saveZon">Guardar zonas</button></div></div>';
   h+='<div class="card"><h3>Costos</h3><div class="tecrow"><label class="f"><span>Visita a domicilio S/G (separados por coma)</span><input class="i" id="cfgCos" value="'+esc(c.costos.join(', '))+'" style="max-width:320px"></label><label class="f"><span>Revisión en el local</span><input class="i" id="cfgRev" value="'+esc(c.revisionLocal)+'" style="max-width:200px"></label><button class="btn btn-primary" id="saveCos">Guardar</button></div></div>';
   h+='<div class="card"><h3>Fleteros</h3><p class="muted" style="margin:0">Quienes hacen retiros y entregas (no son técnicos). Separados por coma.</p><div class="tecrow"><input class="i" id="cfgFle" value="'+esc((c.fleteros||[]).join(', '))+'"><button class="btn btn-primary" id="saveFle">Guardar</button></div></div>';
   h+='<div class="card"><h3>Mensajes de confirmación por WhatsApp</h3><p class="muted" style="margin:0">{DIA} se reemplaza por el día del turno, {COSTO} por el costo de la visita y {SALUDO} por “Buenos días” o “Buenas tardes” según la hora.</p><label class="f">Sin garantía<textarea class="i" id="cfgMsgSG" style="min-height:220px">'+esc(c.msgSG)+'</textarea></label><label class="f">Garantía<textarea class="i" id="cfgMsgGT" style="min-height:220px">'+esc(c.msgGT)+'</textarea></label><div><button class="btn btn-primary" id="saveMsg">Guardar mensajes</button></div></div>';
-  h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0"><b>S/G:</b> en la misma semana que entró el pedido (hasta el viernes).<br><b>GTIA, GTIA TALLER y ACEPTADO:</b> como mucho hasta el viernes de la semana siguiente.</p></div>';
+  h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0"><b>S/G:</b> se cuentan días hábiles (lunes a viernes) desde que entró el pedido: a los <b>3</b> se pone en amarillo y a los <b>5</b> en rojo.<br><b>GTIA, GTIA TALLER y ACEPTADO:</b> como mucho hasta el viernes de la semana siguiente.</p></div>';
   h+='<div class="card"><h3>Contraseña de turnos</h3><div class="g3"><label class="f">Actual<input class="i" type="password" id="pwO"></label><label class="f">Nueva<input class="i" type="password" id="pwN"></label><label class="f">Repetir nueva<input class="i" type="password" id="pwN2"></label></div><p class="err" id="pwE" hidden></p><div><button class="btn btn-primary" id="pwS">Cambiar contraseña</button></div></div>';
   h+=archivoCard();
   h+='<div class="card"><h3>Copia de seguridad</h3><p class="muted" style="margin:0">Todo se guarda solo en Google Drive (planilla “Turnos VILLGUZ”).</p><div class="tecrow"><button class="btn" id="bk">Descargar copia</button><label class="btn">Cargar una copia<input type="file" id="rs" accept=".json,application/json" hidden></label></div><p class="muted" style="margin:0;font-size:.85rem">“Cargar una copia” <b>borra todo</b> lo que hay y lo reemplaza por el archivo.</p></div>';return h;}
@@ -739,8 +769,9 @@ function lista(s){return String(s||'').split(',').map(function(x){return x.trim(
 function bindAjustes(){var c=DB.cfg;
   document.querySelectorAll('[data-tn]').forEach(function(inp){inp.onchange=function(){var i=+inp.dataset.tn,old=c.tecnicos[i],nu=inp.value.trim();if(!nu||nu===old){inp.value=old;return;}
     if(c.tecnicos.some(function(x){return nk(x)===nk(nu);})){toast('Ya existe ese nombre');inp.value=old;return;}
-    c.tecnicos[i]=nu;c.esp[nu]=c.esp[old];delete c.esp[old];var j=c.inactivos.indexOf(old);if(j>=0)c.inactivos[j]=nu;DB.items.forEach(function(t){if(t.tecnico===old){t.tecnico=nu;touch(t);}});saveCfg();render();toast('Nombre cambiado');};});
+    c.tecnicos[i]=nu;c.esp[nu]=c.esp[old];delete c.esp[old];c.tecTel=c.tecTel||{};c.tecTel[nu]=c.tecTel[old]||'';delete c.tecTel[old];var j=c.inactivos.indexOf(old);if(j>=0)c.inactivos[j]=nu;DB.items.forEach(function(t){if(t.tecnico===old){t.tecnico=nu;touch(t);}});saveCfg();render();toast('Nombre cambiado');};});
   document.querySelectorAll('[data-te]').forEach(function(inp){inp.onchange=function(){c.esp[inp.dataset.te]=inp.value.toUpperCase();saveCfg();toast('Especialidad guardada');};});
+  document.querySelectorAll('[data-tt]').forEach(function(inp){inp.onchange=function(){c.tecTel=c.tecTel||{};c.tecTel[inp.dataset.tt]=inp.value.trim();saveCfg();toast('WhatsApp de '+inp.dataset.tt+' guardado');};});
   document.querySelectorAll('[data-toff]').forEach(function(b){b.onclick=function(){var n=c.tecnicos[+b.dataset.toff],j=c.inactivos.indexOf(n);if(j>=0)c.inactivos.splice(j,1);else c.inactivos.push(n);saveCfg();render();};});
   document.querySelectorAll('[data-zf]').forEach(function(b){b.onclick=function(){var z=b.dataset.zf,j=c.zonasFuera.indexOf(z);if(j>=0)c.zonasFuera.splice(j,1);else c.zonasFuera.push(z);saveCfg();render();};});
   $('addTec').onclick=function(){var n=$('newTec').value.trim();if(!n)return;if(c.tecnicos.some(function(x){return nk(x)===nk(n);})){toast('Ese técnico ya está');return;}c.tecnicos.push(n);saveCfg();render();toast('Técnico agregado');};
@@ -822,7 +853,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
         '<div class="g2"><div class="step"><div class="q">¿Desde cuándo?</div>'+opts('desde',DESDE.map(function(x){return [x,x];}),W.t.desde,'')+'</div><div class="step"><div class="q">¿Dónde está instalado?</div>'+opts('donde',DONDE.map(function(x){return [x,x];}),W.t.donde,'')+'</div></div>'+
         '<div class="g2"><label class="f"><span>¿Muestra código de error o luz?</span><input class="i" id="t-error" value="'+esc(W.t.error||'')+'"></label><div class="step"><div class="q">¿Lo vio otro técnico?</div>'+opts('otroTec',[['No','No'],['Sí','Sí']],W.t.otroTec,'wide ')+'</div></div>';}
     else if(W.paso===5){h=(W.cli?urgTip(W.cli):'')+resumenHTML()+(W.t.modo==='taller'?'<div class="tip good">El cliente trae el equipo al local (revisión '+money(DB.cfg.revisionLocal)+'). Se guarda en <b>Taller</b> como “Esperando”.</div>':W.t.modo==='piensa'?'<div class="tip">El cliente lo va a pensar. Se guardan sus datos en Clientes, sin turno.</div>':
-        '<div class="tip">Si tocás <b>✔ Guardar</b> sin elegir día, queda en <b>Pendientes · Esperan día</b> y se lo das después.</div><div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
+        horarioBox(W.t.horario,W.t.avisar)+'<div class="tip">Si tocás <b>✔ Guardar</b> sin elegir día, queda en <b>Pendientes · Esperan día</b> y se lo das después.</div><div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
     pz.innerHTML=h;bindOpts(pz,onOpt);after();}
   function after(){if(W.paso===1){var bq=pz.querySelector('#b-q')||{value:''},tm;function look(){var v=bq.value.trim(),dig=v.replace(/[\s-]/g,''),q={};if(/^\d+$/.test(dig)){q.telefono=dig;q.orden=dig;}else q.txt=v;W.found=buscarCli(q);
         var r=pz.querySelector('#bRes');var any=dig.length>=6||v.length>=3||W.prev==='no';
@@ -862,7 +893,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
       if(t.tipo==='SG'){t.modo=ov(pz,'modo')||t.modo;var v=ov(pz,'visita');if(v==='otro')t.visita=+String(g('t-visOtro')).replace(/\D/g,'')||0;else if(v)t.visita=+v;}else t.modo='visita';}
     if(W.paso===4){var t2=W.t;t2.producto=ov(pz,'producto');t2.marca=g('t-marcaOtra')?g('t-marcaOtra').toUpperCase():ov(pz,'marca');['modelo','nfab','falla','error'].forEach(function(k){var v=g('t-'+k);if(v!=null)t2[k]=v;});
       t2.fallas=ov(pz,'fallas')||[];t2.desde=ov(pz,'desde');t2.donde=ov(pz,'donde');t2.otroTec=ov(pz,'otroTec');}
-    if(W.paso===5&&W.agendar==='ahora'){var f=pz.querySelector('#f-dia');if(f&&f.value)W.dia=f.value;}}
+    if(W.paso===5){horarioLeer(pz,W.t);if(W.agendar==='ahora'){var f=pz.querySelector('#f-dia');if(f&&f.value)W.dia=f.value;}}}
   function bad(id,msg){var e=pz.querySelector('#'+id);if(e){e.classList.add('bad');e.focus();}toast(msg);return false;}
   function valid(){var c=W.c,t=W.t;
     if(W.paso===2){if(!c.nombre)return bad('c-nombre','Falta el nombre');if(!c.telefono)return bad('c-telefono','Falta el teléfono');if(!c.domicilio)return bad('c-domicilio','Falta el domicilio');if(!c.zona){toast('Elegí la zona');return false;}
@@ -878,7 +909,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
   function agBox(){var b=pz.querySelector('#agBox');if(!b)return;if(W.agendar!=='ahora'){b.innerHTML='<div class="tip">Queda en <b>Inicio · Esperan día</b>. Cuando le des día, mandale la confirmación por WhatsApp.</div>';return;}
     var tmp={tipo:W.t.tipo,ingreso:today()};var p=plazo(tmp),esp=function(n){return lista(DB.cfg.esp[n]).indexOf(W.t.producto)>=0;};
     var ts=tecsPara({flete:W.t.modo==='flete'}).slice().sort(function(a,b){return esp(b)-esp(a);});var pref=W.t.tipo==='AC'&&W.cli?tecPresu(W.cli.id):'';if(ts.indexOf(pref)<0)pref='';W.sel=W.sel||{tec:W.tec,dia:W.dia,pref:pref};var sel=W.sel;
-    b.innerHTML='<div class="tip warn">Plazo sugerido: hasta el <b>'+fL(p)+'</b> ('+(W.t.tipo==='SG'?'S/G: en la semana':'como mucho la semana siguiente')+'). Zona del cliente: <b>'+esc(W.c.zona)+'</b>.</div>'+
+    b.innerHTML='<div class="tip warn">Plazo sugerido: hasta el <b>'+fL(p)+'</b> ('+(W.t.tipo==='SG'?'S/G: 5 días hábiles':'como mucho la semana siguiente')+'). Zona del cliente: <b>'+esc(W.c.zona)+'</b>.</div>'+
       picker({ts:ts,esp:esp,sel:sel,pref:pref,p:p,zona:W.c.zona});
     bindPicker(b,sel,function(){W.tec=sel.tec;W.dia=sel.dia;agBox();});}
   function guardar(){var c=W.c,t=W.t,cli=W.cli;
@@ -889,7 +920,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
     if(t.modo==='taller'){touch({id:uid(),kind:'taller',orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:c.nombre,clienteId:cli.id,telefono:c.telefono||'',falla:falla,tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:'Lo trae el cliente · revisión en local '+money(DB.cfg.revisionLocal)});closeM();go('taller');toast('Guardado en Taller: el cliente trae el equipo');return;}
     var n={id:uid(),kind:'turno',clienteId:cli.id,nombre:c.nombre,telefono:[c.telefono,c.tel2].filter(Boolean).join(' / '),domicilio:c.domicilio,ref:c.ref||'',zona:c.zona,canal:W.canal,atendio:W.atendio,alta:today(),ingreso:today(),
       tipo:t.tipo,ordenFab:t.ordenFab||'',ordenTS:t.ordenTS||'',visita:t.tipo==='SG'&&t.modo==='visita'?t.visita:0,flete:t.modo==='flete'?'retiro':'',fleteMonto:t.modo==='flete'?(+String(t.fleteMonto||'').replace(/\D/g,'')||0):0,
-      producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
+      horario:t.horario||'',avisar:!!t.avisar,producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
       estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:''};
     if(t.tipo==='AC'&&cli)n.tecPref=tecPresu(cli.id);
     if(W.agendar==='ahora'&&W.tec&&W.dia){n.estado='asignado';n.tecnico=W.tec;n.fecha=W.dia;}else if(W.agendar==='ahora'&&W.tec){n.tecPref=W.tec;}
@@ -908,19 +939,19 @@ function verTurno(t){var fl=flagOf(t);var r=function(k,v){return v?'<div><b clas
     '<div class="resumen">'+r('Estado',t.estado==='pendiente'?'<b>Espera día</b> · '+plazoCorto(t):t.estado==='asignado'?'<b>Turno '+fL(t.fecha)+'</b> con '+esc(t.tecnico)+' · '+confCell(t):t.estado==='repuesto'?'<b>Espera repuesto</b>':'<b>✔ Hecho '+fL(t.fecha)+'</b> · '+esc(t.tecnico)+(t.sol?' · '+SOL[t.sol]:''))+
       r('Cliente',esc(t.nombre)+(t.clienteId?' <button class="btn btn-sm" data-vcli="1">Ver ficha e historial</button>':''))+r('Teléfono',telLink(t))+r('Domicilio',esc(t.domicilio)+(t.ref?' · '+esc(t.ref):'')+(t.zona?' · <b>'+esc(t.zona)+'</b>':''))+
       r('Tipo',tipoCell(t))+r('Órdenes',esc([t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ')))+r('Equipo',esc([PRODN[t.producto]||t.producto,t.marca,t.modelo,t.nfab?'N° '+t.nfab:''].filter(Boolean).join(' · ')))+
-      r('Falla',esc(fallaTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+r('Atendió',esc([t.atendio,t.canal,t.alta?ddy(t.alta):''].filter(Boolean).join(' · ')))+'</div>'+
+      r('Falla',esc(fallaTxt(t)))+r('Horario',esc(horarioTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+r('Atendió',esc([t.atendio,t.canal,t.alta?ddy(t.alta):''].filter(Boolean).join(' · ')))+'</div>'+
     '<div class="g2"><label class="f"><span>N° orden fábrica</span><input class="i" id="e-ordenFab" value="'+esc(t.ordenFab||'')+'"></label><label class="f"><span>N° orden TS</span><input class="i" id="e-ordenTS" value="'+esc(t.ordenTS||'')+'"></label></div>'+
     '<label class="f"><span>Falla</span><input class="i" id="e-falla" value="'+esc(t.falla||'')+'"></label>'+
     '<label class="f"><span>Nota interna</span><input class="i" id="e-nota" value="'+esc(t.nota||'')+'"></label>'+
     '<label class="f"><span>Resultado / qué se hizo</span><input class="i" id="e-resultado" value="'+esc(t.resultado||'')+'"></label>'+
     (t.estado==='repuesto'||t.rep?repForm(t):'')+
-    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'');
+    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar):'');
   var f='<span class="left"><button class="btn btn-danger" data-a="del">Borrar</button>'+(t.estado==='asignado'?'<button class="btn" data-a="unasg">Sacar el día</button>':'')+(t.estado!=='pendiente'&&t.estado!=='repuesto'?'':'')+'</span>'+
     (t.estado==='asignado'?'<button class="btn btn-wa" data-a="wa">📲 Confirmación</button>'+(t.conf!=='confirmada'?'<button class="btn" data-a="confok">✔ Confirmó</button>':'')+'<button class="btn" data-a="asg">Cambiar día</button><button class="btn btn-green" data-a="cerrar">¿Cómo terminó?</button>':'')+
     (t.estado==='pendiente'?'<button class="btn btn-green" data-a="asg">Dar día</button>':'')+(t.estado==='hecho'?'<button class="btn" data-a="reabrir">Reabrir</button>':'')+'<button class="btn btn-primary btn-big" data-a="save">Guardar</button>';
   var o=modal('Turno · '+esc(t.nombre),b,f);bindOpts(o);
   var bc=o.querySelector('[data-vcli]');if(bc)bc.onclick=function(){var c=byId[t.clienteId];if(c)verCliente(c);};
-  function leer(){['ordenFab','ordenTS','falla','nota','resultado'].forEach(function(k){t[k]=o.querySelector('#e-'+k).value.trim();});repLeer(o,t);var tp=o.querySelector('#e-tecPref');if(tp)t.tecPref=tp.value;touch(t);}
+  function leer(){['ordenFab','ordenTS','falla','nota','resultado'].forEach(function(k){t[k]=o.querySelector('#e-'+k).value.trim();});repLeer(o,t);horarioLeer(o,t);var tp=o.querySelector('#e-tecPref');if(tp)t.tecPref=tp.value;touch(t);}
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
     if(a==='del'){if(!confirm('¿Borrar este turno de '+t.nombre+'? No se puede deshacer.'))return;drop(t);closeM();toast('Borrado');return;}
     leer();
@@ -964,18 +995,25 @@ function asignar(t){if(!t)return;var tal=t.kind==='taller';var ts0=tecsPara(t,ta
   var b=(fl?'<div class="tip bad">'+(fl.flag==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(fl.motivo?': '+esc(fl.motivo):'')+'</div>':'')+(cli?urgTip(cli):'')+
     '<div class="tip"><b>'+esc(tal?'Orden '+(t.orden||''):t.nombre||'')+'</b>'+(tal?(t.equipo?' · '+esc(t.equipo):'')+(t.cliente?' · '+esc(t.cliente):''):' · '+(t.tipo?TIPO[t.tipo]:'')+(t.flete?' · FLETE '+esc(t.flete.toUpperCase()):'')+' · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' · '))+'<br>📍 '+esc(t.domicilio||'')+' · <b>'+esc(t.zona||'sin zona')+'</b>')+'</div>'+
     (p&&t.estado==='pendiente'?'<div class="tip '+(diff(today(),p)<0?'bad':'warn')+'">'+(diff(today(),p)<0?'⚠ Ya se pasó el plazo ('+fD(p)+'). Conviene darle el primer día que puedas.':'Plazo sugerido: hasta el <b>'+fL(p)+'</b>.')+'</div>':'')+
-    '<div id="pick"></div>';
+    '<div id="pick"></div>'+(tal?'':horarioBox(t.horario,t.avisar));
   var o=modal(tal?'Asignar día de taller':'Dar día',b,'<button class="btn" data-a="x">Cancelar</button><button class="btn btn-green btn-big" data-a="ok">Confirmar</button>');
   function paint(){var box=o.querySelector('#pick');box.innerHTML=picker({ts:ts,esp:esp,sel:sel,pref:pref,p:t.estado==='pendiente'?p:'',zona:tal?'':t.zona,excl:t.id});bindPicker(box,sel,paint);}
-  paint();
+  paint();bindOpts(o);
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();
+    if(!tal)horarioLeer(o,t);
     if(!sel.tec){toast('Tocá el técnico');return;}if(!sel.dia){toast('Tocá un día');return;}
     if(fl&&fl.flag==='no'&&!confirm('Este cliente está marcado “NO ATENDER”. ¿Dar el día igual?'))return;
     var cambio=t.fecha!==sel.dia;t.tecnico=sel.tec;t.fecha=sel.dia;if(!tal){t.estado='asignado';if(cambio)t.conf='';}else if(t.estado==='esperando')t.estado='en_reparacion';touch(t);closeM();
     if(tal){toast('Orden '+(t.orden||'')+' asignada a '+t.tecnico+' para el '+fL(t.fecha));return;}if(t.flete){toast('Flete asignado a '+t.tecnico+' para el '+fL(t.fecha));listo(t);return;}listo(t);};}
-function telWA(s){var n=(String(s||'').match(/\d[\d\s-]{6,}\d/)||[''])[0].replace(/\D/g,'');if(n.indexOf('549')!==0){n=n.replace(/^0/,'');n='549'+n.replace(/^(\d{2,4})15/,'$1');}return n;}
+function telWA(s){var n=(String(s||'').match(/\d[\d\s-]{5,}\d/)||[''])[0].replace(/\D/g,'');if(n.indexOf('549')===0)return n;if(n.indexOf('54')===0)n=n.slice(2);n=n.replace(/^0/,'');
+  // número local con 15 (ej. 381 15 555-1234 = 12 dígitos): se saca el 15 después del código de área
+  if(n.length===12){var ar=[3,2,4];for(var i=0;i<3;i++){if(n.substr(ar[i],2)==='15'){n=n.slice(0,ar[i])+n.slice(ar[i]+2);break;}}}
+  if(n.length===7)n='381'+n; // sin código de área: Tucumán
+  return '549'+n;}
 function enviarConf(t){var tpl=t.tipo==='SG'?DB.cfg.msgSG:DB.cfg.msgGT,h=new Date().getHours();
   var m=tpl.replace(/\{SALUDO\}/g,h<13?'Buenos días':'Buenas tardes').replace(/\{DIA\}/g,fL(t.fecha)).replace(/\{COSTO\}/g,money(t.visita||DB.cfg.costos[0]));
+  if(t.horario)m=m.replace(/9:00 a 14:00 hs \(sin hora fija\)/g,'de '+t.horario+' hs (el horario que nos pidió)');
+  if(t.avisar)m=m.replace(/(\* \*?Tolerancia)/,'* El técnico le va a avisar media hora antes de llegar.\n$1');
   window.open('https://wa.me/'+telWA(t.telefono)+'?text='+encodeURIComponent(m),'_blank','noopener');if(t.conf!=='confirmada'){t.conf='enviada';touch(t);}render();toast('Confirmación abierta en WhatsApp. Cuando responda, tocá “✔ Confirmó”.',5000);}
 
 /* ---------- Taller: cargar / editar ---------- */
@@ -1000,11 +1038,32 @@ function editTaller(t,pre,cb,ordenReq){var nuevo=!t;t=t?JSON.parse(JSON.stringif
     if(!t.clienteId&&t.cliente){var cn={id:uid(),kind:'cliente',nombre:t.cliente,telefono:t.telefono||'',alta:today()};touch(cn);t.clienteId=cn.id;}
     var cur=byId[t.id];if(cur){Object.assign(cur,t);touch(cur);}else touch(t);closeM();toast('Guardado');if(cb)cb(t);};}
 
+/* ---------- Lista del día al técnico por WhatsApp ---------- */
+function listaTxt(tec,d){var its=dayItems(tec,d),dom=its.filter(function(t){return t.kind==='turno';}),tal=its.filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
+  var cuando=d===today()?'hoy':d===addD(today(),1)?'mañana':'el '+fL(d);
+  var m='Hola '+tec+', '+cuando+' tenés '+(dom.length?(dom.length===1?'este turno':'estos '+dom.length+' turnos')+' para realizar en domicilio:':'estos trabajos:')+'\n';
+  if(dn)m+='📝 '+dn.texto+'\n';
+  dom.forEach(function(t,i){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' ');
+    m+='\n*'+(i+1)+') '+(t.nombre||'')+'*\n';
+    m+='📍 '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';
+    if(t.telefono)m+='📞 '+t.telefono+'\n';
+    m+='🔧 '+(eq||'Equipo')+' — '+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' · cobrar visita '+money(t.visita):'')+(t.flete?' · FLETE '+t.flete.toUpperCase():'')+'\n';
+    if(fallaTxt(t))m+='⚠ Falla: '+fallaTxt(t)+'\n';
+    m+='🕘 Horario: '+(t.horario?t.horario+' hs':'sin horario fijo (9 a 14 hs)')+(t.avisar?' · *avisarle 30 min antes*':'')+'\n';
+    var ords=[t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='🧾 Orden: '+ords+'\n';
+    if(t.nota)m+='📝 '+t.nota+'\n';
+    if(t.conf!=='confirmada')m+='❗ Todavía no confirmó el cliente\n';});
+  if(tal.length){m+='\n*En el taller:*\n';tal.forEach(function(t){m+='• Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'')+'\n';});}
+  m+='\nCualquier cosa avisanos. ¡Buen trabajo! 💪\nVILLGUZ Refrigeración';return m;}
+function listaWA(tec,d){var tel=(DB.cfg.tecTel||{})[tec]||'';
+  if(!tel){toast('Falta el número de WhatsApp de '+tec+'. Cargalo en Ajustes → Técnicos.',5000);return;}
+  window.open('https://wa.me/'+telWA(tel)+'?text='+encodeURIComponent(listaTxt(tec,d)),'_blank','noopener');toast('Lista abierta en WhatsApp para '+tec+'. Solo tocá enviar.',4000);}
+
 /* ---------- Imprimir hoja del técnico ---------- */
 function imprimir(tec,days){var h='<div class="pr-h"><svg viewBox="0 0 682 212"><use href="#logo"/></svg><h1>Turnos · '+esc(tec)+'</h1><span>Impreso '+dd(today())+'</span></div>';
-  days.forEach(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);if(!its.length&&!dn)return;h+='<div class="pr-day">'+fL(d)+(dn?' — '+esc(dn.texto):'')+'</div>';if(!its.length)return;h+='<table class="pr-t"><thead><tr><th>Tipo</th><th>Orden fáb. / TS</th><th>Cliente</th><th>Domicilio</th><th>Zona</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Nota</th><th style="width:15%">Resultado</th></tr></thead><tbody>'+
-    its.map(function(t){if(t.kind==='taller')return '<tr><td>TALLER</td><td>'+esc(t.orden)+'</td><td>'+esc(t.cliente||'')+'</td><td></td><td></td><td></td><td>'+esc(t.equipo||'')+'</td><td>'+esc(t.falla||'')+'</td><td>'+esc(t.nota||'')+'</td><td></td></tr>';
-      return '<tr><td>'+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+(t.flete?' · '+t.flete.toUpperCase():'')+'</td><td>'+esc([t.ordenFab,t.ordenTS].filter(Boolean).join(' / '))+'</td><td>'+esc(t.nombre)+'</td><td>'+esc(t.domicilio)+(t.ref?' ('+esc(t.ref)+')':'')+'</td><td>'+esc(t.zona||'')+'</td><td>'+esc(t.telefono)+'</td><td>'+esc([t.producto,t.marca,t.modelo].filter(Boolean).join(' '))+'</td><td>'+esc(fallaTxt(t))+'</td><td>'+esc(t.nota||'')+'</td><td>'+esc(t.resultado||'')+'</td></tr>';}).join('')+'</tbody></table>';});
+  days.forEach(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);if(!its.length&&!dn)return;h+='<div class="pr-day">'+fL(d)+(dn?' — '+esc(dn.texto):'')+'</div>';if(!its.length)return;h+='<table class="pr-t"><thead><tr><th>Tipo</th><th>Orden fáb. / TS</th><th>Cliente</th><th>Domicilio</th><th>Zona</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Horario</th><th>Nota</th><th style="width:15%">Resultado</th></tr></thead><tbody>'+
+    its.map(function(t){if(t.kind==='taller')return '<tr><td>TALLER</td><td>'+esc(t.orden)+'</td><td>'+esc(t.cliente||'')+'</td><td></td><td></td><td></td><td>'+esc(t.equipo||'')+'</td><td>'+esc(t.falla||'')+'</td><td></td><td>'+esc(t.nota||'')+'</td><td></td></tr>';
+      return '<tr><td>'+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+(t.flete?' · '+t.flete.toUpperCase():'')+'</td><td>'+esc([t.ordenFab,t.ordenTS].filter(Boolean).join(' / '))+'</td><td>'+esc(t.nombre)+'</td><td>'+esc(t.domicilio)+(t.ref?' ('+esc(t.ref)+')':'')+'</td><td>'+esc(t.zona||'')+'</td><td>'+esc(t.telefono)+'</td><td>'+esc([t.producto,t.marca,t.modelo].filter(Boolean).join(' '))+'</td><td>'+esc(fallaTxt(t))+'</td><td>'+esc(horarioTxt(t))+'</td><td>'+esc(t.nota||'')+'</td><td>'+esc(t.resultado||'')+'</td></tr>';}).join('')+'</tbody></table>';});
   $('print').innerHTML=h;setTimeout(function(){window.print();},50);}
 
 /* ---------- Arranque ---------- */
