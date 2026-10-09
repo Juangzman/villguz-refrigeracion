@@ -540,21 +540,64 @@ a,button,summary,[role="button"]{touch-action:manipulation}
 @media (hover:hover) and (pointer:fine){.brands .brand-track a.bt:hover{transform:scale(1.06)}}
 @media (max-width:900px){.brands .brand-track li{height:52px;margin-right:48px}.brands .brand-track img{transform:scale(.85)}}
 
-/* Bandas claras: se mantienen blancas también en modo oscuro */
-.banda-clara{--paper:#FFFFFF;--ink:#0C1624;--mist:#EEF3F8;--line:#D6DFEA;--muted:#4A5A70;--green-ink:#4E8A14;--logo-filter:none;--shadow:0 1px 2px rgba(0,34,77,.06),0 8px 24px rgba(0,34,77,.08);background:var(--paper);color:var(--ink);color-scheme:light}
-.trust.banda-clara{border-block:1px solid var(--line)}
-.tips.banda-clara{padding-top:clamp(56px,8vw,96px)}
-.tips.banda-clara .tip h3{color:var(--navy)}
-.claim-band.banda-clara{background:#fff;color:var(--navy);border-block:1px solid var(--line)}
-.claim-band.banda-clara .claim{color:var(--navy)}
-.claim-band.banda-clara p{color:var(--muted)}
-.tips.banda-clara .ig-btn{color:var(--navy)}
+/* ===== Vidrio esmerilado en toda la web ===== */
+body{background:#E8EEF5}
+.fondo-marca{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(42vw 42vw at 4% 20%,rgba(47,127,216,.60),transparent 70%),
+    radial-gradient(36vw 36vw at 98% 6%,rgba(0,51,112,.50),transparent 70%),
+    radial-gradient(40vw 40vw at 92% 60%,rgba(118,183,42,.45),transparent 70%),
+    radial-gradient(44vw 44vw at 8% 94%,rgba(0,70,150,.45),transparent 70%),
+    radial-gradient(30vw 30vw at 50% 50%,rgba(150,200,240,.25),transparent 70%),
+    linear-gradient(160deg,#EEF3F8 0%,#E3EBF4 100%)}
+:root[data-theme="dark"] body{background:#0A1F3D}
+:root[data-theme="dark"] .fondo-marca{background:radial-gradient(38vw 38vw at 6% 18%,rgba(47,127,216,.55),transparent 70%),radial-gradient(34vw 34vw at 96% 8%,rgba(0,90,190,.45),transparent 70%),radial-gradient(36vw 36vw at 88% 62%,rgba(118,183,42,.35),transparent 70%),radial-gradient(40vw 40vw at 12% 92%,rgba(30,90,170,.45),transparent 70%),linear-gradient(160deg,#0B2548 0%,#061A33 100%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) body{background:#0A1F3D}:root:not([data-theme="light"]) .fondo-marca{background:radial-gradient(38vw 38vw at 6% 18%,rgba(47,127,216,.55),transparent 70%),radial-gradient(34vw 34vw at 96% 8%,rgba(0,90,190,.45),transparent 70%),radial-gradient(36vw 36vw at 88% 62%,rgba(118,183,42,.35),transparent 70%),radial-gradient(40vw 40vw at 12% 92%,rgba(30,90,170,.45),transparent 70%),linear-gradient(160deg,#0B2548 0%,#061A33 100%)}}
+main{position:relative}
+/* paneles claros */
+.vidrio{--paper:#FFFFFF;--ink:#0C1624;--mist:#EEF3F8;--line:rgba(0,51,112,.12);--muted:#4A5A70;--green-ink:#4E8A14;--logo-filter:none;--shadow:0 1px 2px rgba(0,34,77,.06),0 10px 28px rgba(0,34,77,.10);
+  background:transparent!important;border:0!important;padding-block:10px!important;padding-inline:var(--gutter);color:var(--ink);color-scheme:light}
+.vidrio > .wrap{position:relative;max-width:var(--maxw);margin-inline:auto;border-radius:28px;padding:clamp(30px,4.5vw,60px) clamp(20px,4.5vw,60px);
+  background:linear-gradient(145deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
+  -webkit-backdrop-filter:blur(22px) saturate(1.45);backdrop-filter:blur(22px) saturate(1.45);
+  border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 22px 60px rgba(0,34,77,.12)}
+main > .vidrio:first-of-type,.hero + .vidrio{padding-top:22px!important}
+.vidrio h2,.vidrio .sec-head h2{color:var(--navy)}
+.vidrio .brands-title{color:var(--navy)!important}
+/* ajustes por sección */
+.brands.vidrio .marquee{margin-inline:calc(clamp(20px,4.5vw,60px)*-1)}
+.trust.vidrio > .wrap{padding-block:clamp(10px,2vw,18px)}
+.trust.vidrio .t-item+.t-item{border-color:var(--line)}
+.order.vidrio .order-card{background:transparent;border:0;padding:0}
+.claim-band.vidrio{text-align:center}
+.claim-band.vidrio .claim{color:var(--navy)}
+.claim-band.vidrio p{color:var(--muted)}
+.cat{background:rgba(255,255,255,.78);border-color:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.cat-lav{background:rgba(231,242,218,.85);border-color:rgba(231,242,218,.9)}
+.cat-air{background:var(--navy);border-color:var(--navy)}
+.tip,.mv article,.timeline li,.c-item:not(.wa){background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.85)}
+.map{border-color:rgba(255,255,255,.85)}
+:root[data-theme="dark"] .vidrio .cat h3:not(.cat-air h3),:root[data-theme="dark"] .vidrio .mv h3{color:var(--navy)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .vidrio .cat:not(.cat-air) h3,:root:not([data-theme="light"]) .vidrio .mv h3,:root:not([data-theme="light"]) .quick .sec-head h2{color:var(--navy)}:root:not([data-theme="light"]) .cat-lav{background:rgba(231,242,218,.85)}}
+:root[data-theme="dark"] .vidrio .cat:not(.cat-air) h3,:root[data-theme="dark"] .quick .sec-head h2{color:var(--navy)} :root[data-theme="dark"] .cat-lav{background:rgba(231,242,218,.85)}
 
-/* Blanco perlado en las bandas claras */
-.banda-clara{--perla:#F4F6F9;background:radial-gradient(120% 140% at 15% 0%,#FBFCFD 0%,rgba(251,252,253,0) 55%),radial-gradient(90% 120% at 100% 100%,#E9EEF4 0%,rgba(233,238,244,0) 60%),linear-gradient(180deg,#F7F8FA 0%,#EFF2F6 100%)!important;background-color:var(--perla)!important}
-.banda-clara .tip,.banda-clara .t-item{background:transparent}
-.tips.banda-clara .tip{background:rgba(255,255,255,.72);border-color:#DCE3EC}
-.banda-clara{border-color:#DCE3EC}
+:root[data-theme="dark"] .vidrio > .wrap{background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(240,245,251,.74))}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .vidrio > .wrap{background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(240,245,251,.74))}}
+/* paneles azules */
+.vidrio-azul{background:transparent!important;padding-block:10px!important;padding-inline:var(--gutter);overflow:visible}
+.vidrio-azul > .wrap{max-width:var(--maxw);margin-inline:auto;border-radius:28px;padding:clamp(30px,4.5vw,60px) clamp(20px,4.5vw,60px);
+  background:linear-gradient(150deg,rgba(0,58,128,.90),rgba(0,34,77,.92));-webkit-backdrop-filter:blur(22px) saturate(1.3);backdrop-filter:blur(22px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 22px 60px rgba(0,22,49,.28)}
+.vidrio-libre{background:transparent!important;padding-block:10px!important;padding-inline:var(--gutter)}
+.vidrio-libre > .wrap{max-width:var(--maxw);padding-inline:0}
+.turnos-box{border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 22px 60px rgba(0,22,49,.28);background:linear-gradient(150deg,rgba(0,58,128,.94),rgba(0,34,77,.95))}
+.footer{margin-top:28px}
+/* portada: borde inferior suave hacia el fondo */
+.hero{border-radius:0 0 32px 32px}
+/* celular: menos desenfoque para que vaya fluido */
+@media (max-width:900px){.vidrio > .wrap,.vidrio-azul > .wrap{-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);border-radius:22px}.hero{border-radius:0 0 22px 22px}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.vidrio > .wrap{background:rgba(255,255,255,.9)}}
+@media (prefers-reduced-transparency: reduce){.vidrio > .wrap{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}}
 /* Barra fija inferior en el celular */
 .mbar{display:none}
 @media (max-width:920px){
@@ -774,6 +817,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </header>
 
+<div class="fondo-marca" aria-hidden="true"></div>
 <main id="inicio">
 <section class="hero" aria-label="Portada">
   <div class="hero-mark" aria-hidden="true"><svg viewBox="226 318 193 212"><use href="#mark-mono"/></svg></div>
@@ -793,7 +837,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="brands banda-clara" id="marcas" aria-labelledby="b-title">
+<section class="brands vidrio" id="marcas" aria-labelledby="b-title">
   <div class="wrap">
     <h2 id="b-title" class="brands-title">Servicio técnico oficial de estas marcas</h2>
     <div class="marquee">
@@ -806,7 +850,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="quick" aria-labelledby="q-title">
+<section class="quick vidrio" aria-labelledby="q-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -837,7 +881,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="trust banda-clara" aria-label="Por qué elegirnos">
+<section class="trust vidrio" aria-label="Por qué elegirnos">
   <div class="wrap">
     <div class="t-item"><svg viewBox="0 0 24 24"><use href="#i-badge"/></svg><div><b>Servicio oficial</b><span>Samsung, LG, Whirlpool, BGH, Eslabón de Lujo, Beko y Vondom</span></div></div>
     <div class="t-item"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg><div><b>Repuestos originales</b><span>Piezas de fábrica en cada reparación</span></div></div>
@@ -846,7 +890,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="services" id="servicios" aria-labelledby="s-title">
+<section class="services vidrio" id="servicios" aria-labelledby="s-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -932,7 +976,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="tips banda-clara" id="consejos" aria-labelledby="k-title">
+<section class="tips vidrio" id="consejos" aria-labelledby="k-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -973,7 +1017,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="process" id="como-trabajamos" aria-labelledby="p-title">
+<section class="process vidrio-azul" id="como-trabajamos" aria-labelledby="p-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -990,7 +1034,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="order" aria-labelledby="o-title">
+<section class="order vidrio" aria-labelledby="o-title">
   <div class="wrap">
     <div class="order-card">
       <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-clip"/></svg></div>
@@ -1005,7 +1049,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="about" id="nosotros" aria-labelledby="a-title">
+<section class="about vidrio" id="nosotros" aria-labelledby="a-title">
   <div class="wrap about-grid">
     <div class="intro">
       <h2 id="a-title">Una empresa familiar tucumana, con oficio de verdad</h2>
@@ -1028,7 +1072,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="history" id="historia" aria-labelledby="h-title">
+<section class="history vidrio" id="historia" aria-labelledby="h-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -1044,14 +1088,14 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="claim-band banda-clara" aria-label="Frío que perdura, garantía de confianza.">
+<section class="claim-band vidrio" aria-label="Frío que perdura, garantía de confianza.">
   <div class="wrap">
     <span class="claim" aria-hidden="true"><svg viewBox="0 0 925 75"><use href="#claim"/></svg></span>
     <p>VILLGUZ Refrigeración · Desde 1990</p>
   </div>
 </section>
 
-<section class="turnos" id="turnos" aria-labelledby="tw-title">
+<section class="turnos vidrio-libre" id="turnos" aria-labelledby="tw-title">
   <div class="wrap">
     <div class="turnos-box">
       <div class="turnos-grid">
@@ -1130,7 +1174,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="contact" id="contacto" aria-labelledby="c-title">
+<section class="contact vidrio" id="contacto" aria-labelledby="c-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
