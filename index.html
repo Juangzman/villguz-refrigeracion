@@ -539,6 +539,16 @@ a,button,summary,[role="button"]{touch-action:manipulation}
 .brands .brand-track a.bt img{filter:none!important;opacity:1!important}
 @media (hover:hover) and (pointer:fine){.brands .brand-track a.bt:hover{transform:scale(1.06)}}
 @media (max-width:900px){.brands .brand-track li{height:52px;margin-right:48px}.brands .brand-track img{transform:scale(.85)}}
+
+/* Bandas claras: se mantienen blancas también en modo oscuro */
+.banda-clara{--paper:#FFFFFF;--ink:#0C1624;--mist:#EEF3F8;--line:#D6DFEA;--muted:#4A5A70;--green-ink:#4E8A14;--logo-filter:none;--shadow:0 1px 2px rgba(0,34,77,.06),0 8px 24px rgba(0,34,77,.08);background:var(--paper);color:var(--ink);color-scheme:light}
+.trust.banda-clara{border-block:1px solid var(--line)}
+.tips.banda-clara{padding-top:clamp(56px,8vw,96px)}
+.tips.banda-clara .tip h3{color:var(--navy)}
+.claim-band.banda-clara{background:#fff;color:var(--navy);border-block:1px solid var(--line)}
+.claim-band.banda-clara .claim{color:var(--navy)}
+.claim-band.banda-clara p{color:var(--muted)}
+.tips.banda-clara .ig-btn{color:var(--navy)}
 /* Barra fija inferior en el celular */
 .mbar{display:none}
 @media (max-width:920px){
@@ -777,7 +787,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="brands" id="marcas" aria-labelledby="b-title">
+<section class="brands banda-clara" id="marcas" aria-labelledby="b-title">
   <div class="wrap">
     <h2 id="b-title" class="brands-title">Servicio técnico oficial de estas marcas</h2>
     <div class="marquee">
@@ -821,7 +831,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="trust" aria-label="Por qué elegirnos">
+<section class="trust banda-clara" aria-label="Por qué elegirnos">
   <div class="wrap">
     <div class="t-item"><svg viewBox="0 0 24 24"><use href="#i-badge"/></svg><div><b>Servicio oficial</b><span>Samsung, LG, Whirlpool, BGH, Eslabón de Lujo, Beko y Vondom</span></div></div>
     <div class="t-item"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg><div><b>Repuestos originales</b><span>Piezas de fábrica en cada reparación</span></div></div>
@@ -916,7 +926,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="tips" id="consejos" aria-labelledby="k-title">
+<section class="tips banda-clara" id="consejos" aria-labelledby="k-title">
   <div class="wrap">
     <div class="sec-head">
       <div>
@@ -1028,7 +1038,7 @@ a,button,summary,[role="button"]{touch-action:manipulation}
   </div>
 </section>
 
-<section class="claim-band" aria-label="Frío que perdura, garantía de confianza.">
+<section class="claim-band banda-clara" aria-label="Frío que perdura, garantía de confianza.">
   <div class="wrap">
     <span class="claim" aria-hidden="true"><svg viewBox="0 0 925 75"><use href="#claim"/></svg></span>
     <p>VILLGUZ Refrigeración · Desde 1990</p>
