@@ -490,6 +490,17 @@ function render(){if($('app').hidden)return;counts();var m=$('main'),q=$('q').va
   m.innerHTML=alerts()+({inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,informe:vInforme,clientes:vClientes,ajustes:vAjustes}[VIEW])();
   if(VIEW==='inicio')bindInicio();if(VIEW==='ajustes')bindAjustes();if(VIEW==='agenda')bindAgenda();if(VIEW==='clientes')bindClientes();}
 
+/* ---------- Órdenes TS: cada número es único ----------
+   Cada vez que se ve un equipo es una orden nueva, aunque sea el mismo cliente y producto. */
+function ordKey(v){return String(v==null?'':v).trim().replace(/\s+/g,'').replace(/^0+(?=\d)/,'');}
+function ordUsos(){var m={};DB.items.forEach(function(it){var o=it.kind==='turno'?it.ordenTS:it.kind==='taller'?it.orden:'';var k=ordKey(o);if(k)(m[k]=m[k]||[]).push(it);});return m;}
+function ordDesc(it){return it.kind==='taller'?'Taller · '+(it.cliente||'')+(it.equipo?' · '+it.equipo:''):'Turno de '+(it.nombre||'')+' ('+(it.fecha?fD(it.fecha):ddy(it.alta))+')';}
+// devuelve dónde está usado ese N° (o '' si está libre). Ignora el propio registro y el retiro por flete que lleva el equipo al taller.
+function tsUso(num,selfId,linkId){var k=ordKey(num);if(!k)return '';var r='';DB.items.some(function(it){if(it.id===selfId||it.id===linkId||(selfId&&it.fromId===selfId))return false;
+  var o=it.kind==='turno'?it.ordenTS:it.kind==='taller'?it.orden:'';if(ordKey(o)===k){r=ordDesc(it);return true;}return false;});return r;}
+function tsMsg(num,u){return 'El N° de orden TS '+num+' ya está usado en: '+u+'. Cada visita lleva una orden nueva.';}
+function ordRepetidas(){var m=ordUsos(),out=[];Object.keys(m).forEach(function(k){var l=m[k].filter(function(it,i,a){return !a.some(function(o){return o!==it&&(o.fromId===it.id||it.fromId===o.id);})||!it.fromId;});if(l.length>1)out.push([k,l]);});return out;}
+
 /* ---------- Clientes ---------- */
 function phones(s){return (String(s||'').match(/\d[\d\s-]{5,}\d/g)||[]).map(function(x){return x.replace(/\D/g,'').slice(-8);}).filter(function(x){return x.length>=7;});}
 var FLG=null;
@@ -550,7 +561,7 @@ function tipoCell(t){return (t.tipo?'<span class="pill p-'+t.tipo+'">'+TIPO[t.ti
   (t.flete?' <span class="pill p-fl">'+esc(t.flete.toUpperCase())+(t.fleteMonto?' '+money(t.fleteMonto):'')+'</span>':'')+(esFuera(t)?' <span class="pill p-fz">FUERA ZONA</span>':'');}
 function confCell(t){if(t.estado!=='asignado')return t.estado==='hecho'&&t.sol?'<b>'+SOL[t.sol]+'</b>':'';return t.conf==='confirmada'?'<span class="pill p-ok">✔ Confirmó</span>':t.conf==='enviada'?'<span class="pill p-warn">WhatsApp enviado</span>':'<span class="pill p-bad">Sin confirmar</span>';}
 var HEAD='<th>Ingresó</th><th>Tipo</th><th>Orden fábrica / TS</th><th>Cliente</th><th>Zona</th><th>Domicilio</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Confirmación / cierre</th><th>Resultado</th><th>Atendió</th>';
-function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><td>'+tipoCell(t)+'</td><td class="ord">'+esc(t.ordenFab||'')+(t.ordenFab&&t.ordenTS?'<br>':'')+(t.ordenTS?'<span class="muted">TS '+esc(t.ordenTS)+'</span>':'')+'</td><td class="nm">'+flagTag(fl)+(t.clienteId&&visitas90(byId[t.clienteId])>=3?'<span class="flag urg" title="3 o más visitas en 3 meses">🔥</span>':'')+esc(t.nombre||'')+'</td><td class="nw">'+esc(t.zona||'')+'</td><td class="dom">'+esc(t.domicilio||'')+(t.ref?'<div class="muted" style="font-size:.76rem">'+esc(t.ref)+'</div>':'')+(t.nota?'<div class="muted" style="font-size:.76rem">📝 '+esc(t.nota)+'</div>':'')+(t.horario||t.avisar?'<div class="hr-tag">🕘 '+esc(horarioTxt(t))+'</div>':'')+'</td><td>'+telLink(t)+'</td><td class="nw">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</td><td class="fa">'+esc(fallaTxt(t))+'</td><td>'+confCell(t)+'</td><td class="res">'+esc(t.resultado||'')+'</td><td class="nw muted">'+esc(t.atendio||'')+(t.canal?'<br>'+esc(t.canal):'')+'</td>';}
+function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><td>'+tipoCell(t)+'</td><td class="ord">'+esc(t.ordenFab||'')+(t.ordenFab&&t.ordenTS?'<br>':'')+(t.ordenTS?'<span class="muted">TS '+esc(t.ordenTS)+'</span>':'')+(t.ordenTSAnt?'<br><span class="muted" style="font-size:.72rem">ant. TS '+esc(t.ordenTSAnt)+' · falta orden nueva</span>':'')+'</td><td class="nm">'+flagTag(fl)+(t.clienteId&&visitas90(byId[t.clienteId])>=3?'<span class="flag urg" title="3 o más visitas en 3 meses">🔥</span>':'')+esc(t.nombre||'')+'</td><td class="nw">'+esc(t.zona||'')+'</td><td class="dom">'+esc(t.domicilio||'')+(t.ref?'<div class="muted" style="font-size:.76rem">'+esc(t.ref)+'</div>':'')+(t.nota?'<div class="muted" style="font-size:.76rem">📝 '+esc(t.nota)+'</div>':'')+(t.horario||t.avisar?'<div class="hr-tag">🕘 '+esc(horarioTxt(t))+'</div>':'')+'</td><td>'+telLink(t)+'</td><td class="nw">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</td><td class="fa">'+esc(fallaTxt(t))+'</td><td>'+confCell(t)+'</td><td class="res">'+esc(t.resultado||'')+'</td><td class="nw muted">'+esc(t.atendio||'')+(t.canal?'<br>'+esc(t.canal):'')+'</td>';}
 function fallaTxt(t){return [(t.fallas||[]).join(', '),t.falla].filter(Boolean).join(' — ');}
 function rowCls(t,lead){var fl=flagOf(t);return (t.estado==='asignado'&&t.fecha&&t.fecha<today()?' ask':'')+(lead==='plazo'?(t.estado==='pendiente'?sem(t):''):'')+(t.estado==='hecho'?' done':'')+(fl&&fl.flag==='no'?' no':'');}
 function leadCell(t,lead){var x='';
@@ -578,7 +589,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];t.conf='confirmada';touch(t);render();toast('Turno confirmado ✔');return;}
   if((b=e.target.closest('[data-rep]'))){editRep(byId[b.dataset.rep]);return;}
   if((b=e.target.closest('[data-ataller]'))){aTaller(byId[b.dataset.ataller],'repuesto');return;}
-  if((b=e.target.closest('[data-llego]'))){var r=byId[b.dataset.llego];r.rep=Object.assign(repDe(r),{pedido:'llego'});r.estado='pendiente';r.ingreso=today();r.nota=((r.nota||'')+' · Llegó repuesto '+dd(today())).replace(/^ · /,'');touch(r);render();asignar(r);return;}
+  if((b=e.target.closest('[data-llego]'))){var r=byId[b.dataset.llego];r.rep=Object.assign(repDe(r),{pedido:'llego'});if(r.ordenTS){r.ordenTSAnt=r.ordenTS;r.ordenTS='';}r.estado='pendiente';r.ingreso=today();r.nota=((r.nota||'')+' · Llegó repuesto '+dd(today())).replace(/^ · /,'');touch(r);render();asignar(r);return;}
   if((b=e.target.closest('[data-st]'))){var x=byId[b.dataset.id];x.estado=b.dataset.st;touch(x);render();toast('Orden '+(x.orden||'')+': '+TST[x.estado]);return;}
   if((b=e.target.closest('[data-dn]'))){var y=b.dataset.dn.split('|');notaDia(y[0],y[1]);return;}
   if((b=e.target.closest('[data-watec]'))){var w=b.dataset.watec.split('|');listaWA(w[0],w[1]);return;}
@@ -760,6 +771,7 @@ function vAjustes(){var c=DB.cfg;var h='<div class="vh"><div><h2>Ajustes</h2></d
   h+='<div class="card"><h3>Mensajes de confirmación por WhatsApp</h3><p class="muted" style="margin:0">{DIA} se reemplaza por el día del turno, {COSTO} por el costo de la visita y {SALUDO} por “Buenos días” o “Buenas tardes” según la hora.</p><label class="f">Sin garantía<textarea class="i" id="cfgMsgSG" style="min-height:220px">'+esc(c.msgSG)+'</textarea></label><label class="f">Garantía<textarea class="i" id="cfgMsgGT" style="min-height:220px">'+esc(c.msgGT)+'</textarea></label><div><button class="btn btn-primary" id="saveMsg">Guardar mensajes</button></div></div>';
   h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0"><b>S/G:</b> se cuentan días hábiles (lunes a viernes) desde que entró el pedido: a los <b>3</b> se pone en amarillo y a los <b>5</b> en rojo.<br><b>GTIA, GTIA TALLER y ACEPTADO:</b> como mucho hasta el viernes de la semana siguiente.</p></div>';
   h+='<div class="card"><h3>Contraseña de turnos</h3><div class="g3"><label class="f">Actual<input class="i" type="password" id="pwO"></label><label class="f">Nueva<input class="i" type="password" id="pwN"></label><label class="f">Repetir nueva<input class="i" type="password" id="pwN2"></label></div><p class="err" id="pwE" hidden></p><div><button class="btn btn-primary" id="pwS">Cambiar contraseña</button></div></div>';
+  var rep=ordRepetidas();h+='<div class="card"><h3>Órdenes TS repetidas</h3>'+(rep.length?'<p class="muted" style="margin:0">Cada número de orden TS es único. Estas están cargadas en más de un lugar (probablemente de antes de este control): tocá cada una y corregí el número.</p>'+rep.map(function(x){return '<div class="tip warn"><b>TS '+esc(x[0])+'</b> · '+x[1].length+' veces<br>'+x[1].map(function(it){return '<button class="btn btn-sm" data-ed="'+it.id+'">'+esc(ordDesc(it))+'</button>';}).join(' ')+'</div>';}).join(''):'<p style="margin:0">✔ No hay órdenes repetidas.</p>')+'</div>';
   h+=archivoCard();
   h+='<div class="card"><h3>Copia de seguridad</h3><p class="muted" style="margin:0">Todo se guarda solo en Google Drive (planilla “Turnos VILLGUZ”).</p><div class="tecrow"><button class="btn" id="bk">Descargar copia</button><label class="btn">Cargar una copia<input type="file" id="rs" accept=".json,application/json" hidden></label></div><p class="muted" style="margin:0;font-size:.85rem">“Cargar una copia” <b>borra todo</b> lo que hay y lo reemplaza por el archivo.</p></div>';return h;}
 /* ---------- Archivo anual ---------- */
@@ -912,7 +924,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
   function valid(){var c=W.c,t=W.t;
     if(W.paso===2){if(!c.nombre)return bad('c-nombre','Falta el nombre');if(!c.telefono)return bad('c-telefono','Falta el teléfono');if(!c.domicilio)return bad('c-domicilio','Falta el domicilio');if(!c.zona){toast('Elegí la zona');return false;}
       if(c.flag==='no'&&!confirm('Este cliente está marcado NO ATENDER. ¿Seguir igual?'))return false;}
-    if(W.paso===3){if(!t.tipo){toast('Elegí si es garantía o sin garantía');return false;}if(t.tipo==='SG'&&t.modo==='visita'&&!t.visita){toast('Elegí el costo de la visita');return false;}}
+    if(W.paso===3){if(!t.tipo){toast('Elegí si es garantía o sin garantía');return false;}if(t.ordenTS){var u3=tsUso(t.ordenTS);if(u3)return bad('t-ordenTS',tsMsg(t.ordenTS,u3));}if(t.tipo==='SG'&&t.modo==='visita'&&!t.visita){toast('Elegí el costo de la visita');return false;}}
     if(W.paso===4){if(!t.producto){toast('Elegí el equipo');return false;}if(!t.marca){toast('Elegí la marca');return false;}if(!t.falla&&!t.fallas.length)return bad('t-falla','Contanos qué le pasa al equipo');}
     
     return true;}
@@ -953,9 +965,9 @@ function verTurno(t){var fl=flagOf(t);var r=function(k,v){return v?'<div><b clas
   var b=(fl?'<div class="tip bad">'+(fl.flag==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(fl.motivo?': '+esc(fl.motivo):'')+'</div>':'')+(t.clienteId&&byId[t.clienteId]?urgTip(byId[t.clienteId]):'')+
     '<div class="resumen">'+r('Estado',t.estado==='pendiente'?'<b>Espera día</b> · '+plazoCorto(t):t.estado==='asignado'?'<b>Turno '+fL(t.fecha)+'</b> con '+esc(t.tecnico)+' · '+confCell(t):t.estado==='repuesto'?'<b>Espera repuesto</b>':'<b>✔ Hecho '+fL(t.fecha)+'</b> · '+esc(t.tecnico)+(t.sol?' · '+SOL[t.sol]:''))+
       r('Cliente',esc(t.nombre)+(t.clienteId?' <button class="btn btn-sm" data-vcli="1">Ver ficha e historial</button>':''))+r('Teléfono',telLink(t))+r('Domicilio',esc(t.domicilio)+(t.ref?' · '+esc(t.ref):'')+(t.zona?' · <b>'+esc(t.zona)+'</b>':''))+
-      r('Tipo',tipoCell(t))+r('Órdenes',esc([t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ')))+r('Equipo',esc([PRODN[t.producto]||t.producto,t.marca,t.modelo,t.nfab?'N° '+t.nfab:''].filter(Boolean).join(' · ')))+
+      r('Tipo',tipoCell(t))+r('Órdenes',esc([t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:'',t.ordenTSAnt?'(orden anterior TS '+t.ordenTSAnt+' · esta visita lleva una nueva)':''].filter(Boolean).join(' · ')))+r('Equipo',esc([PRODN[t.producto]||t.producto,t.marca,t.modelo,t.nfab?'N° '+t.nfab:''].filter(Boolean).join(' · ')))+
       r('Falla',esc(fallaTxt(t)))+r('Horario',esc(horarioTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+r('Atendió',esc([t.atendio,t.canal,t.alta?ddy(t.alta):''].filter(Boolean).join(' · ')))+'</div>'+
-    '<div class="g2"><label class="f"><span>N° orden fábrica</span><input class="i" id="e-ordenFab" value="'+esc(t.ordenFab||'')+'"></label><label class="f"><span>N° orden TS</span><input class="i" id="e-ordenTS" value="'+esc(t.ordenTS||'')+'"></label></div>'+
+    '<div class="g2"><label class="f"><span>N° orden fábrica</span><input class="i" id="e-ordenFab" value="'+esc(t.ordenFab||'')+'"></label><label class="f"><span>N° orden TS <small>(única: cada visita una nueva)</small></span><input class="i" id="e-ordenTS" value="'+esc(t.ordenTS||'')+'"></label></div>'+
     '<label class="f"><span>Falla</span><input class="i" id="e-falla" value="'+esc(t.falla||'')+'"></label>'+
     '<label class="f"><span>Nota interna</span><input class="i" id="e-nota" value="'+esc(t.nota||'')+'"></label>'+
     '<label class="f"><span>Resultado / qué se hizo</span><input class="i" id="e-resultado" value="'+esc(t.resultado||'')+'"></label>'+
@@ -969,6 +981,7 @@ function verTurno(t){var fl=flagOf(t);var r=function(k,v){return v?'<div><b clas
   function leer(){['ordenFab','ordenTS','falla','nota','resultado'].forEach(function(k){t[k]=o.querySelector('#e-'+k).value.trim();});repLeer(o,t);horarioLeer(o,t);var tp=o.querySelector('#e-tecPref');if(tp)t.tecPref=tp.value;touch(t);}
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
     if(a==='del'){if(!confirm('¿Borrar este turno de '+t.nombre+'? No se puede deshacer.'))return;drop(t);closeM();toast('Borrado');return;}
+    var nts=o.querySelector('#e-ordenTS').value.trim();if(nts&&ordKey(nts)!==ordKey(t.ordenTS)){var ue=tsUso(nts,t.id);if(ue){var ie=o.querySelector('#e-ordenTS');ie.classList.add('bad');ie.focus();toast(tsMsg(nts,ue),6000);return;}}
     leer();
     if(a==='save'){closeM();toast('Guardado');}
     else if(a==='asg'){asignar(t);}
@@ -990,11 +1003,11 @@ function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega';
   opts('sol',lst,'','wide ')+'<label class="f"><span>'+(fle?'Nota (opcional)':'¿Qué se hizo / qué tiene el equipo?')+'</span><textarea class="i" id="s-res">'+esc(t.resultado||'')+'</textarea></label><div id="s-rep"></div>','<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
   bindOpts(o,function(n,v){if(n!=='sol')return;var bx=o.querySelector('#s-rep');bx.innerHTML=v==='repuesto'?repForm(t):'';bindOpts(bx);});
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();var s=ov(o,'sol'),res=o.querySelector('#s-res').value.trim();if(!s){toast('Elegí cómo terminó');return;}
-    t.resultado=res;var copia=function(extra){var n=JSON.parse(JSON.stringify(t));Object.assign(n,{id:uid(),estado:'pendiente',tecnico:'',tecPref:t.tecnico||t.tecPref||'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',atendio:YO||t.atendio,flete:'',fleteMonto:0,rep:null},extra);delete n.v;delete n.mod;return n;};
+    t.resultado=res;var copia=function(extra){var n=JSON.parse(JSON.stringify(t));Object.assign(n,{id:uid(),estado:'pendiente',tecnico:'',tecPref:t.tecnico||t.tecPref||'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',atendio:YO||t.atendio,flete:'',fleteMonto:0,rep:null,ordenTS:'',ordenTSAnt:t.ordenTS||t.ordenTSAnt||''},extra);delete n.v;delete n.mod;return n;};
     if(s==='ausente'||s==='nofue'||s==='rep_nos'||s==='rep_cli'){var why=s==='nofue'?'⚠ NO FUE EL TÉCNICO el ':s==='ausente'?'No estaba el ':s==='rep_nos'?'Reprogramado (problema nuestro) el ':'Reprogramado (problema del cliente) el ';
       t.estado='pendiente';t.nota=((t.nota||'')+' · '+why+dd(t.fecha)+(res?': '+res:'')).replace(/^ · /,'');t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Vuelve a esperar día');return;}
     t.estado='hecho';t.sol=s;touch(t);
-    if(s==='retirado'||s==='externo'){touch({id:uid(),kind:'taller',orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:t.nombre,clienteId:t.clienteId||'',telefono:t.telefono||'',falla:fallaTxt(t),tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:s==='retirado'?'Retirado por flete':'Lo trae un flete externo del cliente'});closeM();toast(s==='retirado'?'Retiro hecho. El equipo quedó en Taller.':'Anotado: flete externo. Queda en Taller esperando el equipo.');return;}
+    if(s==='retirado'||s==='externo'){touch({id:uid(),kind:'taller',fromId:t.id,orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:t.nombre,clienteId:t.clienteId||'',telefono:t.telefono||'',falla:fallaTxt(t),tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:s==='retirado'?'Retirado por flete':'Lo trae un flete externo del cliente'});closeM();toast(s==='retirado'?'Retiro hecho. El equipo quedó en Taller.':'Anotado: flete externo. Queda en Taller esperando el equipo.');return;}
     if(s==='volver'){touch(copia({nota:'Volver: '+res}));toast('Hecho. Se creó otro turno para volver.');}
     else if(s==='acepto'){touch(copia({tipo:'AC',nota:'Aceptó presupuesto: '+res}));toast('Hecho. Se creó el turno ACEPTADO.');}
     else if(s==='repuesto'){var tmpR={};repLeer(o,tmpR);touch(copia({estado:'repuesto',nota:'Repuesto: '+res,rep:tmpR.rep||null}));toast('Hecho. Quedó en “Esperan repuesto”.');}
@@ -1051,6 +1064,7 @@ function editTaller(t,pre,cb,ordenReq){var nuevo=!t;t=t?JSON.parse(JSON.stringif
     if(a==='del'){if(!confirm('¿Borrar la orden '+t.orden+' del taller?'))return;drop(byId[t.id]);closeM();return;}
     ['orden','equipo','cliente','telefono','ingreso','fecha','nota','falla'].forEach(function(k){t[k]=o.querySelector('#t-'+k).value.trim();});t.tecnico=o.querySelector('#t-tec').value;t.estado=ov(o,'est')||'esperando';
     if(!t.orden&&!t.cliente){toast('Poné el N° de orden o el cliente');return;}
+    if(t.orden){var cur0=byId[t.id];if(!cur0||ordKey(cur0.orden)!==ordKey(t.orden)){var ut=tsUso(t.orden,t.id,t.fromId);if(ut){o.querySelector('#t-orden').classList.add('bad');o.querySelector('#t-orden').focus();toast(tsMsg(t.orden,ut),6000);return;}}}
     if(!t.clienteId&&t.cliente){var cn={id:uid(),kind:'cliente',nombre:t.cliente,telefono:t.telefono||'',alta:today()};touch(cn);t.clienteId=cn.id;}
     var cur=byId[t.id];if(cur){Object.assign(cur,t);touch(cur);}else touch(t);closeM();toast('Guardado');if(cb)cb(t);};}
 
