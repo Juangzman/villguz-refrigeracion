@@ -618,7 +618,7 @@ function horarioLeer(root,t){var g=root.querySelector('.opts[data-name="horario"
 function horarioTxt(t){return (t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
 
 /* ---------- Carga del día ---------- */
-var CARGA_AMAR=5,CARGA_ROJO=7;
+var CARGA_AMAR=6,CARGA_ROJO=8; // hasta 5 normal, 6-7 amarillo, 8+ aviso
 function nDom(tec,d,excl){return dayItems(tec,d).filter(function(i){return i.kind==='turno'&&i.id!==excl;}).length;}
 function cargaCls(n){return n>=CARGA_ROJO?'c7':n>=CARGA_AMAR?'c5':'';}
 function cargaTag(n){var c=cargaCls(n);return c?'<span class="cg '+c+'">'+(c==='c7'?'⚠ '+n+' turnos · son muchos':n+' turnos · día completo')+'</span>':'';}
