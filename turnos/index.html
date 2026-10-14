@@ -188,6 +188,18 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .opt.c7{border-color:var(--red);background:var(--red-bg)}.opt.c7.on{background:var(--red);border-color:var(--red)}
 .cg{display:inline-block;font-weight:800;font-size:.72rem;padding:.12em .5em;border-radius:5px;margin-left:6px}.cg.c5{background:var(--amber-bg);color:var(--amber)}.cg.c7{background:var(--red);color:#fff}
 .walist{display:grid;gap:8px}.walist .btn{justify-content:flex-start;text-align:left;width:100%}.walist .btn.sent{opacity:.6}
+.adj{border:2px dashed var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px;background:#FAFCFE}
+.adj-list{display:flex;flex-wrap:wrap;gap:8px}
+.adj-it{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.adj-it button{border:0;background:none;cursor:pointer;font:inherit;padding:8px 10px;color:var(--ink)}
+.adj-it .v{font-weight:700;font-size:.86rem;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adj-it .x{color:var(--red);font-weight:800;border-left:1px solid var(--line)}
+.adj-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.adj-st{font-size:.86rem;font-weight:700;color:var(--navy)}
+.p-nofac{background:#FDE2E2;color:#9B1C1C}
+.adj-view{position:fixed;inset:0;z-index:200;background:rgba(0,15,35,.88);display:grid;place-items:center;padding:16px}
+.adj-view img{max-width:100%;max-height:calc(100vh - 90px);border-radius:10px;background:#fff}
+.adj-view .bar{position:fixed;top:12px;right:12px;display:flex;gap:8px}
 .hrbox{border:2px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
 .chk{display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px}
 .mini.tal{border-left-color:var(--violet);background:var(--violet-bg)}
@@ -558,7 +570,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('[data-cli]
 /* ---------- Planilla (tabla) ---------- */
 function telLink(t){return t.telefono?'<a class="tel" href="tel:'+esc(String(t.telefono).replace(/[^\d+]/g,'').slice(0,13))+'">'+esc(t.telefono)+'</a>':'';}
 function tipoCell(t){return (t.tipo?'<span class="pill p-'+t.tipo+'">'+TIPO[t.tipo]+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+'</span>':'')+
-  (t.flete?' <span class="pill p-fl">'+esc(t.flete.toUpperCase())+(t.fleteMonto?' '+money(t.fleteMonto):'')+'</span>':'')+(esFuera(t)?' <span class="pill p-fz">FUERA ZONA</span>':'');}
+  (t.flete?' <span class="pill p-fl">'+esc(t.flete.toUpperCase())+(t.fleteMonto?' '+money(t.fleteMonto):'')+'</span>':'')+(esFuera(t)?' <span class="pill p-fz">FUERA ZONA</span>':'')+(faltaFactura(t)?' <span class="pill p-nofac">🧾 SIN FACTURA</span>':'')+((t.adj||[]).length?' <span class="pill p-x" title="Adjuntos">📎 '+t.adj.length+'</span>':'');}
 function confCell(t){if(t.estado!=='asignado')return t.estado==='hecho'&&t.sol?'<b>'+SOL[t.sol]+'</b>':'';return t.conf==='confirmada'?'<span class="pill p-ok">✔ Confirmó</span>':t.conf==='enviada'?'<span class="pill p-warn">WhatsApp enviado</span>':'<span class="pill p-bad">Sin confirmar</span>';}
 var HEAD='<th>Ingresó</th><th>Tipo</th><th>Orden fábrica / TS</th><th>Cliente</th><th>Zona</th><th>Domicilio</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Confirmación / cierre</th><th>Resultado</th><th>Atendió</th>';
 function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><td>'+tipoCell(t)+'</td><td class="ord">'+esc(t.ordenFab||'')+(t.ordenFab&&t.ordenTS?'<br>':'')+(t.ordenTS?'<span class="muted">TS '+esc(t.ordenTS)+'</span>':'')+(t.ordenTSAnt?'<br><span class="muted" style="font-size:.72rem">ant. TS '+esc(t.ordenTSAnt)+' · falta orden nueva</span>':'')+'</td><td class="nm">'+flagTag(fl)+(t.clienteId&&visitas90(byId[t.clienteId])>=3?'<span class="flag urg" title="3 o más visitas en 3 meses">🔥</span>':'')+esc(t.nombre||'')+'</td><td class="nw">'+esc(t.zona||'')+'</td><td class="dom">'+esc(t.domicilio||'')+(t.ref?'<div class="muted" style="font-size:.76rem">'+esc(t.ref)+'</div>':'')+(t.nota?'<div class="muted" style="font-size:.76rem">📝 '+esc(t.nota)+'</div>':'')+(t.horario||t.avisar?'<div class="hr-tag">🕘 '+esc(horarioTxt(t))+'</div>':'')+'</td><td>'+telLink(t)+'</td><td class="nw">'+esc([t.producto,t.marca].filter(Boolean).join(' · '))+'</td><td class="fa">'+esc(fallaTxt(t))+'</td><td>'+confCell(t)+'</td><td class="res">'+esc(t.resultado||'')+'</td><td class="nw muted">'+esc(t.atendio||'')+(t.canal?'<br>'+esc(t.canal):'')+'</td>';}
@@ -586,7 +598,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-asg]'))){asignar(byId[b.dataset.asg]);return;}
   if((b=e.target.closest('[data-cerrar]'))){cerrar(byId[b.dataset.cerrar]);return;}
   if((b=e.target.closest('[data-wa]'))){enviarConf(byId[b.dataset.wa]);return;}
-  if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];t.conf='confirmada';touch(t);render();toast('Turno confirmado ✔');return;}
+  if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];if(faltaFactura(t)&&!confirm('Es en garantía y todavía no tiene la factura adjunta. ¿Marcar como confirmado igual?'))return;t.conf='confirmada';touch(t);render();toast('Turno confirmado ✔');return;}
   if((b=e.target.closest('[data-rep]'))){editRep(byId[b.dataset.rep]);return;}
   if((b=e.target.closest('[data-ataller]'))){aTaller(byId[b.dataset.ataller],'repuesto');return;}
   if((b=e.target.closest('[data-llego]'))){var r=byId[b.dataset.llego];r.rep=Object.assign(repDe(r),{pedido:'llego'});if(r.ordenTS){r.ordenTSAnt=r.ordenTS;r.ordenTS='';}r.estado='pendiente';r.ingreso=today();r.nota=((r.nota||'')+' · Llegó repuesto '+dd(today())).replace(/^ · /,'');touch(r);render();asignar(r);return;}
@@ -619,6 +631,57 @@ function bindInicio(){var i=$('hq'),r=$('hres'),t;if(!i)return;
   i.oninput=function(){clearTimeout(t);t=setTimeout(function(){var v=i.value.trim(),dig=v.replace(/[\s-]/g,''),q=/^\d+$/.test(dig)?{telefono:dig,orden:dig}:{txt:v},f=buscarCli(q);
     r.innerHTML=(dig.length>=6||v.length>=3)?(f.length?f.map(function(c){return cliCard(c,'<span class="tecrow"><button type="button" class="btn btn-sm" data-hver="'+c.id+'">Ver ficha</button><button type="button" class="btn btn-sm btn-green" data-hat="'+c.id+'">📞 Atender a este cliente</button></span>');}).join(''):'<div class="tip">No está en la base. Tocá por dónde llegó para cargarlo como nuevo.</div>'):'';},250);};
   r.onclick=function(e){var b=e.target.closest('[data-hver]');if(b){verCliente(byId[b.dataset.hver]);return;}b=e.target.closest('[data-hat]');if(b)proceso({cli:byId[b.dataset.hat]});};}
+
+/* ---------- Adjuntos: factura de compra, fotos del equipo, capturas ----------
+   Se guardan en Google Drive (carpeta "Turnos VILLGUZ - Adjuntos", una subcarpeta por cliente).
+   En el turno queda solo la referencia: id, nombre, tipo y categoría. */
+var ADJ_CAT={factura:'🧾 Factura',foto:'📷 Foto del equipo',otro:'📎 Otro'};
+function tieneFactura(t){return (t.adj||[]).some(function(a){return a.cat==='factura';});}
+function faltaFactura(t){return t.kind==='turno'&&t.tipo==='GT'&&t.estado!=='hecho'&&t.estado!=='cancelado'&&!tieneFactura(t);}
+function adjCarpeta(nombre,t){return [nombre||'Sin nombre',[PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' ')].filter(Boolean).join(' - ');}
+function aB64(file,max){return new Promise(function(res,rej){
+  var esImg=/^image\//.test(file.type)&&!/heic|heif/i.test(file.type);
+  if(!esImg){if(file.size>10*1024*1024)return rej('El archivo pesa más de 10 MB. Mandalo más liviano o como foto.');
+    var fr=new FileReader();fr.onload=function(){res({b64:String(fr.result).split(',')[1],tipo:file.type||'application/octet-stream',ext:(file.name.match(/\.[a-z0-9]+$/i)||[''])[0]});};fr.onerror=function(){rej('No se pudo leer el archivo');};fr.readAsDataURL(file);return;}
+  var url=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){var k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    res({b64:c.toDataURL('image/jpeg',.82).split(',')[1],tipo:'image/jpeg',ext:'.jpg'});};
+  im.onerror=function(){URL.revokeObjectURL(url);var fr=new FileReader();fr.onload=function(){res({b64:String(fr.result).split(',')[1],tipo:file.type||'image/jpeg',ext:(file.name.match(/\.[a-z0-9]+$/i)||['.jpg'])[0]});};fr.readAsDataURL(file);};
+  im.src=url;});}
+function adjErr(r){return r.error==='accion'?'Falta actualizar el Apps Script de Turnos (Nueva versión) para poder adjuntar.':r.error==='grande'?'El archivo es muy grande.':r.error==='clave'?'La contraseña cambió: volvé a entrar.':'No se pudo subir ('+(r.error||'sin conexión')+'). Probá de nuevo.';}
+// Caja de adjuntos reutilizable. o = {lista(), set(lista), carpeta(), gt:boolean, nombre()}
+function adjUI(box,o){var cat=o.gt&&!o.lista().some(function(a){return a.cat==='factura';})?'factura':'foto',ocup=false;
+  function pinta(st){var L=o.lista();
+    box.innerHTML='<div class="adj"><div class="q">📎 Adjuntos <small class="muted">(factura de compra, fotos del equipo, capturas que te mandan)</small></div>'+
+      (o.gt&&!L.some(function(a){return a.cat==='factura';})?'<div class="tip warn" style="margin:0">🧾 Es en garantía: falta la <b>factura de compra</b>. Si ya la tenés, adjuntala acá.</div>':'')+
+      (L.length?'<div class="adj-list">'+L.map(function(a,i){return '<span class="adj-it"><button type="button" class="v" data-adjv="'+i+'" title="Ver">'+(ADJ_CAT[a.cat]||'📎').split(' ')[0]+' '+esc(a.nombre)+'</button><button type="button" class="x" data-adjx="'+i+'" title="Quitar">✕</button></span>';}).join('')+'</div>':'')+
+      '<div class="adj-row"><span class="muted" style="font-size:.85rem;font-weight:700">Es:</span>'+Object.keys(ADJ_CAT).map(function(k){return '<button type="button" class="chip sm'+(cat===k?' on':'')+'" data-adjc="'+k+'">'+ADJ_CAT[k]+'</button>';}).join('')+'</div>'+
+      '<div class="adj-row"><label class="btn btn-sm">📷 Sacar foto<input type="file" accept="image/*" capture="environment" hidden data-adjf="1"></label><label class="btn btn-sm">📎 Elegir archivos<input type="file" accept="image/*,application/pdf" multiple hidden data-adjf="1"></label><span class="adj-st">'+(st||'')+'</span></div></div>';}
+  pinta();
+  box.onclick=function(e){var b=e.target.closest('[data-adjc]');if(b){cat=b.dataset.adjc;pinta();return;}
+    b=e.target.closest('[data-adjv]');if(b){verAdj(o.lista()[+b.dataset.adjv]);return;}
+    b=e.target.closest('[data-adjx]');if(b){var L=o.lista().slice(),a=L[+b.dataset.adjx];if(!confirm('¿Quitar “'+a.nombre+'”? Se borra también de Drive.'))return;
+      L.splice(+b.dataset.adjx,1);o.set(L);pinta();
+      var otro=DB.items.some(function(it){return (it.adj||[]).some(function(x){return x.id===a.id;});});
+      if(!otro)api('borrarAdj',{id:a.id}).catch(function(){});}};
+  box.onchange=async function(e){var inp=e.target.closest('[data-adjf]');if(!inp||!inp.files.length||ocup)return;var fs=[].slice.call(inp.files);inp.value='';ocup=true;
+    if(!CLOUD){toast('Sin conexión con Drive: no se pueden adjuntar archivos.');ocup=false;return;}
+    for(var i=0;i<fs.length;i++){pinta('Subiendo '+(fs.length>1?(i+1)+' de '+fs.length:'')+'… no cierres la ventana');
+      try{var f=await aB64(fs[i],1600),nom=(cat==='factura'?'Factura':cat==='foto'?'Foto':'Adjunto')+' - '+(o.nombre()||'cliente')+' - '+today()+(fs.length>1?' ('+(i+1)+')':'')+f.ext;
+        var r=await api('subir',{nombre:nom,tipo:f.tipo,datos:f.b64,carpeta:o.carpeta()});
+        if(!r.ok){toast(adjErr(r),7000);break;}
+        var L=o.lista().slice();L.push({id:r.id,nombre:r.nombre,tipo:r.tipo,tam:r.tam,cat:cat,fecha:today(),quien:YO||''});o.set(L);
+        if(cat==='factura')cat='foto';
+      }catch(err){toast(typeof err==='string'?err:'No se pudo subir: revisá la conexión.',6000);break;}}
+    ocup=false;pinta(o.lista().length?'✔ Guardado en Drive':'');};}
+async function verAdj(a){if(!a)return;var v=document.createElement('div');v.className='adj-view';v.innerHTML='<div class="bar"><button class="btn" data-c="1">✕ Cerrar</button></div><div style="color:#fff;font-weight:700">Abriendo '+esc(a.nombre)+'…</div>';document.body.appendChild(v);
+  var cerrar=function(){v.remove();};v.onclick=function(e){if(e.target===v||e.target.closest('[data-c]'))cerrar();};
+  try{var r=await api('archivo',{id:a.id});if(!r.ok)throw r;var bin=atob(r.datos),u8=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    var url=URL.createObjectURL(new Blob([u8],{type:r.tipo}));
+    if(/^image\//.test(r.tipo)){v.innerHTML='<div class="bar"><a class="btn" href="'+url+'" download="'+esc(r.nombre)+'">⬇ Descargar</a><button class="btn" data-c="1">✕ Cerrar</button></div><img src="'+url+'" alt="'+esc(r.nombre)+'">';}
+    else{cerrar();var w=window.open(url,'_blank');if(!w){var l=document.createElement('a');l.href=url;l.download=r.nombre;l.click();}}
+  }catch(e){cerrar();toast(e&&e.error?(e.error==='accion'?'Falta actualizar el Apps Script de Turnos.':'No se pudo abrir el archivo ('+e.error+').'):'No se pudo abrir: revisá la conexión.',6000);}}
 
 /* ---------- Horario que pide el cliente ---------- */
 var HORARIOS=['8 a 11','9 a 12','10 a 13','11 a 14','12 a 15','13 a 16','14 a 17'];
@@ -846,7 +909,7 @@ function saludo(canal,yo){var y=yo||'(tu nombre)';
   if(canal==='WhatsApp')return 'Respondé: “¡Hola, buen día! Le escribe '+esc(y)+' de VillGuz Refrigeración. ¿En qué lo podemos ayudar?”<br>Y preguntale: <b>“¿Es la primera vez que nos consulta o ya lo atendimos antes?”</b>';
   if(canal==='Presencial')return '“Buen día, bienvenido a VillGuz Refrigeración. ¿En qué lo puedo ayudar?”<br>Y preguntale: <b>“¿Es la primera vez que viene o ya nos trajo algún equipo?”</b>';
   return 'Caso derivado por fábrica (Samsung, LG, Whirlpool…). Tené a mano la <b>orden de fábrica</b>. Buscá al cliente por nombre, dirección o teléfono: si no está en la base, cargalo como nuevo.';}
-function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli:o.cli||null,c:{},t:{tipo:'',modo:'visita',fallas:[],visita:DB.cfg.costos[DB.cfg.costos.length-1]||0},found:[],tec:'',dia:'',agendar:''};
+function proceso(o){var W={adj:[],paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli:o.cli||null,c:{},t:{tipo:'',modo:'visita',fallas:[],visita:DB.cfg.costos[DB.cfg.costos.length-1]||0},found:[],tec:'',dia:'',agendar:''};
   if(W.cli){W.prev='si';W.bq=(String(W.cli.telefono||'').match(/\d[\d\s-]{5,}\d/)||[W.cli.nombre||''])[0].replace(/[\s-]/g,'')||W.cli.nombre;W.cli=null;}
   if(W.canal==='Fábrica')W.t.tipo='GT';
   var o2=modal('Atender cliente','<div id="pz"></div>','<span class="left"><button class="btn" data-a="back">← Atrás</button></span><button class="btn btn-green btn-big" data-a="next">Siguiente →</button>','<div class="pasos" id="pasos"></div>');o2._ask=true;
@@ -877,7 +940,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
         '<div class="step" id="fallasBox"></div>'+
         '<label class="f req"><span>Contanos la falla con las palabras del cliente</span><textarea class="i" id="t-falla">'+esc(W.t.falla||'')+'</textarea></label>'+
         '<div class="g2"><div class="step"><div class="q">¿Desde cuándo?</div>'+opts('desde',DESDE.map(function(x){return [x,x];}),W.t.desde,'')+'</div><div class="step"><div class="q">¿Dónde está instalado?</div>'+opts('donde',DONDE.map(function(x){return [x,x];}),W.t.donde,'')+'</div></div>'+
-        '<div class="g2"><label class="f"><span>¿Muestra código de error o luz?</span><input class="i" id="t-error" value="'+esc(W.t.error||'')+'"></label><div class="step"><div class="q">¿Lo vio otro técnico?</div>'+opts('otroTec',[['No','No'],['Sí','Sí']],W.t.otroTec,'wide ')+'</div></div>';}
+        '<div class="g2"><label class="f"><span>¿Muestra código de error o luz?</span><input class="i" id="t-error" value="'+esc(W.t.error||'')+'"></label><div class="step"><div class="q">¿Lo vio otro técnico?</div>'+opts('otroTec',[['No','No'],['Sí','Sí']],W.t.otroTec,'wide ')+'</div></div><div id="adjBox"></div>';}
     else if(W.paso===5){h=(W.cli?urgTip(W.cli):'')+resumenHTML()+(W.t.modo==='taller'?'<div class="tip good">El cliente trae el equipo al local (revisión '+money(DB.cfg.revisionLocal)+'). Se guarda en <b>Taller</b> como “Esperando”.</div>':W.t.modo==='piensa'?'<div class="tip">El cliente lo va a pensar. Se guardan sus datos en Clientes, sin turno.</div>':
         horarioBox(W.t.horario,W.t.avisar)+'<div class="tip">Si tocás <b>✔ Guardar</b> sin elegir día, queda en <b>Pendientes · Esperan día</b> y se lo das después.</div><div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
     pz.innerHTML=h;bindOpts(pz,onOpt);after();}
@@ -895,7 +958,7 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
         box.innerHTML=f.length?'<div class="tip warn">Ojo: puede que ya esté en la base.</div>'+f.map(function(c,i){return cliCard(c,'<button type="button" class="btn btn-primary btn-sm" data-dup="'+i+'">Es este, usar sus datos</button>');}).join(''):'';box._f=f;};
       [ct,cn].forEach(function(i){i.addEventListener('input',function(){clearTimeout(tm2);tm2=setTimeout(chk,300);});});chk();
       box.onclick=function(e){var b=e.target.closest('[data-dup]');if(!b)return;var c=box._f[+b.dataset.dup];W.cli=c;W.c={nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona||'',flag:c.flag||'',motivo:c.motivo||'',codTS:c.codTS||''};draw();};}
-    if(W.paso===3)tipoBox();if(W.paso===4)fallasBox();if(W.paso===5&&W.agendar==='ahora')agBox();}
+    if(W.paso===3)tipoBox();if(W.paso===4){fallasBox();adjUI(pz.querySelector('#adjBox'),{lista:function(){return W.adj||[];},set:function(L){W.adj=L;},gt:W.t.tipo==='GT',nombre:function(){return W.c.nombre;},carpeta:function(){var pr=ov(pz,'producto')||W.t.producto,mk=ov(pz,'marca')||W.t.marca;return adjCarpeta(W.c.nombre,{producto:pr,marca:mk});}});}if(W.paso===5&&W.agendar==='ahora')agBox();}
   function val1(){W.canal=ov(pz,'canal');W.atendio=ov(pz,'atendio');if(!W.canal){toast('Elegí por dónde llegó el cliente');return false;}if(!W.atendio){toast('Tocá tu nombre en “¿Quién atiende?”');return false;}YO=W.atendio;try{localStorage.setItem('vt_yo',YO);}catch(e){}return true;}
   function onOpt(n,v){if(W.paso===1&&(n==='canal'||n==='atendio'||n==='prev')){W[n]=v;var q=pz.querySelector('#b-q');if(q)W.bq=q.value;draw();return;}if(n==='tipo'){W.t.tipo=v;tipoBox();}if(n==='modo'){W.t.modo=v;tipoBox();}if(n==='producto'){W.t.producto=v;W.t.fallas=[];fallasBox();}if(n==='marca'){pz.querySelector('#t-marcaOtra').value='';}
     if(n==='agendar'){W.agendar=v;agBox();}if(n==='visita'){var vo=pz.querySelector('#t-visOtro');if(vo)vo.hidden=v!=='otro';}}
@@ -943,11 +1006,11 @@ function proceso(o){var W={paso:1,prev:'',bq:'',canal:o.canal||'',atendio:YO,cli
     else{cli={id:uid(),kind:'cliente',nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona,codTS:c.codTS||'',alta:today()};touch(cli);}
     if(t.modo==='piensa'){closeM();toast('Cliente guardado. No se cargó turno.');return;}
     var falla=fallaTxt(t)+(t.desde?' · desde '+t.desde.toLowerCase():'')+(t.donde?' · '+t.donde.toLowerCase():'')+(t.error?' · código '+t.error:'')+(t.otroTec==='Sí'?' · ya lo vio otro técnico':'');
-    if(t.modo==='taller'){touch({id:uid(),kind:'taller',orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:c.nombre,clienteId:cli.id,telefono:c.telefono||'',falla:falla,tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:'Lo trae el cliente · revisión en local '+money(DB.cfg.revisionLocal)});closeM();go('taller');toast('Guardado en Taller: el cliente trae el equipo');return;}
+    if(t.modo==='taller'){touch({id:uid(),kind:'taller',adj:W.adj||[],orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:c.nombre,clienteId:cli.id,telefono:c.telefono||'',falla:falla,tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:'Lo trae el cliente · revisión en local '+money(DB.cfg.revisionLocal)});closeM();go('taller');toast('Guardado en Taller: el cliente trae el equipo');return;}
     var n={id:uid(),kind:'turno',clienteId:cli.id,nombre:c.nombre,telefono:[c.telefono,c.tel2].filter(Boolean).join(' / '),domicilio:c.domicilio,ref:c.ref||'',zona:c.zona,canal:W.canal,atendio:W.atendio,alta:today(),ingreso:today(),
       tipo:t.tipo,ordenFab:t.ordenFab||'',ordenTS:t.ordenTS||'',visita:t.tipo==='SG'&&t.modo==='visita'?t.visita:0,flete:t.modo==='flete'?'retiro':'',fleteMonto:t.modo==='flete'?(+String(t.fleteMonto||'').replace(/\D/g,'')||0):0,
       horario:t.horario||'',avisar:!!t.avisar,producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
-      estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:''};
+      estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:'',adj:W.adj||[]};
     if(t.tipo==='AC'&&cli)n.tecPref=tecPresu(cli.id);
     if(W.agendar==='ahora'&&W.tec&&W.dia&&!okCarga(W.tec,W.dia))return;
     if(W.agendar==='ahora'&&W.tec&&W.dia){n.estado='asignado';n.tecnico=W.tec;n.fecha=W.dia;}else if(W.agendar==='ahora'&&W.tec){n.tecPref=W.tec;}
@@ -972,11 +1035,12 @@ function verTurno(t){var fl=flagOf(t);var r=function(k,v){return v?'<div><b clas
     '<label class="f"><span>Nota interna</span><input class="i" id="e-nota" value="'+esc(t.nota||'')+'"></label>'+
     '<label class="f"><span>Resultado / qué se hizo</span><input class="i" id="e-resultado" value="'+esc(t.resultado||'')+'"></label>'+
     (t.estado==='repuesto'||t.rep?repForm(t):'')+
-    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar):'');
+    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar):'')+'<div id="adjBox"></div>';
   var f='<span class="left"><button class="btn btn-danger" data-a="del">Borrar</button>'+(t.estado==='asignado'?'<button class="btn" data-a="unasg">Sacar el día</button>':'')+(t.estado!=='pendiente'&&t.estado!=='repuesto'?'':'')+'</span>'+
     (t.estado==='asignado'?'<button class="btn btn-wa" data-a="wa">📲 Confirmación</button>'+(t.conf!=='confirmada'?'<button class="btn" data-a="confok">✔ Confirmó</button>':'')+'<button class="btn" data-a="asg">Cambiar día</button><button class="btn btn-green" data-a="cerrar">¿Cómo terminó?</button>':'')+
     (t.estado==='pendiente'?'<button class="btn btn-green" data-a="asg">Dar día</button>':'')+(t.estado==='hecho'?'<button class="btn" data-a="reabrir">Reabrir</button>':'')+'<button class="btn btn-primary btn-big" data-a="save">Guardar</button>';
   var o=modal('Turno · '+esc(t.nombre),b,f);bindOpts(o);
+  adjUI(o.querySelector('#adjBox'),{lista:function(){return t.adj||[];},set:function(L){var cur=byId[t.id]||t;cur.adj=L;t.adj=L;touch(cur);},gt:t.tipo==='GT',nombre:function(){return t.nombre;},carpeta:function(){return adjCarpeta(t.nombre,t);}});
   var bc=o.querySelector('[data-vcli]');if(bc)bc.onclick=function(){var c=byId[t.clienteId];if(c)verCliente(c);};
   function leer(){['ordenFab','ordenTS','falla','nota','resultado'].forEach(function(k){t[k]=o.querySelector('#e-'+k).value.trim();});repLeer(o,t);horarioLeer(o,t);var tp=o.querySelector('#e-tecPref');if(tp)t.tecPref=tp.value;touch(t);}
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
