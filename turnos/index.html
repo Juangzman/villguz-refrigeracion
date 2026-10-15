@@ -204,6 +204,8 @@ table.xl{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .adj-view img{max-width:100%;max-height:calc(100vh - 90px);border-radius:10px;background:#fff}
 .adj-view .bar{position:fixed;top:12px;right:12px;display:flex;gap:8px}
 .hrbox{border:2px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
+.fpbox{border:2px dashed #9DB8E0;border-radius:14px;padding:12px 14px;display:grid;gap:8px;margin-bottom:10px;background:#F4F8FE}.fpbox .btn{justify-self:start}
+.opt.fpd{outline:3px solid #2B6CC4;outline-offset:1px}
 .chk{display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px}
 .mini.tal{border-left-color:var(--violet);background:var(--violet-bg)}
 @media (max-width:1000px){.ag-days{grid-template-columns:1fr}.ag-day{border-right:0;border-bottom:1px solid var(--line)}.ag-cell{min-height:0}.ag-cell:empty::after{content:"Sin turnos";color:var(--muted);font-size:.85rem}}
@@ -387,9 +389,10 @@ function fD(s){return s?DN[dow(s)]+' '+dd(s):'';}
 function fL(s){return s?DL[dow(s)]+' '+dd(s):'';}
 
 /* ---------- Reglas ----------
-   S/G: turno dentro de la misma semana en que entró el pedido (hasta el viernes).
-   GTIA, GTIA TALLER y ACEPTADO: como mucho hasta el viernes de la semana siguiente.
-   Si entra sábado o domingo, cuenta desde la semana que empieza. */
+   Se cuentan DÍAS HÁBILES (lunes a viernes) desde que se recepcionó el pedido,
+   sin importar el cambio de semana.
+   S/G: 3 días hábiles. GTIA, GTIA TALLER y ACEPTADO: 7 días hábiles.
+   Si el cliente pide una fecha específica, el plazo pasa a ser esa fecha. */
 var TIPO={GT:'GTIA',SG:'S/G',GTT:'GTIA TALLER',AC:'ACEPTADO'};
 var SOL={ok:'✔ Solucionado',volver:'🔁 Hay que volver',presu:'💲 Presupuestado',acepto:'👍 Aceptó presupuesto',repuesto:'🔩 Necesita repuesto',taller:'🔧 Se lleva al taller',ausente:'🚪 No estaba',nofue:'🚫 El técnico no fue',retirado:'✔ Retiro realizado',entregado:'✔ Entrega realizada',externo:'🚚 Flete externo del cliente'};
 var SOL_VISITA=['ok','volver','presu','acepto','repuesto','taller','ausente','nofue'];
@@ -398,13 +401,20 @@ function base(t){return t.ingreso||t.alta||'';}
 function habil(s){var w=dow(s);return w!==0&&w!==6;}
 function addBD(s,n){var d=s;while(n>0){d=addD(d,1);if(habil(d))n--;}return d;}
 function bdiff(a,b){var n=0,d=a;while(d<b){d=addD(d,1);if(habil(d))n++;}return n;}
-var SG_AMAR=3,SG_ROJO=5; // S/G: a los 3 días hábiles amarillo, a los 5 rojo
-function plazo(t){var b=base(t);if(!b)return '';if(t.tipo==='SG')return addBD(b,SG_ROJO);var m=monday(b);if(dow(b)===6||dow(b)===0)m=addD(m,7);return addD(m,11);}
-function sem(t){var b=base(t);if(!b)return 'sin';if(t.tipo==='SG'){var n=bdiff(b,today());return n>=SG_ROJO?'venc':n>=SG_AMAR?'hoy':'ok';}
-  var p=plazo(t),d=diff(today(),p);return d<0?'venc':d<=1?'hoy':'ok';}
-function plazoCorto(t){var b=base(t);if(!b)return 'Sin fecha';
-  if(t.tipo==='SG'){var n=bdiff(b,today());return n>=SG_ROJO?'VENCIDO · '+n+' días háb.':n>=SG_AMAR?'⚠ '+n+' días háb.':(n===0?'Entró hoy':n+(n===1?' día háb.':' días háb.'))+' · rojo a los 5';}
-  var p=plazo(t),d=diff(today(),p);if(d<0)return 'VENCIDO '+(-d)+'d';if(d===0)return 'HOY';if(d===1)return 'Mañana';return 'hasta '+fD(p);}
+var PLAZO_SG=3,PLAZO_GT=7; // días hábiles desde la recepción
+function plazoN(t){return t.tipo==='SG'?PLAZO_SG:PLAZO_GT;}
+function plazo(t){if(t.fechaPedida)return t.fechaPedida;var b=base(t);if(!b)return '';return addBD(b,plazoN(t));}
+// días hábiles que faltan hasta el plazo (0 = el plazo es hoy); -1 si ya pasó
+function faltan(p){var h=today();if(h>p)return -1;return bdiff(h,p);}
+function sem(t){var p=plazo(t);if(!p)return 'sin';var f=faltan(p);return f<0?'venc':f<=1?'hoy':'ok';}
+function plazoCorto(t){var p=plazo(t);if(!p)return 'Sin fecha';var f=faltan(p);
+  if(t.fechaPedida)return '📅 Pidió el '+fD(p)+(f<0?' · YA PASÓ':f===0?' · ES HOY':f===1?' · mañana háb.':'');
+  var N=plazoN(t),n=Math.min(bdiff(base(t),today()),99);
+  if(f<0)return 'VENCIDO · '+n+' días háb. (plazo '+N+')';
+  if(f===0)return '⚠ Último día ('+N+' de '+N+')';
+  if(f===1)return '⚠ Vence '+fD(p)+' ('+n+' de '+N+')';
+  return (n===0?'Entró hoy':n+(n===1?' día háb.':' días háb.'))+' de '+N+' · hasta '+fD(p);}
+function plazoReglaTxt(t){return t.fechaPedida?'fecha que pidió el cliente'+(t.fechaMotivo?': '+t.fechaMotivo:''):(t.tipo==='SG'?'S/G':TIPO[t.tipo]||'GTIA')+': '+plazoN(t)+' días hábiles desde que entró';}
 function esFuera(t){return DB.cfg.zonasFuera.indexOf(t.zona)>=0;}
 
 /* ---------- Datos ---------- */
@@ -624,7 +634,7 @@ function vInicio(){var all=L_sin(),l=all;if(FILT.tipo!=='todos')l=l.filter(funct
   var h='<section class="hero"><div><h2>¿Llama o escribe un cliente?</h2><p>Tocá por dónde llegó y seguí los pasos. El sistema te va diciendo qué preguntar.</p></div><div class="canales">'+
     '<button class="canal" data-canal="Teléfono"><span>📞</span>Teléfono<small>llamada</small></button><button class="canal" data-canal="WhatsApp"><span>💬</span>WhatsApp<small>mensaje</small></button><button class="canal" data-canal="Presencial"><span>🏪</span>En el local<small>vino al taller</small></button><button class="canal" data-canal="Fábrica"><span>🏭</span>Caso de fábrica<small>Samsung, LG, Whirlpool…</small></button></div>'+
     '<label class="f hq"><span>🔎 Buscar cliente en la base (nombre, apellido, dirección o teléfono)</span><input class="i" id="hq" autocomplete="off" placeholder="Ej.: Pérez · Laprida 500 · 381 5551234"></label><div id="hres" class="hres"></div></section>';
-  h+='<div class="vh"><div><h2>Esperan día de turno</h2><p>Primero los más urgentes. <b>S/G:</b> amarillo a los 3 días hábiles y rojo a los 5 · <b>GTIA y ACEPTADO:</b> como mucho la semana siguiente. Filtrá por zona para armar el recorrido.</p></div></div>';
+  h+='<div class="vh"><div><h2>Esperan día de turno</h2><p>Primero los más urgentes. Plazo en <b>días hábiles</b> desde que entró: <b>S/G 3</b> · <b>GTIA, GTIA TALLER y ACEPTADO 7</b>. Amarillo en el último día hábil o el anterior, rojo si se pasó. 📅 = el cliente pidió una fecha. Filtrá por zona para armar el recorrido.</p></div></div>';
   h+=chipsF('tipo',[['todos','Todos ('+all.length+')'],['venc','⚠ Vencidos ('+all.filter(function(t){return sem(t)==='venc';}).length+')'],['GT','GTIA ('+cnt('GT')+')'],['SG','S/G ('+cnt('SG')+')'],['AC','ACEPTADO ('+cnt('AC')+')'],['GTT','GTIA TALLER ('+cnt('GTT')+')']]);
   if(Object.keys(zs).length>1)h+=chipsF('zona',[['todas','Todas las zonas']].concat(Object.keys(zs).sort().map(function(z){return [z,(z||'Sin zona')+' ('+zs[z]+')'];})));
   if(!l.length)return h+'<div class="empty">'+(all.length?'No hay clientes con este filtro.':'No hay clientes esperando día. 🎉')+'</div>';
@@ -695,11 +705,13 @@ async function verAdj(a){if(!a)return;var v=document.createElement('div');v.clas
 
 /* ---------- Horario que pide el cliente ---------- */
 var HORARIOS=['8 a 11','9 a 12','10 a 13','11 a 14','12 a 15','13 a 16','14 a 17'];
-function horarioBox(h,av){return '<div class="hrbox"><div class="q">🕘 Horario que pide el cliente <small class="muted">(opcional · rango de 3 horas · tocá de nuevo para sacarlo)</small></div>'+
+var FP_HOOK=null;function fpCambio(){if(FP_HOOK){var r=document.querySelector('#h-fped');FP_HOOK(r?r.value:'');}}
+function fpBox(fp,fm){return '<div class="fpbox"><div class="q">📅 ¿El cliente pide una fecha específica? <small class="muted">(opcional · reemplaza el plazo)</small></div><div class="g2"><label class="f"><span>Fecha que pide</span><input class="i" type="date" id="h-fped" value="'+esc(fp||'')+'" onchange="fpCambio()"></label><label class="f"><span>Motivo (opcional)</span><input class="i" id="h-fmot" value="'+esc(fm||'')+'" placeholder="Ej.: viaja, cobra el 10, está de vacaciones"></label></div>'+(fp?'<button type="button" class="btn btn-sm" onclick="var i=document.querySelector(\'#h-fped\');i.value=\'\';fpCambio()">Quitar fecha</button>':'')+'</div>';}
+function horarioBox(h,av,fp,fm){return fpBox(fp,fm)+'<div class="hrbox"><div class="q">🕘 Horario que pide el cliente <small class="muted">(opcional · rango de 3 horas · tocá de nuevo para sacarlo)</small></div>'+
   opts('horario',HORARIOS.map(function(x){return [x,x+' hs'];}),h||'','')+
   '<label class="chk"><input type="checkbox" id="h-avisar"'+(av?' checked':'')+'> 📲 Avisarle al cliente media hora antes de llegar</label></div>';}
-function horarioLeer(root,t){var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;t.horario=ov(root,'horario');var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
-function horarioTxt(t){return (t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
+function horarioLeer(root,t){var fpi=root.querySelector('#h-fped');if(fpi){t.fechaPedida=fpi.value||'';var fmi=root.querySelector('#h-fmot');t.fechaMotivo=t.fechaPedida&&fmi?fmi.value.trim():'';}var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;t.horario=ov(root,'horario');var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
+function horarioTxt(t){return (t.fechaPedida?'📅 pidió el '+fL(t.fechaPedida)+(t.fechaMotivo?' ('+t.fechaMotivo+')':'')+(t.horario||t.avisar?' · ':''):'')+(t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
 
 /* ---------- Carga del día ---------- */
 var CARGA_AMAR=6,CARGA_ROJO=8; // hasta 5 normal, 6-7 amarillo, 8+ aviso
@@ -719,15 +731,15 @@ function urgTag(c){var n=visitas90(c);return n>=3?'<span class="flag urg" title=
 function urgTip(c){var n=visitas90(c);return n>=3?'<div class="tip bad">🔥 Cliente URGENTE: ya fuimos '+n+' veces en los últimos 3 meses. Atendelo con prioridad y con mucha paciencia (puede estar molesto).</div>':'';}
 function picker(x){if(!x.sel._init){x.sel._init=1;if(!x.sel.tec&&x.pref&&x.ts.indexOf(x.pref)>=0)x.sel.tec=x.pref;else if(!x.sel.tec&&!x.pref&&x.ts.length&&x.esp(x.ts[0]))x.sel.tec=x.ts[0];}
   var verTs=x.ts;if(x.pref&&x.ts.indexOf(x.pref)>=0&&!x.sel.otro)verTs=[x.pref];
-  var ds=[],d=today();while(ds.length<12){if(dow(d)!==0)ds.push(d);d=addD(d,1);}var T=x.sel.tec;
+  var ds=[],d=today();while(ds.length<12){if(dow(d)!==0)ds.push(d);d=addD(d,1);}if(x.fp&&x.fp>=today()&&ds.indexOf(x.fp)<0)ds.push(x.fp);if(x.sel.dia&&ds.indexOf(x.sel.dia)<0&&x.sel.dia>=today())ds.push(x.sel.dia);ds.sort();var T=x.sel.tec;
   var h='<div class="step"><div class="q">1. Técnico'+(x.pref?' <small class="muted">(por defecto vuelve '+esc(x.pref)+', que lo vio y presupuestó)</small>':'')+'</div><div class="tecpref"><div class="opts">'+verTs.map(function(n){return '<button type="button" class="opt wide'+(x.esp(n)?' esp':'')+(T===n?' on':'')+'" data-ptec="'+esc(n)+'">'+esc(n)+'<small>'+(n===x.pref?'★ lo vio primero':x.esp(n)?'✔ especialista':'')+'</small></button>';}).join('')+'</div>'+
     (x.pref&&x.ts.indexOf(x.pref)>=0?(x.sel.otro?'<button type="button" class="btn btn-sm" data-potro="0">Volver a '+esc(x.pref)+'</button>':'<button type="button" class="btn btn-sm" data-potro="1">👤 Otro técnico (si '+esc(x.pref)+' no puede)</button>'):'')+'</div><p class="hint-un">Tocá de nuevo para desmarcar.</p></div>';
   h+='<div class="step"><div class="q">2. Día <small class="muted">(cuántos turnos tiene '+(T?esc(T):'el técnico')+' y por qué zonas anda · ⭐ misma zona)</small></div><div class="days-pick">'+ds.map(function(d){
-      var its=T?dayItems(T,d).filter(function(i){return i.id!==x.excl;}):[],zs=T?zonasDia(T,d,x.excl):[],dn=T?dayNote(T,d):null,late=x.p&&d>x.p,misma=x.zona&&zs.indexOf(x.zona)>=0;
+      var its=T?dayItems(T,d).filter(function(i){return i.id!==x.excl;}):[],zs=T?zonasDia(T,d,x.excl):[],dn=T?dayNote(T,d):null,fpd=x.fp&&d===x.fp,late=x.p&&d>x.p,misma=x.zona&&zs.indexOf(x.zona)>=0;
       var nd=T?its.filter(function(i){return i.kind==='turno';}).length:0,cc=cargaCls(nd+(x.sel.dia===d?0:0));
-      return '<button type="button" class="opt'+(late?' late':'')+(cc?' '+cc:'')+(x.sel.dia===d?' on':'')+'" data-pdia="'+d+'"><span>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+(misma?' ⭐':'')+'</span><small>'+(T?(its.length?its.length+(its.length===1?' turno':' turnos')+(cc==='c7'?' · ¡muchos!':cc==='c5'?' · completo':''):'libre'):'elegí técnico')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+(late?' · después del plazo':'')+'</small></button>';}).join('')+'</div>';
+      return '<button type="button" class="opt'+(late?' late':'')+(fpd?' fpd':'')+(cc?' '+cc:'')+(x.sel.dia===d?' on':'')+'" data-pdia="'+d+'"><span>'+(d===today()?'HOY':DN[dow(d)].toUpperCase())+' '+dd(d)+(misma?' ⭐':'')+(fpd?' 📅':'')+'</span><small>'+(fpd?'<b>pidió este día</b> · ':'')+(T?(its.length?its.length+(its.length===1?' turno':' turnos')+(cc==='c7'?' · ¡muchos!':cc==='c5'?' · completo':''):'libre'):'elegí técnico')+(zs.length?' · '+esc(zs.join(', ')):'')+(dn?' · '+esc(dn.texto.toLowerCase()):'')+(late?' · después del plazo':'')+'</small></button>';}).join('')+'</div>';
   if(x.sel.dia&&T){var ns=nDom(T,x.sel.dia,x.excl)+1;if(ns>=CARGA_ROJO)h+='<div class="tip bad">⚠ Con este, '+esc(T)+' queda con <b>'+ns+' turnos</b> ese día. Son muchos para un día: se puede asignar igual, pero conviene repartir.</div>';else if(ns>=CARGA_AMAR)h+='<div class="tip warn">'+esc(T)+' queda con '+ns+' turnos ese día (día completo).</div>';}
-  if(x.sel.dia&&x.p&&x.sel.dia>x.p)h+='<div class="tip warn">⚠ Ese día queda después del plazo ('+fD(x.p)+'). Es solo un aviso: podés darle el turno igual.</div>';
+  if(x.sel.dia&&x.fp&&x.sel.dia!==x.fp)h+='<div class="tip warn">📅 El cliente pidió el '+fL(x.fp)+' y estás eligiendo otro día. Es solo un aviso.</div>';else if(x.sel.dia&&x.p&&x.sel.dia>x.p)h+='<div class="tip warn">⚠ Ese día queda después del plazo ('+fD(x.p)+'). Es solo un aviso: podés darle el turno igual.</div>';
   h+='<label class="f" style="max-width:260px"><span>Otra fecha</span><input class="i" type="date" id="f-dia" value="'+esc(x.sel.dia||'')+'"></label></div>';
   return h;}
 function bindPicker(box,sel,redraw){box.onclick=function(e){var x=e.target.closest('[data-potro]');if(x){sel.otro=x.dataset.potro==='1';if(!sel.otro&&sel.pref)sel.tec=sel.pref;else if(sel.otro&&sel.tec===sel.pref)sel.tec='';redraw();return;}x=e.target.closest('[data-ptec]');if(x){sel.tec=sel.tec===x.dataset.ptec?'':x.dataset.ptec;redraw();return;}x=e.target.closest('[data-pdia]');if(x){sel.dia=sel.dia===x.dataset.pdia?'':x.dataset.pdia;redraw();}};
@@ -842,7 +854,7 @@ function vAjustes(){var c=DB.cfg;var h='<div class="vh"><div><h2>Ajustes</h2></d
   h+='<div class="card"><h3>Costos</h3><div class="tecrow"><label class="f"><span>Visita a domicilio S/G (separados por coma)</span><input class="i" id="cfgCos" value="'+esc(c.costos.join(', '))+'" style="max-width:320px"></label><label class="f"><span>Revisión en el local</span><input class="i" id="cfgRev" value="'+esc(c.revisionLocal)+'" style="max-width:200px"></label><button class="btn btn-primary" id="saveCos">Guardar</button></div></div>';
   h+='<div class="card"><h3>Fleteros</h3><p class="muted" style="margin:0">Quienes hacen retiros y entregas (no son técnicos). Separados por coma.</p><div class="tecrow"><input class="i" id="cfgFle" value="'+esc((c.fleteros||[]).join(', '))+'"><button class="btn btn-primary" id="saveFle">Guardar</button></div></div>';
   h+='<div class="card"><h3>Mensajes de confirmación por WhatsApp</h3><p class="muted" style="margin:0">{DIA} se reemplaza por el día del turno, {COSTO} por el costo de la visita y {SALUDO} por “Buenos días” o “Buenas tardes” según la hora.</p><label class="f">Sin garantía<textarea class="i" id="cfgMsgSG" style="min-height:220px">'+esc(c.msgSG)+'</textarea></label><label class="f">Garantía<textarea class="i" id="cfgMsgGT" style="min-height:220px">'+esc(c.msgGT)+'</textarea></label><div><button class="btn btn-primary" id="saveMsg">Guardar mensajes</button></div></div>';
-  h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0"><b>S/G:</b> se cuentan días hábiles (lunes a viernes) desde que entró el pedido: a los <b>3</b> se pone en amarillo y a los <b>5</b> en rojo.<br><b>GTIA, GTIA TALLER y ACEPTADO:</b> como mucho hasta el viernes de la semana siguiente.</p></div>';
+  h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0">Se cuentan <b>días hábiles</b> (lunes a viernes) desde el día en que se recepcionó el pedido, aunque pase de una semana a la otra.<br><b>S/G:</b> 3 días hábiles · <b>GTIA, GTIA TALLER y ACEPTADO:</b> 7 días hábiles.<br>Se pone <b>amarillo</b> cuando queda 1 día hábil o es el último, y <b>rojo</b> cuando se pasó.<br><b>📅 Fecha que pide el cliente:</b> si el cliente pide un día específico, el plazo pasa a ser esa fecha.</p></div>';
   h+='<div class="card"><h3>Contraseña de turnos</h3><div class="g3"><label class="f">Actual<input class="i" type="password" id="pwO"></label><label class="f">Nueva<input class="i" type="password" id="pwN"></label><label class="f">Repetir nueva<input class="i" type="password" id="pwN2"></label></div><p class="err" id="pwE" hidden></p><div><button class="btn btn-primary" id="pwS">Cambiar contraseña</button></div></div>';
   var rep=ordRepetidas();h+='<div class="card"><h3>Órdenes TS repetidas</h3>'+(rep.length?'<p class="muted" style="margin:0">Cada número de orden TS es único. Estas están cargadas en más de un lugar (probablemente de antes de este control): tocá cada una y corregí el número.</p>'+rep.map(function(x){return '<div class="tip warn"><b>TS '+esc(x[0])+'</b> · '+x[1].length+' veces<br>'+x[1].map(function(it){return '<button class="btn btn-sm" data-ed="'+it.id+'">'+esc(ordDesc(it))+'</button>';}).join(' ')+'</div>';}).join(''):'<p style="margin:0">✔ No hay órdenes repetidas.</p>')+'</div>';
   h+=archivoCard();
@@ -952,7 +964,7 @@ function proceso(o){var W={adj:[],paso:1,prev:'',bq:'',canal:o.canal||'',atendio
         '<div class="g2"><div class="step"><div class="q">¿Desde cuándo?</div>'+opts('desde',DESDE.map(function(x){return [x,x];}),W.t.desde,'')+'</div><div class="step"><div class="q">¿Dónde está instalado?</div>'+opts('donde',DONDE.map(function(x){return [x,x];}),W.t.donde,'')+'</div></div>'+
         '<div class="g2"><label class="f"><span>¿Muestra código de error o luz?</span><input class="i" id="t-error" value="'+esc(W.t.error||'')+'"></label><div class="step"><div class="q">¿Lo vio otro técnico?</div>'+opts('otroTec',[['No','No'],['Sí','Sí']],W.t.otroTec,'wide ')+'</div></div><div id="adjBox"></div>';}
     else if(W.paso===5){h=(W.cli?urgTip(W.cli):'')+resumenHTML()+(W.t.modo==='taller'?'<div class="tip good">El cliente trae el equipo al local (revisión '+money(DB.cfg.revisionLocal)+'). Se guarda en <b>Taller</b> como “Esperando”.</div>':W.t.modo==='piensa'?'<div class="tip">El cliente lo va a pensar. Se guardan sus datos en Clientes, sin turno.</div>':
-        horarioBox(W.t.horario,W.t.avisar)+'<div class="tip">Si tocás <b>✔ Guardar</b> sin elegir día, queda en <b>Pendientes · Esperan día</b> y se lo das después.</div><div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
+        horarioBox(W.t.horario,W.t.avisar,W.t.fechaPedida,W.t.fechaMotivo)+'<div class="tip">Si tocás <b>✔ Guardar</b> sin elegir día, queda en <b>Pendientes · Esperan día</b> y se lo das después.</div><div class="step"><div class="q">¿Le damos día ahora?</div>'+opts('agendar',[['ahora','📅 Sí, darle día ahora<small>mirá la lista y elegí</small>'],['despues','💬 Le aviso por WhatsApp<small>queda en “Esperan día”</small>']],W.agendar,'wide big ')+'</div><div id="agBox"></div>');}
     pz.innerHTML=h;bindOpts(pz,onOpt);after();}
   function after(){if(W.paso===1){var bq=pz.querySelector('#b-q')||{value:''},tm;function look(){var v=bq.value.trim(),dig=v.replace(/[\s-]/g,''),q={};if(/^\d+$/.test(dig)){q.telefono=dig;q.orden=dig;}else q.txt=v;W.found=buscarCli(q);
         var r=pz.querySelector('#bRes');var any=dig.length>=6||v.length>=3||W.prev==='no';
@@ -968,6 +980,7 @@ function proceso(o){var W={adj:[],paso:1,prev:'',bq:'',canal:o.canal||'',atendio
         box.innerHTML=f.length?'<div class="tip warn">Ojo: puede que ya esté en la base.</div>'+f.map(function(c,i){return cliCard(c,'<button type="button" class="btn btn-primary btn-sm" data-dup="'+i+'">Es este, usar sus datos</button>');}).join(''):'';box._f=f;};
       [ct,cn].forEach(function(i){i.addEventListener('input',function(){clearTimeout(tm2);tm2=setTimeout(chk,300);});});chk();
       box.onclick=function(e){var b=e.target.closest('[data-dup]');if(!b)return;var c=box._f[+b.dataset.dup];W.cli=c;W.c={nombre:c.nombre,telefono:c.telefono,tel2:c.tel2||'',domicilio:c.domicilio,ref:c.ref||'',zona:c.zona||'',flag:c.flag||'',motivo:c.motivo||'',codTS:c.codTS||''};draw();};}
+    FP_HOOK=null;if(W.paso===5)FP_HOOK=function(v){var ant=W.t.fechaPedida||'';W.t.fechaPedida=v;if(W.sel&&v&&v>=today()&&(!W.sel.dia||W.sel.dia===ant)){W.sel.dia=v;W.dia=v;}agBox();};
     if(W.paso===3)tipoBox();if(W.paso===4){fallasBox();adjUI(pz.querySelector('#adjBox'),{lista:function(){return W.adj||[];},set:function(L){W.adj=L;},gt:W.t.tipo==='GT',nombre:function(){return W.c.nombre;},carpeta:function(){var pr=ov(pz,'producto')||W.t.producto,mk=ov(pz,'marca')||W.t.marca;return adjCarpeta(W.c.nombre,{producto:pr,marca:mk});}});}if(W.paso===5&&W.agendar==='ahora')agBox();}
   function val1(){W.canal=ov(pz,'canal');W.atendio=ov(pz,'atendio');if(!W.canal){toast('Elegí por dónde llegó el cliente');return false;}if(!W.atendio){toast('Tocá tu nombre en “¿Quién atiende?”');return false;}YO=W.atendio;try{localStorage.setItem('vt_yo',YO);}catch(e){}return true;}
   function onOpt(n,v){if(W.paso===1&&(n==='canal'||n==='atendio'||n==='prev')){W[n]=v;var q=pz.querySelector('#b-q');if(q)W.bq=q.value;draw();return;}if(n==='tipo'){W.t.tipo=v;tipoBox();}if(n==='modo'){W.t.modo=v;tipoBox();}if(n==='producto'){W.t.producto=v;W.t.fallas=[];fallasBox();}if(n==='marca'){pz.querySelector('#t-marcaOtra').value='';}
@@ -1005,10 +1018,10 @@ function proceso(o){var W={adj:[],paso:1,prev:'',bq:'',canal:o.canal||'',atendio
       r('Tipo','<span class="pill p-'+t.tipo+'">'+TIPO[t.tipo]+'</span>'+(t.tipo==='SG'?' · '+({visita:'Visita '+money(t.visita),taller:'Lo trae al taller',flete:'Flete (retiro)',piensa:'Lo piensa'}[t.modo]):''))+r('Órdenes',esc([t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ')))+
       r('Equipo',esc([PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' · ')))+r('Falla',esc(fallaTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+'</div>';}
   function agBox(){var b=pz.querySelector('#agBox');if(!b)return;if(W.agendar!=='ahora'){b.innerHTML='<div class="tip">Queda en <b>Inicio · Esperan día</b>. Cuando le des día, mandale la confirmación por WhatsApp.</div>';return;}
-    var tmp={tipo:W.t.tipo,ingreso:today()};var p=plazo(tmp),esp=function(n){return lista(DB.cfg.esp[n]).indexOf(W.t.producto)>=0;};
-    var ts=tecsPara({flete:W.t.modo==='flete'}).slice().sort(function(a,b){return esp(b)-esp(a);});var pref=W.t.tipo==='AC'&&W.cli?tecPresu(W.cli.id):'';if(ts.indexOf(pref)<0)pref='';W.sel=W.sel||{tec:W.tec,dia:W.dia,pref:pref};var sel=W.sel;
-    b.innerHTML='<div class="tip warn">Plazo sugerido: hasta el <b>'+fL(p)+'</b> ('+(W.t.tipo==='SG'?'S/G: 5 días hábiles':'como mucho la semana siguiente')+'). Zona del cliente: <b>'+esc(W.c.zona)+'</b>.</div>'+
-      picker({ts:ts,esp:esp,sel:sel,pref:pref,p:p,zona:W.c.zona});
+    var tmp={tipo:W.t.tipo,ingreso:today(),fechaPedida:W.t.fechaPedida||'',fechaMotivo:W.t.fechaMotivo||''};var p=plazo(tmp),esp=function(n){return lista(DB.cfg.esp[n]).indexOf(W.t.producto)>=0;};
+    var ts=tecsPara({flete:W.t.modo==='flete'}).slice().sort(function(a,b){return esp(b)-esp(a);});var pref=W.t.tipo==='AC'&&W.cli?tecPresu(W.cli.id):'';if(ts.indexOf(pref)<0)pref='';W.sel=W.sel||{tec:W.tec,dia:W.dia||(W.t.fechaPedida&&W.t.fechaPedida>=today()?W.t.fechaPedida:''),pref:pref};var sel=W.sel;
+    b.innerHTML='<div class="tip warn">'+(tmp.fechaPedida?'📅 El cliente pidió el <b>'+fL(p)+'</b> (reemplaza el plazo)':'Plazo: hasta el <b>'+fL(p)+'</b> ('+esc(plazoReglaTxt(tmp))+')')+'. Zona del cliente: <b>'+esc(W.c.zona)+'</b>.</div>'+
+      picker({ts:ts,esp:esp,sel:sel,pref:pref,p:p,fp:tmp.fechaPedida,zona:W.c.zona});
     bindPicker(b,sel,function(){W.tec=sel.tec;W.dia=sel.dia;agBox();});}
   function guardar(){var c=W.c,t=W.t,cli=W.cli;
     if(cli){['nombre','telefono','tel2','domicilio','ref','zona','codTS'].forEach(function(k){cli[k]=c[k]||'';});touch(cli);}
@@ -1018,7 +1031,7 @@ function proceso(o){var W={adj:[],paso:1,prev:'',bq:'',canal:o.canal||'',atendio
     if(t.modo==='taller'){touch({id:uid(),kind:'taller',adj:W.adj||[],orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:c.nombre,clienteId:cli.id,telefono:c.telefono||'',falla:falla,tecnico:'',fecha:'',ingreso:today(),estado:'esperando',nota:'Lo trae el cliente · revisión en local '+money(DB.cfg.revisionLocal)});closeM();go('taller');toast('Guardado en Taller: el cliente trae el equipo');return;}
     var n={id:uid(),kind:'turno',clienteId:cli.id,nombre:c.nombre,telefono:[c.telefono,c.tel2].filter(Boolean).join(' / '),domicilio:c.domicilio,ref:c.ref||'',zona:c.zona,canal:W.canal,atendio:W.atendio,alta:today(),ingreso:today(),
       tipo:t.tipo,ordenFab:t.ordenFab||'',ordenTS:t.ordenTS||'',ordenTSAnt:t.tipo==='GTT'?(t.ordenAnt||''):'',visita:t.tipo==='SG'&&t.modo==='visita'?t.visita:0,flete:t.modo==='flete'?'retiro':'',fleteMonto:t.modo==='flete'?(+String(t.fleteMonto||'').replace(/\D/g,'')||0):0,
-      horario:t.horario||'',avisar:!!t.avisar,producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
+      horario:t.horario||'',avisar:!!t.avisar,fechaPedida:t.fechaPedida||'',fechaMotivo:t.fechaPedida?(t.fechaMotivo||''):'',producto:t.producto,marca:t.marca,modelo:t.modelo||'',nfab:t.nfab||'',fallas:t.fallas,falla:t.falla||'',desde:t.desde||'',donde:t.donde||'',error:t.error||'',otroTec:t.otroTec||'',monto:t.monto||'',
       estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:'',adj:W.adj||[]};
     if(t.tipo==='AC'&&cli)n.tecPref=tecPresu(cli.id);
     if(W.agendar==='ahora'&&W.tec&&W.dia&&!okCarga(W.tec,W.dia))return;
@@ -1033,18 +1046,18 @@ function listo(t){var o=modal('Turno dado ✔','<div class="tip good" style="fon
   o.querySelector('#okGo').onclick=function(){closeM();go('confirmar');};o.querySelector('#waGo').onclick=function(){enviarConf(t);closeM();};}
 
 /* ---------- Ficha del turno ---------- */
-function verTurno(t){var fl=flagOf(t);var r=function(k,v){return v?'<div><b class="k">'+k+'</b> '+v+'</div>':'';};
+function verTurno(t){FP_HOOK=null;var fl=flagOf(t);var r=function(k,v){return v?'<div><b class="k">'+k+'</b> '+v+'</div>':'';};
   var b=(fl?'<div class="tip bad">'+(fl.flag==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(fl.motivo?': '+esc(fl.motivo):'')+'</div>':'')+(t.clienteId&&byId[t.clienteId]?urgTip(byId[t.clienteId]):'')+
     '<div class="resumen">'+r('Estado',t.estado==='pendiente'?'<b>Espera día</b> · '+plazoCorto(t):t.estado==='asignado'?'<b>Turno '+fL(t.fecha)+'</b> con '+esc(t.tecnico)+' · '+confCell(t):t.estado==='repuesto'?'<b>Espera repuesto</b>':'<b>✔ Hecho '+fL(t.fecha)+'</b> · '+esc(t.tecnico)+(t.sol?' · '+SOL[t.sol]:''))+
       r('Cliente',esc(t.nombre)+(t.clienteId?' <button class="btn btn-sm" data-vcli="1">Ver ficha e historial</button>':''))+r('Teléfono',telLink(t))+r('Domicilio',esc(t.domicilio)+(t.ref?' · '+esc(t.ref):'')+(t.zona?' · <b>'+esc(t.zona)+'</b>':''))+
       r('Tipo',tipoCell(t))+r('Órdenes',esc([t.ordenFab?'Fábrica '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:'',t.ordenTSAnt?'(orden anterior TS '+t.ordenTSAnt+' · esta visita lleva una nueva)':''].filter(Boolean).join(' · ')))+r('Equipo',esc([PRODN[t.producto]||t.producto,t.marca,t.modelo,t.nfab?'N° '+t.nfab:''].filter(Boolean).join(' · ')))+
-      r('Falla',esc(fallaTxt(t)))+r('Horario',esc(horarioTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+r('Atendió',esc([t.atendio,t.canal,t.alta?ddy(t.alta):''].filter(Boolean).join(' · ')))+'</div>'+
+      r('Falla',esc(fallaTxt(t)))+r('Día pedido · horario',esc(horarioTxt(t)))+r('Detalle',esc([t.desde?'Desde: '+t.desde:'',t.donde?'Instalado en: '+t.donde:'',t.error?'Código: '+t.error:'',t.otroTec==='Sí'?'Ya lo vio otro técnico':''].filter(Boolean).join(' · ')))+r('Atendió',esc([t.atendio,t.canal,t.alta?ddy(t.alta):''].filter(Boolean).join(' · ')))+'</div>'+
     '<div class="g2"><label class="f"><span>N° orden fábrica</span><input class="i" id="e-ordenFab" value="'+esc(t.ordenFab||'')+'"></label><label class="f"><span>N° orden TS <small>(única: cada visita una nueva)</small></span><input class="i" id="e-ordenTS" value="'+esc(t.ordenTS||'')+'"></label></div>'+
     '<label class="f"><span>Falla</span><input class="i" id="e-falla" value="'+esc(t.falla||'')+'"></label>'+
     '<label class="f"><span>Nota interna</span><input class="i" id="e-nota" value="'+esc(t.nota||'')+'"></label>'+
     '<label class="f"><span>Resultado / qué se hizo</span><input class="i" id="e-resultado" value="'+esc(t.resultado||'')+'"></label>'+
     (t.estado==='repuesto'||t.rep?repForm(t):'')+
-    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar):'')+'<div id="adjBox"></div>';
+    (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar,t.fechaPedida,t.fechaMotivo):'')+'<div id="adjBox"></div>';
   var f='<span class="left"><button class="btn btn-danger" data-a="del">Borrar</button>'+(t.estado==='asignado'?'<button class="btn" data-a="unasg">Sacar el día</button>':'')+(t.estado!=='pendiente'&&t.estado!=='repuesto'?'':'')+'</span>'+
     (t.estado==='asignado'?'<button class="btn btn-wa" data-a="wa">📲 Confirmación</button>'+(t.conf!=='confirmada'?'<button class="btn" data-a="confok">✔ Confirmó</button>':'')+'<button class="btn" data-a="asg">Cambiar día</button><button class="btn btn-green" data-a="cerrar">¿Cómo terminó?</button>':'')+
     (t.estado==='pendiente'?'<button class="btn btn-green" data-a="asg">Dar día</button>':'')+(t.estado==='hecho'?'<button class="btn" data-a="reabrir">Reabrir</button>':'')+'<button class="btn btn-primary btn-big" data-a="save">Guardar</button>';
@@ -1091,14 +1104,16 @@ function aTaller(t,estado){editTaller(null,{tecnico:t.tecPref||t.tecnico||'',ord
   function(){if(t.estado!=='hecho'||t.sol!=='taller'){t.estado='hecho';t.sol='taller';touch(t);}toast('Pasó al taller con la orden nueva');},true);}
 
 /* ---------- Dar / cambiar día ---------- */
-function asignar(t){if(!t)return;var tal=t.kind==='taller';var ts0=tecsPara(t,tal);var pref=!tal&&t.tecPref&&ts0.indexOf(t.tecPref)>=0?t.tecPref:'';var sel={tec:t.tecnico&&ts0.indexOf(t.tecnico)>=0?t.tecnico:'',dia:t.fecha&&t.fecha>=today()?t.fecha:'',pref:pref,otro:!!(t.tecnico&&pref&&t.tecnico!==pref)};var p=tal?'':plazo(t);var fl=tal?null:flagOf(t);
+function asignar(t){if(!t)return;var tal=t.kind==='taller';var ts0=tecsPara(t,tal);var pref=!tal&&t.tecPref&&ts0.indexOf(t.tecPref)>=0?t.tecPref:'';var sel={tec:t.tecnico&&ts0.indexOf(t.tecnico)>=0?t.tecnico:'',dia:t.fecha&&t.fecha>=today()?t.fecha:(!tal&&t.fechaPedida&&t.fechaPedida>=today()?t.fechaPedida:''),pref:pref,otro:!!(t.tecnico&&pref&&t.tecnico!==pref)};var p=tal?'':plazo(t),fpCur=tal?'':(t.fechaPedida||'');var fl=tal?null:flagOf(t);
   var esp=function(n){return !tal&&lista(DB.cfg.esp[n]).indexOf(t.producto)>=0;};var ts=ts0.slice().sort(function(a,b){return esp(b)-esp(a);});var cli=t.clienteId?byId[t.clienteId]:null;
   var b=(fl?'<div class="tip bad">'+(fl.flag==='no'?'⛔ CLIENTE MARCADO “NO ATENDER”':'⚠ Cliente complicado')+(fl.motivo?': '+esc(fl.motivo):'')+'</div>':'')+(cli?urgTip(cli):'')+
     '<div class="tip"><b>'+esc(tal?'Orden '+(t.orden||''):t.nombre||'')+'</b>'+(tal?(t.equipo?' · '+esc(t.equipo):'')+(t.cliente?' · '+esc(t.cliente):''):' · '+(t.tipo?TIPO[t.tipo]:'')+(t.flete?' · FLETE '+esc(t.flete.toUpperCase()):'')+' · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' · '))+'<br>📍 '+esc(t.domicilio||'')+' · <b>'+esc(t.zona||'sin zona')+'</b>')+'</div>'+
-    (p&&t.estado==='pendiente'?'<div class="tip '+(diff(today(),p)<0?'bad':'warn')+'">'+(diff(today(),p)<0?'⚠ Ya se pasó el plazo ('+fD(p)+'). Conviene darle el primer día que puedas.':'Plazo sugerido: hasta el <b>'+fL(p)+'</b>.')+'</div>':'')+
-    '<div id="pick"></div>'+(tal?'':horarioBox(t.horario,t.avisar));
+    '<div id="plzTip"></div>'+
+    '<div id="pick"></div>'+(tal?'':horarioBox(t.horario,t.avisar,t.fechaPedida,t.fechaMotivo));
   var o=modal(tal?'Asignar día de taller':'Dar día',b,'<button class="btn" data-a="x">Cancelar</button><button class="btn btn-green btn-big" data-a="ok">Confirmar</button>');
-  function paint(){var box=o.querySelector('#pick');box.innerHTML=picker({ts:ts,esp:esp,sel:sel,pref:pref,p:t.estado==='pendiente'?p:'',zona:tal?'':t.zona,excl:t.id});bindPicker(box,sel,paint);}
+  function paint(){var tt=Object.assign({},t,{fechaPedida:fpCur});p=tal?'':plazo(tt);var pt=o.querySelector('#plzTip');if(pt)pt.innerHTML=p&&t.estado==='pendiente'?'<div class="tip '+(today()>p?'bad':'warn')+'">'+(today()>p?(fpCur?'⚠ El cliente había pedido el '+fL(p)+' y ya pasó.':'⚠ Ya se pasó el plazo ('+fD(p)+' · '+esc(plazoReglaTxt(tt))+'). Conviene darle el primer día que puedas.'):(fpCur?'📅 El cliente pidió el <b>'+fL(p)+'</b>'+(t.fechaMotivo?' ('+esc(t.fechaMotivo)+')':'')+'.':'Plazo: hasta el <b>'+fL(p)+'</b> ('+esc(plazoReglaTxt(tt))+').'))+'</div>':'';
+    var box=o.querySelector('#pick');box.innerHTML=picker({ts:ts,esp:esp,sel:sel,pref:pref,p:t.estado==='pendiente'?p:'',fp:fpCur,zona:tal?'':t.zona,excl:t.id});bindPicker(box,sel,paint);}
+  FP_HOOK=tal?null:function(v){var ant=fpCur;fpCur=v;if(v&&v>=today()&&(!sel.dia||sel.dia===ant))sel.dia=v;paint();};
   paint();bindOpts(o);
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();
     if(!tal)horarioLeer(o,t);
@@ -1162,6 +1177,7 @@ function turnoTxt(t,i,n){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo]
   m+='🔧 '+(eq||'Equipo')+' — '+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' · *cobrar visita '+money(t.visita)+'*':'')+(t.flete?' · FLETE '+t.flete.toUpperCase():'')+'\n';
   if(fallaTxt(t))m+='⚠ '+fallaTxt(t)+'\n';
   m+='🕘 '+(t.horario?t.horario+' hs':'Sin horario fijo')+(t.avisar?' · *avisale 30 min antes*':'')+'\n';
+  if(t.fechaPedida)m+='📅 El cliente pidió este día'+(t.fechaMotivo?' ('+t.fechaMotivo+')':'')+'\n';
   var ords=[t.ordenFab?'Fáb. '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='🧾 '+ords+'\n';
   if(t.nota)m+='📝 '+t.nota+'\n';
   if(t.conf!=='confirmada')m+='❗ Todavía no confirmó\n';
