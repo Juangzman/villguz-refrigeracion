@@ -429,6 +429,7 @@ details.edit>summary small{color:var(--muted);font-weight:600;margin-left:6px}
 details.edit[open]>summary{border-bottom:1px solid var(--line)}
 .edit-b{padding:14px;display:grid;gap:14px}
 
+.h-otro{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;color:var(--navy);font-size:.9rem}.h-otro .i{width:auto;min-width:118px;max-width:140px}
 /* Impresión */
 #print{display:none}
 @media print{
@@ -498,7 +499,7 @@ var DEF={tecnicos:['Marcelo','Gabi','Jorge'],inactivos:[],tecTel:{},
   esp:{Marcelo:'HEL, FREEZER',Gabi:'LAV, HEL, AIRE',Jorge:'LAV, LAVAVAJ, LAVASECA, SEC'},
   empleados:['Melina','Griselda','Inés','Juan'],
   zonas:['SMT','Yerba Buena','Tafí Viejo','Las Talitas','Banda del Río Salí','Alderetes','El Manantial','San Pablo','Lules','Otra localidad'],
-  zonasFuera:['Otra localidad'],costos:[30000,35000],revisionLocal:20000,fleteros:['Fletero'],
+  zonasFuera:['Otra localidad'],costos:[30000,35000],revisionLocal:20000,fleteros:['Fletero'],horarios:['8 a 11','9 a 12','10 a 13','11 a 14','12 a 15','13 a 16','14 a 17'],
   msgSG:'{SALUDO}\n\nMe comunico de VillGuz Refrigeración para confirmar la visita del técnico para el día *{DIA}*.\n\nPor favor, confirme lo siguiente:\n\n1️⃣ Que habrá un mayor de 18 años para recibir al técnico.\n2️⃣ Envíenos su ubicación (clic en el clip 📎 > Ubicación > Enviar mi ubicación actual. NO en tiempo real).\n\n⚠️ *Recordatorios:*\n\n* *Costo de visita: {COSTO} en efectivo.*\n* *Rango horario:* 9:00 a 14:00 hs (sin hora fija).\n* *Tolerancia:* El técnico aguardará 15 minutos. De no haber respuesta, deberá retirarse y se reprogramará el turno.\n* *IMPORTANTE: De no confirmar este mensaje, el servicio será cancelado o reprogramado automáticamente.*\n\nAguardamos su respuesta.\nMuchas gracias, que tenga un buen día.',
   msgGT:'{SALUDO}\n\nMe comunico de VillGuz Refrigeración para confirmar el turno de su visita técnica en garantía para el día *{DIA}*.\n\nPara poder confirmar el turno, por favor necesitamos lo siguiente:\n\n1️⃣ *Envíenos una foto o PDF con la factura de compra del equipo (requisito indispensable).*\n2️⃣ Confirme que habrá un mayor de 18 años para recibir al técnico.\n3️⃣ Envíenos su ubicación (clic en el clip 📎 > Ubicación > Enviar mi ubicación actual. NO en tiempo real).\n\n⚠️ Recordatorios:\n\n* Rango horario: 9:00 a 14:00 hs (sin hora fija).\n* Tolerancia: El técnico aguardará 15 minutos. De no haber respuesta, deberá retirarse y se reprogramará el turno.\n\n*IMPORTANTE: De no enviar la factura y confirmar este mensaje, el servicio será cancelado o reprogramado automáticamente.*\n\nAguardamos su respuesta.\nMuchas gracias, que tenga un buen día.'};
 var DB={cfg:JSON.parse(JSON.stringify(DEF)),items:[]},byId={};
@@ -949,10 +950,23 @@ function fpBox(fp,fm){return '<div class="fpbox"><label class="chk"><input type=
   '<div class="fp-in"'+(fp?'':' hidden')+'><div class="g2"><label class="f"><span>Día que PIDIÓ el cliente</span><input class="i" type="date" id="h-fped" value="'+esc(fp||'')+'" onchange="fpCambio()"></label><label class="f"><span>Motivo (opcional)</span><input class="i" id="h-fmot" value="'+esc(fm||'')+'" placeholder="Ej.: viaja, cobra el 10, está de vacaciones"></label></div>'+
   '<p class="hint-un">Esto solo anota la preferencia del cliente (reemplaza el plazo). El turno se da con <b>“Dar día”</b>.</p></div></div>';}
 function fpToggle(el){var bx=el.closest('.fpbox'),inn=bx.querySelector('.fp-in');inn.hidden=!el.checked;if(!el.checked){bx.querySelector('#h-fped').value='';bx.querySelector('#h-fmot').value='';fpCambio();}}
-function horarioBox(h,av,fp,fm){return fpBox(fp,fm)+'<div class="hrbox"><div class="q">🕘 Horario que pide el cliente <small class="muted">(opcional · rango de 3 horas · tocá de nuevo para sacarlo)</small></div>'+
-  opts('horario',HORARIOS.map(function(x){return [x,x+' hs'];}),h||'','')+
+// Horario de visita: rangos rápidos (se editan en Ajustes) o cualquier otro rango “de … a …”
+function horas(){return (DB.cfg.horarios&&DB.cfg.horarios.length?DB.cfg.horarios:HORARIOS);}
+function hm(v){if(!v)return '';var p=v.split(':');return +p[0]+(p[1]&&p[1]!=='00'?':'+p[1]:'');}
+function hParse(h){var m=String(h||'').match(/^(\d{1,2})(?::(\d{2}))?\s*a\s*(\d{1,2})(?::(\d{2}))?/);if(!m)return ['',''];var f=function(a,b){return ('0'+a).slice(-2)+':'+(b||'00');};return [f(m[1],m[2]),f(m[3],m[4])];}
+function horarioBox(h,av,fp,fm){var L=horas(),otro=h&&L.indexOf(h)<0,pr=otro?hParse(h):['',''];
+  return fpBox(fp,fm)+'<div class="hrbox"><div class="q">🕘 Horario que pide el cliente <small class="muted">(opcional · tocá de nuevo para sacarlo)</small></div>'+
+  opts('horario',L.map(function(x){return [x,x+' hs'];}),otro?'':(h||''),'')+
+  '<div class="h-otro"><span>Otro rango: de</span><input class="i" type="time" id="h-de" step="900" value="'+pr[0]+'" oninput="hOtro(this)"><span>a</span><input class="i" type="time" id="h-a" step="900" value="'+pr[1]+'" oninput="hOtro(this)"><span>hs</span>'+(otro&&!pr[0]?'<input class="i" id="h-txt" value="'+esc(h)+'" style="max-width:200px">':'')+'</div>'+
   '<label class="chk"><input type="checkbox" id="h-avisar"'+(av?' checked':'')+'> 📲 Avisarle al cliente media hora antes de llegar</label></div>';}
-function horarioLeer(root,t){var fpi=root.querySelector('#h-fped'),fpc=root.querySelector('#h-fpchk');if(fpi){t.fechaPedida=fpc&&!fpc.checked?'':fpi.value||'';var fmi=root.querySelector('#h-fmot');t.fechaMotivo=t.fechaPedida&&fmi?fmi.value.trim():'';}var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;t.horario=ov(root,'horario');var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
+// al escribir otro rango se desmarcan los botones rápidos
+function hOtro(el){var bx=el.closest('.hrbox'),g=bx.querySelector('.opts[data-name="horario"]');if(g){g.querySelectorAll('.opt').forEach(function(x){x.classList.remove('on');});g.dataset.val='';}}
+document.addEventListener('click',function(e){var b=e.target.closest('.hrbox .opts[data-name="horario"] .opt');if(!b)return;var bx=b.closest('.hrbox');['h-de','h-a','h-txt'].forEach(function(id){var x=bx.querySelector('#'+id);if(x)x.value='';});},true);
+function horarioLeer(root,t){var fpi=root.querySelector('#h-fped'),fpc=root.querySelector('#h-fpchk');if(fpi){t.fechaPedida=fpc&&!fpc.checked?'':fpi.value||'';var fmi=root.querySelector('#h-fmot');t.fechaMotivo=t.fechaPedida&&fmi?fmi.value.trim():'';}var g=root.querySelector('.opts[data-name="horario"]');if(!g)return;
+  var de=root.querySelector('#h-de'),a=root.querySelector('#h-a'),tx=root.querySelector('#h-txt');t.horario=ov(root,'horario');
+  if(!t.horario&&de&&(de.value||a.value))t.horario=de.value&&a.value?hm(de.value)+' a '+hm(a.value):de.value?'desde las '+hm(de.value):'hasta las '+hm(a.value);
+  if(!t.horario&&tx&&tx.value.trim())t.horario=tx.value.trim();
+  var c=root.querySelector('#h-avisar');t.avisar=!!(c&&c.checked);}
 function selHTML(id,list,v,vacio){var L=list.slice();if(v&&L.indexOf(v)<0)L.push(v);return '<select class="i" id="'+id+'"><option value="">'+esc(vacio||'—')+'</option>'+L.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';}
 function zonaSel(id,v){return selHTML(id,DB.cfg.zonas.map(function(z){return z;}),zonaN(v),'— Sin zona —');}
 function horarioTxt(t){return (t.fechaPedida?'📅 pidió el '+fL(t.fechaPedida)+(t.fechaMotivo?' ('+t.fechaMotivo+')':'')+(t.horario||t.avisar?' · ':''):'')+(t.horario?t.horario+' hs':'')+(t.avisar?(t.horario?' · ':'')+'avisar 30 min antes':'');}
@@ -1150,6 +1164,7 @@ function vAjustes(){var c=DB.cfg;var h='<div class="vh"><div><h2>Ajustes</h2></d
   h+='<div class="card"><h3>Quiénes atienden</h3><div class="tecrow"><input class="i" id="cfgEmp" value="'+esc(c.empleados.join(', '))+'"><button class="btn btn-primary" id="saveEmp">Guardar</button></div></div>';
   h+='<div class="card"><h3>Zonas</h3><p class="muted" style="margin:0">Separadas por coma. Marcá cuáles son “fuera de zona” (van a su propia lista).</p><textarea class="i" id="cfgZon">'+esc(c.zonas.join(', '))+'</textarea><div class="chips">'+c.zonas.map(function(z){return '<button class="chip sm'+(c.zonasFuera.indexOf(z)>=0?' on':'')+'" data-zf="'+esc(z)+'">'+esc(z)+(c.zonasFuera.indexOf(z)>=0?' · fuera':'')+'</button>';}).join('')+'</div><div><button class="btn btn-primary" id="saveZon">Guardar zonas</button></div></div>';
   h+='<div class="card"><h3>Costos</h3><div class="tecrow"><label class="f"><span>Visita a domicilio S/G (separados por coma)</span><input class="i" id="cfgCos" value="'+esc(c.costos.join(', '))+'" style="max-width:320px"></label><label class="f"><span>Revisión en el local</span><input class="i" id="cfgRev" value="'+esc(c.revisionLocal)+'" style="max-width:200px"></label><button class="btn btn-primary" id="saveCos">Guardar</button></div></div>';
+  h+='<div class="card"><h3>Rangos horarios de visita</h3><p class="muted" style="margin:0">Los botones rápidos que aparecen en “Horario que pide el cliente”. Separados por coma, por ejemplo: 8 a 11, 9 a 13, 14 a 18. Igual siempre se puede escribir otro rango en cada turno.</p><div class="tecrow"><input class="i" id="cfgHor" value="'+esc(horas().join(', '))+'"><button class="btn btn-primary" id="saveHor">Guardar</button></div></div>';
   h+='<div class="card"><h3>Fleteros</h3><p class="muted" style="margin:0">Quienes hacen retiros y entregas (no son técnicos). Separados por coma.</p><div class="tecrow"><input class="i" id="cfgFle" value="'+esc((c.fleteros||[]).join(', '))+'"><button class="btn btn-primary" id="saveFle">Guardar</button></div></div>';
   h+='<div class="card"><h3>Mensajes de confirmación por WhatsApp</h3><p class="muted" style="margin:0">{DIA} se reemplaza por el día del turno, {COSTO} por el costo de la visita y {SALUDO} por “Buenos días” o “Buenas tardes” según la hora.</p><label class="f">Sin garantía<textarea class="i" id="cfgMsgSG" style="min-height:220px">'+esc(c.msgSG)+'</textarea></label><label class="f">Garantía<textarea class="i" id="cfgMsgGT" style="min-height:220px">'+esc(c.msgGT)+'</textarea></label><div><button class="btn btn-primary" id="saveMsg">Guardar mensajes</button></div></div>';
   h+='<div class="card"><h3>Plazos para dar turno</h3><p style="margin:0">Se cuentan <b>días hábiles</b> (lunes a viernes) desde el día en que se recepcionó el pedido, aunque pase de una semana a la otra.<br><b>S/G:</b> 3 días hábiles · <b>GTIA, GTIA TALLER y ACEPTADO:</b> 7 días hábiles.<br>Se pone <b>amarillo</b> cuando queda 1 día hábil o es el último, y <b>rojo</b> cuando se pasó.<br><b>📅 Fecha que pide el cliente:</b> si el cliente pide un día específico, el plazo pasa a ser esa fecha.</p></div>';
@@ -1188,6 +1203,7 @@ function bindAjustes(){var c=DB.cfg;
   $('saveZon').onclick=function(){c.zonas=lista($('cfgZon').value);c.zonasFuera=c.zonasFuera.filter(function(z){return c.zonas.indexOf(z)>=0;});saveCfg();render();toast('Zonas guardadas');};
   $('saveCos').onclick=function(){c.costos=lista($('cfgCos').value).map(function(x){return +x.replace(/\D/g,'');}).filter(Boolean);c.revisionLocal=+String($('cfgRev').value).replace(/\D/g,'')||0;saveCfg();toast('Guardado');};
   $('saveFle').onclick=function(){c.fleteros=lista($('cfgFle').value);saveCfg();toast('Guardado');};
+  $('saveHor').onclick=function(){var L=lista($('cfgHor').value).map(function(x){return x.replace(/\s*hs?\.?$/i,'').replace(/\s*-\s*/,' a ');});if(!L.length){toast('Poné al menos un rango');return;}c.horarios=L;saveCfg();render();toast('Rangos guardados');};
   $('saveMsg').onclick=function(){c.msgSG=$('cfgMsgSG').value;c.msgGT=$('cfgMsgGT').value;saveCfg();toast('Mensajes guardados');};
   $('arcGo').onclick=archivar;
   $('bk').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));a.download='turnos-villguz-'+today()+'.json';a.click();};
