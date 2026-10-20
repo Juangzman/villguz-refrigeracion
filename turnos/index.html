@@ -1577,37 +1577,36 @@ function editTaller(t,pre,cb,ordenReq){var nuevo=!t;t=t?JSON.parse(JSON.stringif
 /* ---------- Lista del día al técnico por WhatsApp ----------
    Para que no sea un mensaje gigante: primero un resumen corto (un renglón por cliente)
    y después un mensaje chico por cada turno, fácil de encontrar en el chat. */
-var NUM=['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
-function nro(i){return NUM[i]||(i+1)+')';}
+function nro(i){return (i+1)+'.';}
 function cuandoTxt(d){return d===today()?'hoy':d===addD(today(),1)?'mañana':'el '+fL(d);}
 function domDe(tec,d){return dayItems(tec,d).filter(function(t){return t.kind==='turno';});}
 // Qué es el servicio y cuánto cobra el técnico (para el resumen del día)
-function cobroTxt(t){if(t.flete)return '🚚 FLETE '+fleteTxt(t)+(t.fleteMonto?' · *cobrar '+money(t.fleteMonto)+'*':'');
+function cobroTxt(t){if(t.flete)return 'FLETE '+fleteTxt(t)+(t.fleteMonto?' · *cobrar '+money(t.fleteMonto)+'*':'');
   if(t.tipo==='SG')return 'SIN GARANTÍA · *cobrar visita '+money(t.visita||DB.cfg.costos[DB.cfg.costos.length-1]||0)+'*';
   if(t.tipo==='AC')return 'ACEPTADO'+(t.monto?' · *cobrar '+money(+String(t.monto).replace(/\D/g,''))+'*':'');
   if(t.tipo==='GTT')return 'GTIA TALLER · sin cargo';
   return 'GARANTÍA · no se cobra visita';}
 function resumenTxt(tec,d){var dom=domDe(tec,d),tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
-  var m='Hola '+tec+' 👋 '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(dom.length===1?' turno':' turnos')+'* a domicilio:\n';
-  if(dn)m+='📝 '+dn.texto+'\n';
-  dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+' · '+cobroTxt(t)+(t.horario?' · 🕘 '+t.horario:'');});
-  if(tal.length)m+='\n\n🔧 Taller: '+tal.length+(tal.length===1?' orden':' órdenes');
-  if(dom.length)m+='\n\nAhora te mando cada turno por separado con todos los datos 👇';
+  var m='Hola '+tec+'. '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(dom.length===1?' turno':' turnos')+'* a domicilio:\n';
+  if(dn)m+='Nota: '+dn.texto+'\n';
+  dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+' · '+cobroTxt(t)+(t.horario?' · Horario '+t.horario+' hs':'');});
+  if(tal.length)m+='\n\nTaller: '+tal.length+(tal.length===1?' orden':' órdenes');
+  if(dom.length)m+='\n\nAhora te mando cada turno por separado con todos los datos.';
   return m;}
 function turnoTxt(t,i,n){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' ');
-  var m=nro(i)+' *TURNO '+(i+1)+' de '+n+' · '+(t.nombre||'')+'*\n';
-  m+='📍 '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';if(t.domicilio)m+='🗺 '+mapURL(t)+'\n';
-  if(t.telefono)m+='📞 '+t.telefono+'\n';
-  m+='🔧 '+(eq||'Equipo')+' — '+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' · *cobrar visita '+money(t.visita)+'*':'')+(t.flete?' · FLETE '+fleteTxt(t):'')+'\n';
-  if(fallaTxt(t))m+='⚠ '+fallaTxt(t)+'\n';
-  m+='🕘 '+(t.horario?t.horario+' hs':'Sin horario fijo')+(t.avisar?' · *avisale 30 min antes*':'')+'\n';
-  if(t.fechaPedida)m+='📅 El cliente pidió este día'+(t.fechaMotivo?' ('+t.fechaMotivo+')':'')+'\n';
-  var ords=[t.ordenFab?'Fáb. '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='🧾 '+ords+'\n';
-  if(t.nota)m+='📝 '+t.nota+'\n';
-  if(t.conf!=='confirmada')m+='❗ Todavía no confirmó\n';
+  var m='*TURNO '+(i+1)+' de '+n+' · '+(t.nombre||'')+'*\n';
+  m+='Dirección: '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';if(t.domicilio)m+='Mapa: '+mapURL(t)+'\n';
+  if(t.telefono)m+='Teléfono: '+t.telefono+'\n';
+  m+='Equipo: '+(eq||'-')+'\n';m+='Servicio: '+cobroTxt(t)+'\n';
+  if(fallaTxt(t))m+='Falla: '+fallaTxt(t)+'\n';
+  m+='Horario: '+(t.horario?t.horario+' hs':'sin horario fijo')+(t.avisar?' · *avisale 30 min antes*':'')+'\n';
+  if(t.fechaPedida)m+='El cliente pidió este día'+(t.fechaMotivo?' ('+t.fechaMotivo+')':'')+'\n';
+  var ords=[t.ordenFab?'Fáb. '+t.ordenFab:'',t.ordenTS?'TS '+t.ordenTS:''].filter(Boolean).join(' · ');if(ords)m+='Orden: '+ords+'\n';
+  if(t.nota)m+='Nota: '+t.nota+'\n';
+  if(t.conf!=='confirmada')m+='*OJO: todavía no confirmó*\n';
   return m.replace(/\n$/,'');}
 function tallerTxt(tec,d){var tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';});if(!tal.length)return '';
-  return '🔧 *En el taller '+cuandoTxt(d)+':*\n'+tal.map(function(t){return '• Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'');}).join('\n');}
+  return '*En el taller '+cuandoTxt(d)+':*\n'+tal.map(function(t){return '- Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'');}).join('\n');}
 var WASENT={};
 function listaWA(tec,d){var tel=(DB.cfg.tecTel||{})[tec]||'';
   if(!tel){toast('Falta el número de WhatsApp de '+tec+'. Cargalo en Ajustes → Técnicos.',5000);return;}
