@@ -596,7 +596,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('[data-cli]
 /* ---------- Planilla (tabla) ---------- */
 function telLink(t){return t.telefono?'<a class="tel" href="tel:'+esc(String(t.telefono).replace(/[^\d+]/g,'').slice(0,13))+'">'+esc(t.telefono)+'</a>':'';}
 function fleteNom(ft,tipo){return ft==='entrega'?'Entrega':ft==='ambos'?(tipo==='FL'?'Retiro y entrega':'Retiro + entrega'):'Retiro';}
-function fleteTxt(t){if(t.tipo==='FL')return t.flete==='entrega'?'SOLO FLETE · ENTREGA':t.fleteVuelta?'SOLO FLETE · RETIRO Y ENTREGA':'SOLO FLETE · RETIRO';return t.flete==='entrega'?'PARA ENTREGAR':'PARA RETIRAR';}
+function fleteTxt(t){if(t.tipo==='FL')return t.flete==='entrega'?'SOLO FLETE · PARA ENTREGAR':t.fleteVuelta?'SOLO FLETE · PARA RETIRAR Y ENTREGAR':'SOLO FLETE · PARA RETIRAR';return t.flete==='entrega'?'PARA ENTREGAR':'PARA RETIRAR';}
 function tallerDe(t){return t.tallerId?byId[t.tallerId]:null;}
 function origenEnt(t){var x=tallerDe(t);if(x)return x.estado==='listo'?'✔ Listo en taller':'🔧 En taller: '+(TST[x.estado]||x.estado);return t.yaRet?'Ya retirado'+(/^\d{4}-/.test(t.yaRet)?' el '+dd(t.yaRet):''):'Lo trajo el cliente';}
 function tipoCell(t){return (t.tipo&&t.tipo!=='FL'||(t.tipo==='FL'&&!t.flete)?'<span class="pill p-'+t.tipo+'">'+TIPO[t.tipo]+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+'</span>':'')+
@@ -607,8 +607,8 @@ function cols(t){var fl=flagOf(t);return '<td class="nw">'+ddy(base(t))+'</td><t
 function fallaTxt(t){return [(t.fallas||[]).join(', '),t.falla,t.fleteDet?'Flete: '+t.fleteDet:''].filter(Boolean).join(' — ');}
 function rowCls(t,lead){var fl=flagOf(t);return (t.estado==='asignado'&&t.fecha&&t.fecha<today()?' ask':'')+(lead==='plazo'?(t.estado==='pendiente'?sem(t):''):'')+(t.estado==='hecho'?' done':'')+(fl&&fl.flag==='no'?' no':'');}
 function leadCell(t,lead){var x='';
-  if(lead==='plazo')x=plazoCorto(t)+(t.flete==='entrega'&&t.tipo!=='FL'?'<span class="ent-or">'+esc(origenEnt(t))+'</span>':'');
-  else if(lead==='dia')x=(t.estado==='pendiente'?'SIN DÍA':(t.estado==='hecho'?'✔ ':'')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):''))+(t.flete==='entrega'&&t.tipo!=='FL'&&t.estado!=='hecho'?'<span class="ent-or">'+esc(origenEnt(t))+'</span>':'');
+  if(lead==='plazo')x=plazoCorto(t)+(t.flete==='entrega'&&(t.tipo!=='FL'||t.yaRet)?'<span class="ent-or">'+esc(origenEnt(t))+'</span>':'');
+  else if(lead==='dia')x=(t.estado==='pendiente'?'SIN DÍA':(t.estado==='hecho'?'✔ ':'')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):''))+(t.flete==='entrega'&&(t.tipo!=='FL'||t.yaRet)&&t.estado!=='hecho'?'<span class="ent-or">'+esc(origenEnt(t))+'</span>':'');
   else if(lead==='estado')x=t.estado==='pendiente'?'SIN DÍA':t.estado==='repuesto'?'ESPERA REPUESTO':(t.estado==='hecho'?'✔ HECHO ':'TURNO ')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):'');
   else if(lead==='informe')x='<span class="fi-tag">FALTA INFORME</span><br>'+fD(t.fecha)+' · hace '+diff(t.fecha,today())+(diff(t.fecha,today())===1?' día':' días');
   else if(lead==='rep')x='desde '+ddy(t.alta)+(t.tecPref?'<br><span class="muted">vio: '+esc(t.tecPref)+'</span>':'')+'<div style="margin-top:6px;text-align:left">'+repResumen(t)+'</div>';
@@ -1110,7 +1110,7 @@ function verTurno(t){FP_HOOK=null;var fl=flagOf(t);var r=function(k,v){return v?
     (t.estado==='pendiente'||t.estado==='repuesto'?tecPrefBox(t):'')+(t.estado!=='hecho'?horarioBox(t.horario,t.avisar,t.fechaPedida,t.fechaMotivo):'')+'<div id="adjBox"></div>';
   var f='<span class="left"><button class="btn btn-danger" data-a="del">Borrar</button>'+(t.estado==='asignado'?'<button class="btn" data-a="unasg">Sacar el día</button>':'')+(t.estado!=='pendiente'&&t.estado!=='repuesto'?'':'')+'</span>'+
     (t.estado==='asignado'?'<button class="btn btn-wa" data-a="wa">📲 Confirmación</button>'+(t.conf!=='confirmada'?'<button class="btn" data-a="confok">✔ Confirmó</button>':'')+'<button class="btn" data-a="asg">Cambiar día</button><button class="btn btn-green" data-a="cerrar">¿Cómo terminó?</button>':'')+
-    (t.estado==='pendiente'?(t.sinResp?'<button class="btn" data-a="sr_ok">↩ Respondió</button>':'<button class="btn" data-a="sr_si">📵 No responde</button>')+'<button class="btn btn-green" data-a="asg">Dar día</button>':'')+(t.estado==='hecho'?'<button class="btn" data-a="reabrir">Reabrir</button>':'')+'<button class="btn btn-primary btn-big" data-a="save">Guardar</button>';
+    (t.estado==='pendiente'?(t.sinResp?'<button class="btn" data-a="sr_ok">↩ Respondió</button>':'<button class="btn" data-a="sr_si">📵 No responde</button>')+'<button class="btn btn-green" data-a="asg">Dar día</button>':'')+(t.estado==='hecho'?(t.flete?'<button class="btn" data-a="corr">↩ Corregir cómo terminó</button>':'')+'<button class="btn" data-a="reabrir">Reabrir</button>':'')+'<button class="btn btn-primary btn-big" data-a="save">Guardar</button>';
   var o=modal('Turno · '+esc(t.nombre),b,f);bindOpts(o);
   adjUI(o.querySelector('#adjBox'),{lista:function(){return t.adj||[];},set:function(L){var cur=byId[t.id]||t;cur.adj=L;t.adj=L;touch(cur);},gt:t.tipo==='GT',nombre:function(){return t.nombre;},carpeta:function(){return adjCarpeta(t.nombre,t);}});
   var bc=o.querySelector('[data-vcli]');if(bc)bc.onclick=function(){var c=byId[t.clienteId];if(c)verCliente(c);};
@@ -1125,6 +1125,7 @@ function verTurno(t){FP_HOOK=null;var fl=flagOf(t);var r=function(k,v){return v?
     else if(a==='wa'){enviarConf(t);closeM();}
     else if(a==='confok'){t.conf='confirmada';touch(t);closeM();toast('Turno confirmado ✔');}
     else if(a==='unasg'){t.estado='pendiente';t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Volvió a “Esperan día”');}
+    else if(a==='corr'){t.estado='asignado';t.sol='';touch(t);closeM();cerrar(t);}
     else if(a==='reabrir'){t.estado='asignado';t.sol='';touch(t);closeM();toast('Reabierto');}};}
 
 function tecPrefBox(t){var ts=DB.cfg.tecnicos;return '<label class="f" style="max-width:360px"><span>Técnico que lo vio / presupuestó <small>(vuelve él por defecto)</small></span><select class="i" id="e-tecPref"><option value="">— Ninguno —</option>'+ts.map(function(n){return '<option'+(n===t.tecPref?' selected':'')+'>'+esc(n)+'</option>';}).join('')+'</select></label>';}
@@ -1132,8 +1133,13 @@ function tecPrefBox(t){var ts=DB.cfg.tecnicos;return '<label class="f" style="ma
 function tecPresu(cliId){var r='';turnos().filter(function(t){return t.clienteId===cliId&&t.estado==='hecho'&&t.tecnico&&(t.sol==='presu'||t.sol==='acepto'||t.sol==='repuesto'||t.sol==='volver');}).sort(function(a,b){return (b.fecha||'')>(a.fecha||'')?1:-1;}).slice(0,1).forEach(function(t){r=t.tecnico;});return r;}
 
 /* ---------- Cerrar visita ---------- */
+// Opciones para cerrar un flete. Retiro hecho = siempre queda PARA ENTREGAR (salvo que en el mismo viaje se haya entregado).
+function opcFlete(t){var solo=t.tipo==='FL';
+  if(t.flete==='entrega')return [['entregado',SOL.entregado+'<small>el equipo llegó al cliente</small>']].concat(solo?[]:[['retcli','🏪 Lo retiró el cliente<small>vino a buscarlo al local, no hace falta flete</small>']]);
+  if(solo)return [['retirado','⬆ Solo se hizo el RETIRO<small>queda en Fletes PARA ENTREGAR</small>']].concat(t.fleteVuelta?[['realizado','⇅ Se hizo el retiro Y la entrega<small>se llevó directo, flete terminado</small>']]:[]);
+  return [['retirado',SOL.retirado+'<small>el equipo entra al Taller y queda PARA ENTREGAR</small>']];}
 function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega',solo=t.tipo==='FL';
-  var lst=fle?[solo?['realizado',SOL.realizado+'<small>flete terminado</small>']:[ent?'entregado':'retirado',SOL[ent?'entregado':'retirado']+'<small>'+(ent?'el equipo volvió al cliente':'el equipo entra al Taller y queda PARA ENTREGAR')+'</small>']].concat(ent&&!solo?[['retcli','🏪 Lo retiró el cliente<small>vino a buscarlo al local, no hace falta flete</small>']]:[]).concat([['rep_nos','🔁 Se reprograma<small>por un problema nuestro</small>'],['rep_cli','🔁 Se reprograma<small>por un problema del cliente</small>']]).concat(solo||ent?[]:[['externo',SOL.externo+'<small>lo gestiona el cliente, no hacemos nada</small>']]):
+  var lst=fle?opcFlete(t).concat([['rep_nos','🔁 Se reprograma<small>por un problema nuestro</small>'],['rep_cli','🔁 Se reprograma<small>por un problema del cliente</small>']]).concat(solo||ent?[]:[['externo',SOL.externo+'<small>lo gestiona el cliente, no hacemos nada</small>']]):
     SOL_VISITA.map(function(k){return [k,SOL[k]+'<small>'+{ok:'listo, no hay que volver',volver:'se crea otro turno',presu:'esperamos respuesta del cliente',acepto:'se crea turno ACEPTADO',repuesto:'va a “Esperan repuesto”',taller:'nueva orden TS, se repara en taller',ausente:'vuelve a “Esperan día”',nofue:'vuelve a “Esperan día” con prioridad'}[k]+'</small>'];});
   var o=modal(fle?'¿Cómo terminó el flete?':'¿Cómo terminó la visita?','<div class="tip"><b>'+esc(t.nombre)+'</b> · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' '))+' · '+fL(t.fecha)+' con '+esc(t.tecnico)+'</div>'+
   opts('sol',lst,'','wide ')+'<label class="f"><span>'+(fle?'Nota (opcional)':'¿Qué se hizo / qué tiene el equipo?')+'</span><textarea class="i" id="s-res">'+esc(t.resultado||'')+'</textarea></label><div id="s-rep"></div>','<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
@@ -1144,6 +1150,7 @@ function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega',solo=t.tipo==='FL';
       t.estado='pendiente';t.nota=((t.nota||'')+' · '+why+dd(t.fecha)+(res?': '+res:'')).replace(/^ · /,'');t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Vuelve a esperar día');return;}
     t.estado='hecho';t.sol=s;touch(t);
     if((s==='entregado'||s==='retcli')&&t.tallerId&&byId[t.tallerId]){var tl=byId[t.tallerId];tl.estado='entregado';if(!tl.fecha)tl.fecha=today();touch(tl);}
+    if(s==='retirado'&&t.tipo==='FL'){var ne=JSON.parse(JSON.stringify(t));Object.assign(ne,{id:uid(),flete:'entrega',fleteVuelta:false,yaRet:t.fecha||today(),fleteMonto:0,estado:'pendiente',tecnico:'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',sinResp:'',intentos:0,nota:('Entregar lo retirado el '+dd(t.fecha||today())+(t.nota?' · '+t.nota:''))});delete ne.v;delete ne.mod;touch(ne);closeM();render();toast('Retiro hecho: quedó en Fletes PARA ENTREGAR.',5000);return;}
     if(s==='retirado'||s==='externo'){var tx={id:uid(),kind:'taller',fromId:t.id,orden:t.ordenTS||'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:t.nombre,clienteId:t.clienteId||'',telefono:t.telefono||'',falla:fallaTxt(t),tecnico:'',fecha:'',ingreso:today(),estado:'esperando',entregaFlete:s==='retirado',nota:s==='retirado'?'Retirado por flete':'Lo trae un flete externo del cliente'};touch(tx);if(s==='retirado')crearEntrega(tx,true);closeM();render();toast(s==='retirado'?'Retiro hecho: el equipo quedó en Taller y en Fletes como PARA ENTREGAR.':'Anotado: flete externo. Queda en Taller esperando el equipo.',5000);return;}
     if(s==='volver'){touch(copia({nota:'Volver: '+res}));toast('Hecho. Se creó otro turno para volver.');}
     else if(s==='acepto'){touch(copia({tipo:'AC',nota:'Aceptó presupuesto: '+res}));toast('Hecho. Se creó el turno ACEPTADO.');}
