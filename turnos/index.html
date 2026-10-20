@@ -810,7 +810,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-asg]'))){asignar(byId[b.dataset.asg]);return;}
   if((b=e.target.closest('[data-cerrar]'))){cerrar(byId[b.dataset.cerrar]);return;}
   if((b=e.target.closest('[data-wa]'))){enviarConf(byId[b.dataset.wa]);return;}
-  if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];if(!b._ok&&!siPregunta(faltaFactura(t),'Falta la factura','Es en garantía y todavía no tiene la factura adjunta. ¿Marcar como confirmado igual?','Confirmar igual',function(){b._ok=1;b.click();}))return;b._ok=0;t.conf='confirmada';touch(t);render();toast('Turno confirmado ✔');return;}
+  if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];t.conf='confirmada';touch(t);render();toast(confTxt(t),faltaFactura(t)?6000:3200);return;}
   if((b=e.target.closest('[data-flisto]'))){var fe=byId[b.dataset.flisto];fe.retenido=false;fe.ingreso=today();touch(fe);render();toast('Pasó a PARA ENTREGAR');return;}
   if((b=e.target.closest('[data-serie]'))){serieConf();return;}
   if((b=e.target.closest('[data-sinr]'))){sinResp(byId[b.dataset.sinr],b.dataset.v);return;}
@@ -1400,7 +1400,7 @@ function verTurno(t){FP_HOOK=null;var fl=flagOf(t);var r=function(k,v){return v?
     else if(a==='asg'){asignar(t);}
     else if(a==='cerrar'){cerrar(t);}
     else if(a==='wa'){enviarConf(t);closeM();}
-    else if(a==='confok'){t.conf='confirmada';touch(t);closeM();toast('Turno confirmado ✔');}
+    else if(a==='confok'){t.conf='confirmada';touch(t);closeM();toast(confTxt(t),faltaFactura(t)?6000:3200);}
     else if(a==='unasg'){t.estado='pendiente';t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Volvió a “Esperan día”');}
     else if(a==='flete'){closeM();nuevoFlete(t.flete?{desde:t,ft:'entrega',origen:'ret'}:{desde:t});}
     else if(a==='corr'){t.estado='asignado';t.sol='';touch(t);closeM();cerrar(t);}
@@ -1510,6 +1510,8 @@ function telWA(s){var n=(String(s||'').match(/\d[\d\s-]{5,}\d/)||[''])[0].replac
   if(n.length===12){var ar=[3,2,4];for(var i=0;i<3;i++){if(n.substr(ar[i],2)==='15'){n=n.slice(0,ar[i])+n.slice(ar[i]+2);break;}}}
   if(n.length===7)n='381'+n; // sin código de área: Tucumán
   return '549'+n;}
+// Confirmar siempre se puede; si es garantía sin factura solo avisa
+function confTxt(t){return faltaFactura(t)?'Turno confirmado ✔ · Ojo: todavía falta la factura de compra.':'Turno confirmado ✔';}
 function serieConf(){var L=L_conf().filter(function(t){return t.fecha<=addD(today(),1);}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});if(!L.length){toast('No hay turnos para confirmar');return;}var i=0;
   function paso(){if(i>=L.length){closeM();render();toast('Listo: recorriste las '+L.length+' confirmaciones.');return;}var t=byId[L[i].id]||L[i];
     var o=modal('Confirmar en serie · '+(i+1)+' de '+L.length,'<div class="serie-p"><i style="width:'+Math.round(100*i/L.length)+'%"></i></div><div class="resumen"><div><b class="k">Cliente</b> <b>'+esc(t.nombre)+'</b></div><div><b class="k">Turno</b> '+fL(t.fecha)+' con '+esc(t.tecnico||'')+(t.horario?' · '+esc(t.horario)+' hs':'')+'</div><div><b class="k">Equipo</b> '+eqTxt(t)+' · '+(TIPO[t.tipo]||'')+'</div><div><b class="k">Estado</b> '+confCell(t)+'</div>'+(faltaFactura(t)?'<div class="tip warn">🧾 Es garantía y todavía no mandó la factura.</div>':'')+'</div>'+
