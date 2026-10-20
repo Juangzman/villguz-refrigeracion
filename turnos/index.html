@@ -1565,10 +1565,16 @@ var NUM=['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','
 function nro(i){return NUM[i]||(i+1)+')';}
 function cuandoTxt(d){return d===today()?'hoy':d===addD(today(),1)?'mañana':'el '+fL(d);}
 function domDe(tec,d){return dayItems(tec,d).filter(function(t){return t.kind==='turno';});}
+// Qué es el servicio y cuánto cobra el técnico (para el resumen del día)
+function cobroTxt(t){if(t.flete)return '🚚 FLETE '+fleteTxt(t)+(t.fleteMonto?' · *cobrar '+money(t.fleteMonto)+'*':'');
+  if(t.tipo==='SG')return 'SIN GARANTÍA · *cobrar visita '+money(t.visita||DB.cfg.costos[DB.cfg.costos.length-1]||0)+'*';
+  if(t.tipo==='AC')return 'ACEPTADO'+(t.monto?' · *cobrar '+money(+String(t.monto).replace(/\D/g,''))+'*':'');
+  if(t.tipo==='GTT')return 'GTIA TALLER · sin cargo';
+  return 'GARANTÍA · no se cobra visita';}
 function resumenTxt(tec,d){var dom=domDe(tec,d),tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
   var m='Hola '+tec+' 👋 '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(dom.length===1?' turno':' turnos')+'* a domicilio:\n';
   if(dn)m+='📝 '+dn.texto+'\n';
-  dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+(t.horario?' · 🕘 '+t.horario:'');});
+  dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+' · '+cobroTxt(t)+(t.horario?' · 🕘 '+t.horario:'');});
   if(tal.length)m+='\n\n🔧 Taller: '+tal.length+(tal.length===1?' orden':' órdenes');
   if(dom.length)m+='\n\nAhora te mando cada turno por separado con todos los datos 👇';
   return m;}
