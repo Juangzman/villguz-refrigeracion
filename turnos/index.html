@@ -431,6 +431,14 @@ details.edit[open]>summary{border-bottom:1px solid var(--line)}
 
 .h-otro{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;color:var(--navy);font-size:.9rem}.h-otro .i{width:auto;min-width:118px;max-width:140px}
 .notas{border-top:2px dashed var(--line);padding-top:14px}
+.opts[data-name="sol"],.opts[data-name="comoTal"],.opts[data-name="dondeAc"]{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.opts[data-name="sol"] .opt,.opts[data-name="comoTal"] .opt,.opts[data-name="dondeAc"] .opt{justify-items:start;align-content:center;text-align:left;min-height:62px;padding:.55em .9em;gap:2px;width:100%}
+.opts[data-name="sol"] .opt small,.opts[data-name="comoTal"] .opt small,.opts[data-name="dondeAc"] .opt small{font-size:.76rem;line-height:1.25}
+@media (max-width:600px){.opts[data-name="sol"],.opts[data-name="comoTal"],.opts[data-name="dondeAc"]{grid-template-columns:1fr}}
+/* Íconos de línea (reemplazan a los emojis) */
+.ico{width:1.1em;height:1.1em;vertical-align:-.18em;flex:none;display:inline-block}
+.bnav .ico{width:22px;height:22px}.canal .ico{width:1.25em;height:1.25em}
+.opt .ol{display:inline-flex;align-items:center;gap:.4em}
 /* Impresión */
 #print{display:none}
 @media print{
@@ -510,6 +518,44 @@ try{AGMODO=localStorage.getItem('vt_agmodo2')||'tablero';YO=localStorage.getItem
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+// Íconos de línea (estilo Lucide). Los emojis del texto se cambian por estos íconos al dibujar; los decorativos se sacan.
+var ICP={check:'<path d="M20 6 9 17l-5-5"/>',truck:'<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+ alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+ phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+ phoneoff:'<path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7a2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.4 19.4 0 0 1-3.33-2.67M5.2 13.4A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><path d="M22 2 2 22"/>',
+ msg:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+ cal:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+ store:'<path d="M3 9 4.5 4h15L21 9"/><path d="M4 9v11h16V9M3 9h18M9 20v-6h6v6"/>',factory:'<path d="M2 20V9l6 4V9l6 4V4h8v16Z"/><path d="M17 16h1M12 16h1M7 16h1"/>',home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-7h6v7"/>',
+ clip:'<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',down:'<path d="M12 5v14M19 12l-7 7-7-7"/>',up:'<path d="M12 19V5M5 12l7-7 7 7"/>',updown:'<path d="m21 16-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16"/>',
+ undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',box:'<path d="M21 8 12 3 3 8v8l9 5 9-5Z"/><path d="m3 8 9 5 9-5M12 13v8"/>',ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+ pin:'<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',print:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>',
+ file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',list:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M8 11h8M8 16h5"/>',
+ repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+ flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+ star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',money:'<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+ compass:'<circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.4-6.4 2.1 2.1-6.4z"/>',camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
+ ok:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'};
+var EMAP={'✔':'check','✅':'check','🚚':'truck','⚠':'alert','❗':'alert','📲':'phone','📞':'phone','📵':'phoneoff','💬':'msg','🔧':'wrench','🧰':'wrench','🔩':'wrench','📅':'cal','🗓':'cal','📝':'pencil','✏':'pencil',
+ '🏪':'store','🏭':'factory','🏠':'home','📎':'clip','⬇':'down','⬆':'up','⇅':'updown','↩':'undo','📦':'box','⛔':'ban','🚫':'ban','📍':'pin','🖨':'print','🧾':'file','🕘':'clock','⏰':'clock','⏳':'clock',
+ '🔎':'search','🔍':'search','✕':'x','📋':'list','🔁':'repeat','🔥':'flame','⭐':'star','★':'star','☀':'sun','👥':'users','👤':'user','👷':'user','⚙':'gear','☰':'menu','💲':'money','🚪':'out','🧭':'compass','📷':'camera','👍':'ok',
+ '🎉':'','✨':'','📢':'','🤔':'','👋':'','👇':''};
+var EMRE=new RegExp('('+Object.keys(EMAP).map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|')+')\uFE0F?\s?','g');
+function icSVG(k){return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICP[k]+'</svg>';}
+function sinEmojis(root){if(!root||root.nodeType!==1&&root.nodeType!==11)return;
+  if(root.querySelectorAll)root.querySelectorAll('[placeholder],[title]').forEach(function(el){['placeholder','title'].forEach(function(a){var v=el.getAttribute(a);if(v&&EMRE.test(v)){EMRE.lastIndex=0;el.setAttribute(a,v.replace(EMRE,''));}EMRE.lastIndex=0;});});
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var p=n.parentNode&&n.parentNode.nodeName;if(p==='SCRIPT'||p==='STYLE'||p==='TEXTAREA')return NodeFilter.FILTER_REJECT;EMRE.lastIndex=0;return EMRE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP;}}),L=[],n;
+  while((n=w.nextNode()))L.push(n);
+  L.forEach(function(n){var p=n.parentNode;if(!p)return;EMRE.lastIndex=0;
+    if(p.nodeName==='OPTION'||p.nodeName==='TITLE'){n.nodeValue=n.nodeValue.replace(EMRE,'');return;}
+    var html=esc(n.nodeValue).replace(EMRE,function(m,k){var ic=EMAP[k];return ic?icSVG(ic)+(/\s$/.test(m)?' ':''):'';});
+    var t=document.createElement('template');t.innerHTML=html;p.replaceChild(t.content,n);});}
+new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(x){if(x.nodeType===1)sinEmojis(x);else if(x.nodeType===3&&x.parentNode)sinEmojis(x.parentNode);});});}).observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener('DOMContentLoaded',function(){sinEmojis(document.body);});
+
 // Deshacer: antes de cada acción se guarda una foto de los datos; si la acción cambió algo, el aviso de abajo trae “↩ Deshacer”.
 var UNDO=null;
 function snap(){try{UNDO={s:JSON.parse(JSON.stringify(DB.items)),at:Date.now(),dirty:false,shown:false};}catch(e){UNDO=null;}}
@@ -544,7 +590,7 @@ function fL(s){return s?DL[dow(s)]+' '+dd(s):'';}
    S/G: 3 días hábiles. GTIA, GTIA TALLER y ACEPTADO: 7 días hábiles.
    Si el cliente pide una fecha específica, el plazo pasa a ser esa fecha. */
 var TIPO={GT:'GTIA',SG:'S/G',GTT:'GTIA TALLER',AC:'ACEPTADO',FL:'SOLO FLETE'};
-var SOL={ok:'✔ Solucionado',volver:'🔁 Hay que volver',presu:'💲 Presupuestado',acepto:'👍 Aceptó presupuesto',repuesto:'🔩 Necesita repuesto',taller:'🔧 Se lleva al taller',ausente:'🚪 No estaba',nofue:'🚫 El técnico no fue',retirado:'✔ Retiro realizado',retcli:'🏪 Lo retiró el cliente en el local',entregado:'✔ Entrega realizada',realizado:'✔ Flete realizado',externo:'🚚 Flete externo del cliente'};
+var SOL={ok:'Solucionado',volver:'Hay que volver',presu:'Presupuesto / Diagnóstico',acepto:'Aceptó presupuesto',repuesto:'Necesita repuesto',taller:'Se lleva al taller',ausente:'No estaba',nofue:'El técnico no fue',retirado:'Retiro realizado',retcli:'Lo retiró el cliente en el local',entregado:'Entrega realizada',realizado:'Flete realizado',externo:'Flete externo del cliente'};
 var SOL_VISITA=['ok','volver','presu','acepto','repuesto','taller','ausente','nofue'];
 function base(t){return t.ingreso||t.alta||'';}
 // días hábiles (lunes a viernes)
@@ -646,8 +692,8 @@ async function login(p,silent){var err=$('loginErr');err.hidden=true;
   $('loginBtn').disabled=false;$('loginBtn').textContent=firstRun?'Crear y entrar':'Ingresar';}
 $('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('pw1').value);});
 $('logout').addEventListener('click',function(){var bt=this;if(!bt._ok&&!siPregunta(!qEmpty(),'Todavía se está guardando','Hay cambios que todavía no llegaron a Drive. ¿Salir igual?','Salir igual',function(){bt._ok=1;bt.click();}))return;try{sessionStorage.removeItem('vt_pw');}catch(e){}location.reload();});
-var VIEWS=['hoy','inicio','agenda','confirmar','repuesto','fletes','fuera','taller','informe','clientes','ajustes'];
-var PEND=[['inicio','Sin día'],['confirmar','Confirmar'],['informe','Falta informe'],['repuesto','Esperan repuesto'],['fuera','Fuera de zona']],PENDV=PEND.map(function(p){return p[0];}),ULTP='inicio';
+var VIEWS=['hoy','inicio','agenda','confirmar','presu','repuesto','fletes','fuera','taller','informe','clientes','ajustes'];
+var PEND=[['inicio','Sin día'],['confirmar','Confirmar'],['informe','Falta informe'],['presu','Presupuestos'],['repuesto','Esperan repuesto'],['fuera','Fuera de zona']],PENDV=PEND.map(function(p){return p[0];}),ULTP='inicio';
 function enter(){$('login').hidden=true;$('app').hidden=false;WK=monday(today());var h=(location.hash||'').slice(1);go(VIEWS.indexOf(h)>=0?h:'hoy');}
 
 /* ---------- Navegación ---------- */
@@ -669,7 +715,7 @@ function setN(id,n,hot){NUM[id]=n;HOT[id]=!!hot;var e=$(id);if(e){e.textContent=
 function counts(){var s=L_sin();setN('n-inicio',s.length,s.some(function(t){return sem(t)==='venc';}));
   var c=L_conf(),man=addD(today(),1);setN('n-confirmar',c.length,c.some(function(t){return t.fecha<=man;}));
   setN('n-repuesto',L_rep().length);setN('n-fletes',L_fle().filter(function(t){return t.estado==='pendiente';}).length);
-  var f=L_fue().filter(function(t){return t.estado==='pendiente';});setN('n-fuera',f.length,f.some(function(t){return sem(t)==='venc';}));setN('n-taller',L_tal().length);setN('n-informe',pasados().length,pasados().length>0);
+  var f=L_fue().filter(function(t){return t.estado==='pendiente';});setN('n-fuera',f.length,f.some(function(t){return sem(t)==='venc';}));setN('n-taller',L_tal().length);setN('n-informe',pasados().length,pasados().length>0);setN('n-presu',L_presu().length,false);
   var pn=PENDV.reduce(function(a,k){return a+(k==='repuesto'?0:(NUM['n-'+k]||0));},0),ph=PENDV.some(function(k){return HOT['n-'+k];});setN('n-pend',pn,ph);setN('b-pend',pn,ph);setN('b-fletes',NUM['n-fletes'],false);
   var th=tareasHoy().total;setN('n-hoy',th,th>0);setN('b-hoy',th,th>0);}
 function subnav(){if(PENDV.indexOf(VIEW)<0)return '';return '<div class="subnav" role="tablist">'+PEND.map(function(p){var n=NUM['n-'+p[0]]||0;return '<button class="sub'+(VIEW===p[0]?' on':'')+'" data-go="'+p[0]+'" role="tab" aria-selected="'+(VIEW===p[0])+'">'+p[1]+(n?' <span class="n'+(HOT['n-'+p[0]]?' hot':'')+'">'+n+'</span>':'')+'</button>';}).join('')+'</div>';}
@@ -683,7 +729,7 @@ function alerts(){var v=L_sin().concat(L_fue()).filter(function(t){return t.esta
   return L.length?'<div class="astrip" role="status">'+L.join('')+'</div>':'';}
 function render(){if($('app').hidden)return;counts();var m=$('main'),q=$('q').value.trim();
   if(q.length>=2){m.innerHTML=vBuscar(q);return;}
-  m.innerHTML=subnav()+alerts()+({hoy:vHoy,inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,informe:vInforme,clientes:vClientes,ajustes:vAjustes}[VIEW])();
+  m.innerHTML=subnav()+alerts()+({hoy:vHoy,presu:vPresu,inicio:vInicio,agenda:vAgenda,confirmar:vConfirmar,repuesto:vRepuesto,fletes:vFletes,fuera:vFuera,taller:vTaller,informe:vInforme,clientes:vClientes,ajustes:vAjustes}[VIEW])();
   ayudas(m);if(VIEW==='inicio'||VIEW==='hoy')bindInicio();if(VIEW==='ajustes')bindAjustes();if(VIEW==='agenda')bindAgenda();if(VIEW==='clientes')bindClientes();}
 
 // Los textos de explicación de cada sección se abren con ⓘ (no ocupan lugar todos los días)
@@ -777,10 +823,12 @@ function leadTxt(t,lead){var x='';
   else if(lead==='dia')x=(t.estado==='pendiente'?'SIN DÍA':(t.estado==='hecho'?'✔ ':'')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):''))+(fase(t)==='entregar'&&(t.tipo!=='FL'||t.yaRet)?'<span class="ent-or">'+esc(origenEnt(t))+'</span>':'');
   else if(lead==='estado')x=t.estado==='pendiente'?'SIN DÍA':t.estado==='repuesto'?'ESPERA REPUESTO':(t.estado==='hecho'?'✔ HECHO ':'TURNO ')+fD(t.fecha)+(t.tecnico?'<br>'+esc(t.tecnico):'');
   else if(lead==='informe')x='<span class="fi-tag">FALTA INFORME</span><br>'+fD(t.fecha)+' · hace '+diff(t.fecha,today())+(diff(t.fecha,today())===1?' día':' días');
+  else if(lead==='presu'){var dp=diff(t.fecha||t.alta,today());x='Presupuestado '+fD(t.fecha)+'<br><span class="muted">hace '+dp+(dp===1?' día':' días')+(t.tecnico?' · '+esc(t.tecnico):'')+'</span>';}
   else if(lead==='rep')x='desde '+ddy(t.alta)+(t.tecPref?'<br><span class="muted">vio: '+esc(t.tecPref)+'</span>':'')+'<div style="margin-top:6px;text-align:left">'+repResumen(t)+'</div>';
   return x;}
 function acts(pri,sec){sec=sec.filter(Boolean);return (pri||'')+(sec.length?'<button class="btn btn-sm more" data-more="1" aria-label="Más acciones" title="Más acciones">⋯</button><template>'+sec.join('')+'</template>':'');}
 function actCell(t){var id=t.id;
+  if(t.estado==='hecho'&&t.sol==='presu'&&!t.presuFin)return acts('<button class="btn btn-sm btn-green" data-pacep="'+id+'">Aceptó</button>',['<button class="btn btn-sm" data-pno="'+id+'">No aceptó</button>']);
   if(t.estado==='pendiente'&&fase(t)==='retirado')return acts('<button class="btn btn-sm btn-green" data-flisto="'+id+'">⬇ Listo para entregar</button>',[]);
   if(t.estado==='pendiente')return acts('<button class="btn btn-sm btn-green" data-asg="'+id+'">Dar día</button>',t.sinResp?['<button class="btn btn-sm" data-sinr="'+id+'" data-v="ok">↩ Respondió</button>','<button class="btn btn-sm" data-sinr="'+id+'" data-v="mas">📵 Otro intento sin respuesta</button>']:['<button class="btn btn-sm" data-sinr="'+id+'" data-v="si">📵 No responde</button>']);
   if(t.estado==='repuesto')return acts('<button class="btn btn-sm btn-green" data-llego="'+id+'">Llegó: ir a domicilio</button>',['<button class="btn btn-sm" data-rep="'+id+'">🔩 Datos del repuesto</button>','<button class="btn btn-sm" data-ataller="'+id+'">🔧 Reparar en taller</button>']);
@@ -816,6 +864,8 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-confok]'))){var t=byId[b.dataset.confok];t.conf='confirmada';touch(t);render();toast(confTxt(t),faltaFactura(t)?6000:3200);return;}
   if((b=e.target.closest('[data-flisto]'))){var fe=byId[b.dataset.flisto];fe.retenido=false;fe.ingreso=today();touch(fe);render();toast('Pasó a PARA ENTREGAR');return;}
   if((b=e.target.closest('[data-serie]'))){serieConf();return;}
+  if((b=e.target.closest('[data-pacep]'))){aceptoPresu(byId[b.dataset.pacep]);return;}
+  if((b=e.target.closest('[data-pno]'))){snap();var tp=byId[b.dataset.pno];tp.presuFin='no';tp.nota=((tp.nota||'')+' · No aceptó el presupuesto ('+dd(today())+')').replace(/^ · /,'');touch(tp);render();toast('Anotado: no aceptó el presupuesto');return;}
   if((b=e.target.closest('[data-sinr]'))){sinResp(byId[b.dataset.sinr],b.dataset.v);return;}
   if((b=e.target.closest('[data-noresp]'))){var tn=byId[b.dataset.noresp];tn.conf='noresp';tn.confResp=today();touch(tn);render();toast('Marcado: el cliente no responde');return;}
   if((b=e.target.closest('[data-rep]'))){editRep(byId[b.dataset.rep]);return;}
@@ -1228,7 +1278,7 @@ function modal(title,body,foot,extra){closeM();OV=document.createElement('div');
   OV.addEventListener('click',function(e){var b=e.target.closest('[data-ed]');if(b&&!b.closest('.md-f'))openItem(b.dataset.ed);});return OV;}
 function closeM(){if(OV){OV.remove();OV=null;document.body.style.overflow='';render();}}
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&OV&&!OV._ask)closeM();});
-function opts(name,list,val,cls,toggle,multi){return '<div class="opts" data-name="'+name+'"'+(toggle?' data-toggle="1"':'')+(multi?' data-multi="1"':'')+'>'+list.map(function(o){var on=multi?(val||[]).indexOf(o[0])>=0:o[0]===val;return '<button type="button" class="opt '+(cls?cls+o[0]:'')+(on?' on':'')+'" data-v="'+esc(o[0])+'">'+o[1]+'</button>';}).join('')+'</div>';}
+function opts(name,list,val,cls,toggle,multi){return '<div class="opts" data-name="'+name+'"'+(toggle?' data-toggle="1"':'')+(multi?' data-multi="1"':'')+'>'+list.map(function(o){var on=multi?(val||[]).indexOf(o[0])>=0:o[0]===val,k=String(o[1]).indexOf('<small>'),lb=k>=0?'<span class="ol">'+o[1].slice(0,k)+'</span>'+o[1].slice(k):'<span class="ol">'+o[1]+'</span>';return '<button type="button" class="opt '+(cls?cls+o[0]:'')+(on?' on':'')+'" data-v="'+esc(o[0])+'">'+lb+'</button>';}).join('')+'</div>';}
 function bindOpts(root,cb){root.querySelectorAll('.opts[data-name]').forEach(function(g){if(g._b)return;g._b=1;g.addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b)return;
     if(g.dataset.multi){b.classList.toggle('on');}else{var was=b.classList.contains('on');g.querySelectorAll('.opt').forEach(function(x){x.classList.remove('on');});if(!was)b.classList.add('on');}
     g.dataset.val=g.dataset.multi?JSON.stringify([].map.call(g.querySelectorAll('.opt.on'),function(x){return x.dataset.v;})):(g.querySelector('.opt.on')||{dataset:{}}).dataset.v||'';if(cb)cb(g.dataset.name,g.dataset.val);});
@@ -1398,7 +1448,8 @@ function lineaTiempo(t){var P=[],ok='done',cur='cur',bad='warn',fut='todo';
   else{if(t.estado==='pendiente'||t.estado==='repuesto')P.push([t.estado==='repuesto'?bad:cur,t.estado==='repuesto'?'Espera repuesto':'Esperando día',t.estado==='repuesto'?repDe(t).pedido==='llego'?'¡Llegó!':'':plazoCorto(t)]);
     else{P.push([ok,'Día dado',fD(t.fecha)+' · '+esc(t.tecnico||'')]);
       var cf=t.conf==='confirmada'?[ok,'Confirmó','']:t.conf==='enviada'?[cur,'Confirmación','WhatsApp enviado']:t.conf==='noresp'?[bad,'Confirmación','No responde']:[t.estado==='hecho'?ok:cur,'Confirmación',t.estado==='hecho'?'':'Sin confirmar'];P.push(cf);
-      P.push(t.estado==='hecho'?[ok,'Visita',SOL[t.sol]||'Hecha']:t.fecha<today()?[bad,'Visita','Falta informe']:[fut,'Visita',fD(t.fecha)]);}}
+      P.push(t.estado==='hecho'?[ok,'Visita',SOL[t.sol]||'Hecha']:t.fecha<today()?[bad,'Visita','Falta informe']:[fut,'Visita',fD(t.fecha)]);
+      if(t.sol==='presu')P.push(t.presuFin?[t.presuFin==='acepto'?ok:bad,'Respuesta',t.presuFin==='acepto'?'Aceptó':'No aceptó']:[cur,'Respuesta','Esperando al cliente']);}}
   DB.items.forEach(function(x){if(x.origenId===t.id&&x.kind==='turno')P.push([x.estado==='hecho'?ok:cur,'Sigue',(x.flete?'🚚 '+fleteTxt(x):TIPO[x.tipo]||'Turno')+(x.fecha?' · '+fD(x.fecha):' · sin día'),x.id]);});
   return '<ol class="tl">'+P.map(function(p){return '<li class="tl-s '+p[0]+'"'+(p[3]?' data-ed="'+p[3]+'" role="button" tabindex="0"':'')+'><b>'+p[1]+'</b><small>'+(p[2]||'&nbsp;')+'</small></li>';}).join('')+'</ol>';}
 function verTurno(t){FP_HOOK=null;var fl=flagOf(t);var r=function(k,v){return v?'<div><b class="k">'+k+'</b> '+v+'</div>':'';};
@@ -1487,6 +1538,23 @@ function nuevoFlete(pre){pre=pre||{};var src=pre.desde||null,tl=pre.taller||null
 function fleteDeVisita(t,res,tipo){var n={id:uid(),kind:'turno',tipo:tipo||t.tipo||'SG',clienteId:t.clienteId||'',nombre:t.nombre||'',telefono:t.telefono||'',domicilio:t.domicilio||'',ref:t.ref||'',zona:t.zona||'',canal:'Flete',atendio:YO||t.atendio||'',alta:today(),ingreso:today(),
   flete:'retiro',fleteVuelta:true,yaRet:'',retenido:false,fleteMonto:0,fleteDet:'',producto:t.producto||'',marca:t.marca||'',modelo:t.modelo||'',fallas:(t.fallas||[]).slice(),falla:t.falla||'',ordenRef:'',
   estado:'pendiente',tecnico:'',fecha:'',conf:'',nota:'Viene de la visita del '+dd(t.fecha||today())+(t.tecnico?' ('+t.tecnico+')':'')+(res?': '+res:''),adj:[],origenId:t.id};touch(n);return n;}
+/* ---------- Presupuestos: visitas con presupuesto/diagnóstico esperando respuesta del cliente ---------- */
+function L_presu(){return turnos().filter(function(t){return t.estado==='hecho'&&t.sol==='presu'&&!t.presuFin;});}
+function vPresu(){var l=L_presu().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?-1:1;});
+  return '<div class="vh"><div><h2>Presupuestos</h2><p>Visitas que terminaron en <b>Presupuesto / Diagnóstico</b>. El presupuesto se hace en el sistema TS y acá queda esperando la respuesta del cliente. Cuando responda: <b>Aceptó</b> (elegís si se hace en el domicilio, en el taller con flete o lo trae) o <b>No aceptó</b>.</p></div></div>'+
+    (l.length?tabla(l,'presu','Presupuesto'):'<div class="empty">No hay presupuestos esperando respuesta.</div>');}
+function copiaTurno(t,extra){var n=JSON.parse(JSON.stringify(t));Object.assign(n,{id:uid(),estado:'pendiente',tecnico:'',tecPref:t.tecnico||t.tecPref||'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',atendio:YO||t.atendio,flete:'',fleteMonto:0,rep:null,ordenTS:'',ordenTSAnt:t.ordenTS||t.ordenTSAnt||'',presuFin:'',sinResp:'',intentos:0},extra);delete n.v;delete n.mod;return n;}
+function aceptoPresu(t){if(!t)return;var o=modal('Aceptó el presupuesto','<div class="tip"><b>'+esc(t.nombre||'')+'</b> · '+eqTxt(t)+' · visita del '+fD(t.fecha)+(t.resultado?'<br>'+esc(t.resultado):'')+'</div>'+
+    '<div class="step"><div class="q">¿Dónde se hace el trabajo?</div>'+opts('dondeAc',[['dom','En el domicilio<small>se crea el turno ACEPTADO para darle día</small>'],['flete','En el taller, lo retiramos con flete<small>queda en Fletes para retirar (y después entregar)</small>'],['trae','En el taller, lo trae el cliente<small>cuando lo traiga, abrís la orden en Taller</small>']],'dom','')+'</div>'+
+    '<div class="g2"><label class="f"><span>Monto aceptado</span><input class="i" id="pa-monto" inputmode="numeric"></label><label class="f"><span>Nota</span><input class="i" id="pa-nota" placeholder="Qué se va a hacer"></label></div>',
+    '<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');bindOpts(o);
+  o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();
+    var da=ov(o,'dondeAc')||'dom',mo=o.querySelector('#pa-monto').value.trim(),nt=o.querySelector('#pa-nota').value.trim(),res='Aceptó presupuesto'+(mo?' $'+mo:'')+(nt?': '+nt:'');
+    t.presuFin='acepto';touch(t);
+    if(da==='dom'){touch(copiaTurno(t,{tipo:'AC',monto:mo,nota:res}));closeM();toast('Listo: quedó el turno ACEPTADO en Sin día');}
+    else if(da==='flete'){var f=fleteDeVisita(t,res,'AC');f.monto=mo;touch(f);closeM();toast('Listo: quedó en Fletes para retirar');}
+    else{t.nota=((t.nota||'')+' · '+res+' · lo trae al taller').replace(/^ · /,'');touch(t);closeM();toast('Anotado. Cuando lo traiga, abrí la orden en Taller.');}};}
+
 /* ---------- Cerrar visita ---------- */
 // Opciones para cerrar un flete. Retiro hecho = siempre queda PARA ENTREGAR (salvo que en el mismo viaje se haya entregado).
 function opcFlete(t){var solo=t.tipo==='FL';
@@ -1495,15 +1563,15 @@ function opcFlete(t){var solo=t.tipo==='FL';
   return [['retirado',SOL.retirado+'<small>'+(t.fleteVuelta?'queda en Fletes como RETIRADO hasta que esté reparado y listo para entregar':'era solo retiro: el flete termina acá')+'</small>']];}
 function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega',solo=t.tipo==='FL';
   var lst=fle?opcFlete(t).concat([['rep_nos','🔁 Se reprograma<small>por un problema nuestro</small>'],['rep_cli','🔁 Se reprograma<small>por un problema del cliente</small>']]).concat(solo||ent?[]:[['externo',SOL.externo+'<small>lo gestiona el cliente, no hacemos nada</small>']]):
-    SOL_VISITA.map(function(k){return [k,SOL[k]+'<small>'+{ok:'listo, no hay que volver',volver:'se crea otro turno',presu:'esperamos respuesta del cliente',acepto:'se crea turno ACEPTADO',repuesto:'va a “Esperan repuesto”',taller:'se repara en taller',ausente:'vuelve a “Esperan día”',nofue:'vuelve a “Esperan día” con prioridad'}[k]+'</small>'];});
+    SOL_VISITA.map(function(k){return [k,SOL[k]+'<small>'+{ok:'listo, no hay que volver',volver:'se crea otro turno',presu:'se presupuesta en TS · queda esperando la respuesta del cliente',acepto:'en el momento · se crea turno ACEPTADO',repuesto:'va a “Esperan repuesto”',taller:'se repara en taller',ausente:'vuelve a “Esperan día”',nofue:'vuelve a “Esperan día” con prioridad'}[k]+'</small>'];});
   var o=modal(fle?'¿Cómo terminó el flete?':'¿Cómo terminó la visita?','<div class="tip"><b>'+esc(t.nombre)+'</b> · '+esc([PRODN[t.producto]||t.producto,t.marca].filter(Boolean).join(' '))+' · '+fL(t.fecha)+' con '+esc(t.tecnico)+'</div>'+
-  opts('sol',lst,'','wide ')+'<label class="f"><span>'+(fle?'Nota (opcional)':'¿Qué se hizo / qué tiene el equipo?')+'</span><textarea class="i" id="s-res">'+esc(t.resultado||'')+'</textarea></label><div id="s-rep"></div>','<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
-  bindOpts(o,function(n,v){if(n!=='sol')return;var bx=o.querySelector('#s-rep');bx.innerHTML=v==='repuesto'?repForm(t):v==='taller'&&!fle?'<div class="step"><div class="q">¿Cómo llega al taller?</div>'+opts('comoTal',[['flete','🚚 Hay que retirarlo con flete<small>queda en Fletes PARA RETIRAR (retiro y entrega)</small>'],['tec','🧰 Se lo llevó el técnico<small>se abre la orden de taller</small>'],['trae','🏪 Lo trae el cliente']],'flete','wide ')+'</div>':(v==='acepto'||v==='presu')&&!fle?'<div class="step"><div class="q">'+(v==='acepto'?'¿Dónde se hace el trabajo?':'Si acepta, ¿hace falta flete?')+'</div>'+opts('dondeAc',v==='acepto'?[['dom','🏠 En el domicilio<small>se crea el turno ACEPTADO</small>'],['flete','🚚 En taller, lo retiramos con flete<small>se carga en Fletes: retiro y entrega</small>'],['trae','🏪 En taller, lo trae el cliente']]:[['no','No'],['si','Sí, el presupuesto incluye flete<small>se carga en Fletes cuando acepte</small>']],v==='acepto'?'dom':'no','wide ')+'</div>':'';bindOpts(bx);});
+  opts('sol',lst,'','')+'<label class="f"><span>'+(fle?'Nota (opcional)':'¿Qué se hizo / qué tiene el equipo?')+'</span><textarea class="i" id="s-res">'+esc(t.resultado||'')+'</textarea></label><div id="s-rep"></div>','<button class="btn" data-a="x">Cancelar</button><button class="btn btn-primary btn-big" data-a="ok">Guardar</button>');
+  bindOpts(o,function(n,v){if(n!=='sol')return;var bx=o.querySelector('#s-rep');bx.innerHTML=v==='repuesto'?repForm(t):v==='taller'&&!fle?'<div class="step"><div class="q">¿Cómo llega al taller?</div>'+opts('comoTal',[['flete','Hay que retirarlo con flete<small>queda en Fletes para retirar (retiro y entrega)</small>'],['tec','Se lo llevó el técnico<small>se abre la orden de taller</small>'],['trae','Lo trae el cliente<small>cuando lo traiga, abrís la orden en Taller</small>']],'flete','')+'</div>':v==='acepto'&&!fle?'<div class="step"><div class="q">¿Dónde se hace el trabajo?</div>'+opts('dondeAc',[['dom','En el domicilio<small>se crea el turno ACEPTADO</small>'],['flete','En el taller, lo retiramos con flete<small>queda en Fletes para retirar (y después entregar)</small>'],['trae','En el taller, lo trae el cliente<small>cuando lo traiga, abrís la orden en Taller</small>']],'dom','')+'</div>':'';bindOpts(bx);});
   o.querySelector('.md-f').onclick=function(e){var b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='x')return closeM();var s=ov(o,'sol'),res=o.querySelector('#s-res').value.trim();if(!s){toast('Elegí cómo terminó');return;}
-    t.resultado=res;var copia=function(extra){var n=JSON.parse(JSON.stringify(t));Object.assign(n,{id:uid(),estado:'pendiente',tecnico:'',tecPref:t.tecnico||t.tecPref||'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',atendio:YO||t.atendio,flete:'',fleteMonto:0,rep:null,ordenTS:'',ordenTSAnt:t.ordenTS||t.ordenTSAnt||''},extra);delete n.v;delete n.mod;return n;};
+    t.resultado=res;var copia=function(extra){return copiaTurno(t,extra);};
     if(s==='ausente'||s==='nofue'||s==='rep_nos'||s==='rep_cli'){var why=s==='nofue'?'⚠ NO FUE EL TÉCNICO el ':s==='ausente'?'No estaba el ':s==='rep_nos'?'Reprogramado (problema nuestro) el ':'Reprogramado (problema del cliente) el ';
       t.estado='pendiente';t.nota=((t.nota||'')+' · '+why+dd(t.fecha)+(res?': '+res:'')).replace(/^ · /,'');t.tecnico='';t.fecha='';t.conf='';touch(t);closeM();toast('Vuelve a esperar día');return;}
-    t.estado='hecho';t.sol=s;if(s==='presu'&&ov(o,'dondeAc')==='si'){t.presuFlete=true;t.nota=((t.nota||'')+' · Presupuesto con flete: si acepta, cargá el flete desde la ficha (🚚 Cargar flete)').replace(/^ · /,'');}touch(t);
+    t.estado='hecho';t.sol=s;touch(t);
     if((s==='entregado'||s==='retcli')&&t.tallerId&&byId[t.tallerId]){var tl=byId[t.tallerId];tl.estado='entregado';if(!tl.fecha)tl.fecha=today();touch(tl);}
     if(s==='retirado'&&!t.fleteVuelta){closeM();render();toast('Retiro hecho. Queda en Fletes como RETIRADO (historial).',5000);return;}
     if(s==='retirado'){var ne=JSON.parse(JSON.stringify(t));Object.assign(ne,{id:uid(),flete:'entrega',fleteVuelta:false,retenido:t.tipo!=='FL',yaRet:t.fecha||today(),fleteMonto:0,estado:'pendiente',tecnico:'',fecha:'',conf:'',sol:'',resultado:'',alta:today(),ingreso:today(),origenId:t.id,canal:'Seguimiento',sinResp:'',intentos:0,nota:t.nota||''});delete ne.v;delete ne.mod;delete ne.tallerId;touch(ne);closeM();render();toast(t.tipo==='FL'?'Retiro hecho: quedó en Fletes PARA ENTREGAR.':'Retiro hecho: quedó en Fletes como RETIRADO. Cuando esté listo, tocá “Listo para entregar”.',5000);return;}
@@ -1512,6 +1580,7 @@ function cerrar(t){var fle=!!t.flete,ent=t.flete==='entrega',solo=t.tipo==='FL';
     else if(s==='acepto'){var da=ov(o,'dondeAc')||'dom';if(da==='flete'){fleteDeVisita(t,res,'AC');closeM();render();toast('Listo: quedó en Fletes PARA RETIRAR.',5000);return;}if(da==='trae'){t.nota=((t.nota||'')+' · Aceptó: lo trae al taller').replace(/^ · /,'');touch(t);toast('Hecho. Cuando lo traiga, abrí la orden en Taller.');}else{touch(copia({tipo:'AC',nota:'Aceptó presupuesto: '+res}));toast('Hecho. Se creó el turno ACEPTADO.');}}
     else if(s==='repuesto'){var tmpR={};repLeer(o,tmpR);touch(copia({estado:'repuesto',nota:'Repuesto: '+res,rep:tmpR.rep||null}));toast('Hecho. Quedó en “Esperan repuesto”.');}
     else if(s==='taller'){var ct=ov(o,'comoTal')||'flete';if(ct==='tec'){closeM();aTaller(t,'esperando');return;}if(ct==='flete'){fleteDeVisita(t,res);closeM();render();toast('Listo: quedó en Fletes PARA RETIRAR.',5000);return;}t.nota=((t.nota||'')+' · Lo trae el cliente al taller').replace(/^ · /,'');touch(t);toast('Hecho. Cuando lo traiga, abrí la orden en Taller.');}
+    else if(s==='presu')toast('Quedó en Pendientes · Presupuestos, esperando la respuesta del cliente',5000);
     else toast(fle?'Flete cerrado ✔':'Visita cerrada ✔');closeM();};}
 // Pasar un turno al taller con una orden TS nueva (repara en taller)
 function aTaller(t,estado){editTaller(null,{tecnico:t.tecPref||t.tecnico||'',orden:'',equipo:[t.producto,t.marca].filter(Boolean).join(' '),cliente:t.nombre,clienteId:t.clienteId||'',telefono:t.telefono||'',falla:fallaTxt(t),estado:estado||'esperando',nota:'Viene de la visita del '+dd(t.fecha||t.alta)+(t.resultado?': '+t.resultado:'')},
