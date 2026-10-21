@@ -691,7 +691,8 @@ async function login(p,silent){var err=$('loginErr');err.hidden=true;
   }catch(m){CPW='';if(m){err.textContent=typeof m==='string'?m:(m&&m.name==='AbortError'?'Drive tardó demasiado en responder. Esperá un minuto y probá de nuevo.':m&&m.message&&!/fetch|network/i.test(m.message)?'Error al abrir: '+m.message:'Sin conexión con Google Drive. Probá de nuevo en un minuto.');err.hidden=false;if(m&&m.stack)console.error(m);}}
   $('loginBtn').disabled=false;$('loginBtn').textContent=firstRun?'Crear y entrar':'Ingresar';}
 $('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('pw1').value);});
-$('logout').addEventListener('click',function(){var bt=this;if(!bt._ok&&!siPregunta(!qEmpty(),'Todavía se está guardando','Hay cambios que todavía no llegaron a Drive. ¿Salir igual?','Salir igual',function(){bt._ok=1;bt.click();}))return;try{sessionStorage.removeItem('vt_pw');}catch(e){}location.reload();});
+$('logout').addEventListener('click',function(){var bt=this;if(!bt._ok&&!siPregunta(!qEmpty(),'Todavía se está guardando','Hay cambios que todavía no llegaron a Drive. ¿Salir igual?','Salir igual',function(){bt._ok=1;bt.click();}))return;// Salir borra los datos guardados en este navegador (clientes, teléfonos, direcciones): en una PC compartida no queda nada
+  try{sessionStorage.removeItem('vt_pw');localStorage.removeItem(KEY);localStorage.removeItem(QK);localStorage.removeItem(BK);}catch(e){}location.reload();});
 var VIEWS=['hoy','inicio','agenda','confirmar','presu','repuesto','fletes','fuera','taller','informe','clientes','ajustes'];
 var PEND=[['inicio','Sin día'],['confirmar','Confirmar'],['informe','Falta informe'],['presu','Presupuestos'],['repuesto','Esperan repuesto'],['fuera','Fuera de zona']],PENDV=PEND.map(function(p){return p[0];}),ULTP='inicio';
 function enter(){$('login').hidden=true;$('app').hidden=false;WK=monday(today());var h=(location.hash||'').slice(1);go(VIEWS.indexOf(h)>=0?h:'hoy');}

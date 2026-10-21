@@ -529,7 +529,8 @@ $('loginForm').addEventListener('submit',async function(e){
   try{sessionStorage.setItem('vg_ok',DB.cfg.pwHash);}catch(e){}
   enter();
 });
-$('logout').addEventListener('click',function(){try{sessionStorage.removeItem('vg_ok');sessionStorage.removeItem('vg_pw');}catch(e){}location.reload();});
+// Salir borra los datos guardados en este navegador (pagos, DNI/CUIT): en una PC compartida no queda nada
+$('logout').addEventListener('click',function(){if((pending||pushing)&&!confirm('Todavía se están guardando cambios en Drive. ¿Salir igual?'))return;try{sessionStorage.removeItem('vg_ok');sessionStorage.removeItem('vg_pw');localStorage.removeItem(KEY);}catch(e){}location.reload();});
 function enter(){$('vLogin').hidden=true;$('vApp').hidden=false;$('pw1').value='';initApp();}
 
 /* ---------- Navegación ---------- */
