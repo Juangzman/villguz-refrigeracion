@@ -1165,6 +1165,14 @@ function vLista(titulo,desc,l,hechos){var sin=l.filter(function(t){return t.esta
   h+='<div class="sect">Con día ('+con.length+')</div>'+(con.length?tabla(con,'dia','Día'):'<div class="empty">Nada agendado.</div>');
   if(hechos.length)h+='<details class="card"><summary style="cursor:pointer;font-weight:700">Últimos hechos ('+hechos.length+')</summary>'+tabla(hechos.slice(0,40),'dia','Día')+'</details>';return h;}
 function hechosDe(f){return turnos().filter(function(t){return t.estado==='hecho'&&f(t);}).sort(function(a,b){return (b.fecha||'')<(a.fecha||'')?-1:1;});}
+// Fletes con día, agrupados por día y fletero: imprimir la hoja o mandarle la lista por WhatsApp (como a los técnicos)
+function fletesDia(){var fs=fleteros().length?fleteros():tecs(),dias=[],d=today();for(var i=0;i<14;i++){if(dow(d)!==0)dias.push(d);d=addD(d,1);}
+  var filas=[];dias.forEach(function(d){fs.forEach(function(f){var its=dayItems(f,d).filter(function(t){return t.kind==='turno'&&t.flete;});if(its.length)filas.push({d:d,f:f,its:its});});});
+  if(!filas.length)return '<section class="hb"><div class="hb-h"><h3>Fletes por día</h3></div><div class="empty">Todavía no hay fletes con día asignado.</div></section>';
+  return '<section class="hb"><div class="hb-h"><h3>Fletes por día</h3><small class="muted">imprimí la hoja o mandale la lista al fletero</small></div><div class="hb-l">'+filas.map(function(x){
+    var ret=x.its.filter(function(t){return fase(t)==='retirar';}).length,ent=x.its.length-ret,hechos=x.its.filter(function(t){return t.estado==='hecho';}).length;
+    return '<div class="tk'+(x.d===today()?' amber':'')+'"><div class="tk-m"><b>'+(x.d===today()?'HOY · ':x.d===addD(today(),1)?'Mañana · ':'')+fL(x.d)+' · '+esc(x.f)+'</b><div class="tk-s">'+x.its.length+(x.its.length===1?' flete':' fletes')+(ret?' · '+ret+' para retirar':'')+(ent?' · '+ent+' para entregar':'')+(hechos?' · '+hechos+' hechos':'')+' — '+esc(x.its.map(function(t){return t.nombre;}).join(', '))+'</div></div>'+
+      '<div class="tk-a"><button class="btn btn-sm btn-wa" data-watec="'+esc(x.f)+'|'+x.d+'">📲 Enviar por WhatsApp</button><button class="btn btn-sm" data-pr="'+esc(x.f)+'|'+x.d+'">🖨 Imprimir el día</button></div></div>';}).join('')+'</div></section>';}
 function vFletes(){var l=L_fle(),F=function(f){return l.filter(function(t){return fase(t)===f;});},ret=F('retirar'),rdo=F('retirado'),ent=F('entregar');
   var ok=turnos().filter(function(t){return t.flete&&t.estado==='hecho'&&(fase(t)==='entregado'||(fase(t)==='retirado'&&!t.fleteVuelta));}).sort(function(a,b){return (b.fecha||'')<(a.fecha||'')?-1:1;});
   var blk=function(L,vacio,lead){var sin=L.filter(function(t){return t.estado==='pendiente';}).sort(sortPl),con=L.filter(function(t){return t.estado==='asignado';}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});
@@ -1172,6 +1180,7 @@ function vFletes(){var l=L_fle(),F=function(f){return l.filter(function(t){retur
   var sec=function(cls,txt,n,sub){return '<div class="fl-sec"><span class="pill '+cls+'">'+txt+'</span> '+n+(sub?' <small class="muted" style="font-size:.85rem;font-weight:600">· '+sub+'</small>':'')+'</div>';};
   setTimeout(function(){var bn=$('fNew');if(bn)bn.onclick=function(){nuevoFlete();};},0);
   var h='<div class="vh"><div><h2>Fletes</h2><p>Los fletes están solo acá: <b>para retirar → retirado → para entregar → entregado</b>. Al marcar un retiro como hecho queda como <b>RETIRADO</b>; cuando el equipo esté listo tocá <b>⬇ Listo para entregar</b>. Cargalos con <b>+ Nuevo flete</b>: retiro y entrega, solo retiro o solo entrega (por ejemplo cuando el cliente lo trajo al taller y pide que se lo llevemos).</p></div><button class="btn btn-green btn-big" id="fNew">🚚 + Nuevo flete</button></div>';
+  h+=fletesDia();
   h+=sec('p-f-retirar','⬆ PARA RETIRAR',ret.length)+blk(ret,'No hay nada para retirar.');
   h+=sec('p-f-retirado','📦 RETIRADO',rdo.length,'retiro y entrega: lo tenemos nosotros, se está reparando')+(rdo.length?tabla(rdo.sort(function(a,b){return (a.yaRet||'')<(b.yaRet||'')?-1:1;}),'plazo','Estado'):'<div class="empty">No hay equipos retirados esperando.</div>');
   h+=sec('p-f-entregar','⬇ PARA ENTREGAR',ent.length,'retirados por nosotros o que trajo el cliente')+blk(ent,'No hay nada para entregar.');
@@ -1668,14 +1677,14 @@ function cobroTxt(t){if(t.flete)return 'FLETE '+fleteTxt(t)+(t.fleteMonto?' · *
   if(t.tipo==='GTT')return 'GTIA TALLER · sin cargo';
   return 'GARANTÍA · no se cobra visita';}
 function resumenTxt(tec,d){var dom=domDe(tec,d),tal=dayItems(tec,d).filter(function(t){return t.kind==='taller';}),dn=dayNote(tec,d);
-  var m='Hola '+tec+'. '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(dom.length===1?' turno':' turnos')+'* a domicilio:\n';
+  var m='Hola '+tec+'. '+cuandoTxt(d).replace(/^./,function(c){return c.toUpperCase();})+' tenés *'+dom.length+(esFletero(tec)?(dom.length===1?' flete':' fletes')+'*:\n':(dom.length===1?' turno':' turnos')+'* a domicilio:\n');
   if(dn)m+='Nota: '+dn.texto+'\n';
   dom.forEach(function(t,i){m+='\n'+nro(i)+' '+(t.nombre||'')+' · '+(t.domicilio||'')+(t.zona?' ('+t.zona+')':'')+' · '+cobroTxt(t)+(t.horario?' · Horario '+t.horario+' hs':'');});
   if(tal.length)m+='\n\nTaller: '+tal.length+(tal.length===1?' orden':' órdenes');
-  if(dom.length)m+='\n\nAhora te mando cada turno por separado con todos los datos.';
+  if(dom.length)m+='\n\nAhora te mando cada '+(esFletero(tec)?'flete':'turno')+' por separado con todos los datos.';
   return m;}
 function turnoTxt(t,i,n){var eq=[PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' ');
-  var m='*TURNO '+(i+1)+' de '+n+' · '+(t.nombre||'')+'*\n';
+  var m='*'+(t.flete?'FLETE':'TURNO')+' '+(i+1)+' de '+n+' · '+(t.nombre||'')+'*\n';
   m+='Dirección: '+(t.domicilio||'')+(t.ref?' ('+t.ref+')':'')+(t.zona?' · '+t.zona:'')+'\n';if(t.domicilio)m+='Mapa: '+mapURL(t)+'\n';
   if(t.telefono)m+='Teléfono: '+t.telefono+'\n';
   m+='Equipo: '+(eq||'-')+'\n';m+='Servicio: '+cobroTxt(t)+'\n';
@@ -1690,9 +1699,9 @@ function tallerTxt(tec,d){var tal=dayItems(tec,d).filter(function(t){return t.ki
   return '*En el taller '+cuandoTxt(d)+':*\n'+tal.map(function(t){return '- Orden '+(t.orden||'s/n')+' — '+[t.equipo,t.cliente].filter(Boolean).join(' · ')+(t.falla?' — '+t.falla:'');}).join('\n');}
 var WASENT={};
 function listaWA(tec,d){var tel=(DB.cfg.tecTel||{})[tec]||'';
-  if(!tel){toast('Falta el número de WhatsApp de '+tec+'. Cargalo en Ajustes → Técnicos.',5000);return;}
+  if(!tel){toast('Falta el número de WhatsApp de '+tec+'. Cargalo en Ajustes → '+(esFletero(tec)?'Fleteros':'Técnicos')+'.',5000);return;}
   var dom=domDe(tec,d),key=tec+'|'+d,sent=WASENT[key]=WASENT[key]||{},msgs=[['res','📋 Resumen del día',resumenTxt(tec,d)]];
-  dom.forEach(function(t,i){msgs.push([t.id,nro(i)+' Turno '+(i+1)+' · '+esc(t.nombre||''),turnoTxt(t,i,dom.length)]);});
+  dom.forEach(function(t,i){msgs.push([t.id,nro(i)+(t.flete?' Flete ':' Turno ')+(i+1)+' · '+esc(t.nombre||''),turnoTxt(t,i,dom.length)]);});
   var tt=tallerTxt(tec,d);if(tt)msgs.push(['tal','🔧 Órdenes del taller',tt]);
   function body(){return '<div class="tip">Mandale los mensajes <b>en orden</b>: primero el resumen y después cada turno. Cada botón abre WhatsApp con el mensaje listo; solo tocá enviar y volvé acá para el siguiente.</div><div class="walist">'+
     msgs.map(function(m,i){return '<button class="btn '+(sent[m[0]]?'sent':'btn-wa')+'" data-wam="'+i+'">'+(sent[m[0]]?'✔ ':'')+m[1]+(sent[m[0]]?' <small>(enviado)</small>':'')+'</button>';}).join('')+'</div>'+
@@ -1703,10 +1712,10 @@ function listaWA(tec,d){var tel=(DB.cfg.tecTel||{})[tec]||'';
   o.querySelector('.md-f').onclick=function(e){if(e.target.closest('[data-a]'))closeM();};}
 
 /* ---------- Imprimir hoja del técnico ---------- */
-function imprimir(tec,days){var h='<div class="pr-h"><svg viewBox="0 0 682 212"><use href="#logo"/></svg><h1>Turnos · '+esc(tec)+'</h1><span>Impreso '+dd(today())+'</span></div>';
+function imprimir(tec,days){var h='<div class="pr-h"><svg viewBox="0 0 682 212"><use href="#logo"/></svg><h1>'+(esFletero(tec)?'Fletes':'Turnos')+' · '+esc(tec)+'</h1><span>Impreso '+dd(today())+'</span></div>';
   days.forEach(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);if(!its.length&&!dn)return;h+='<div class="pr-day">'+fL(d)+(dn?' — '+esc(dn.texto):'')+'</div>';if(!its.length)return;h+='<table class="pr-t"><thead><tr><th>Tipo</th><th>Orden fáb. / TS</th><th>Cliente</th><th>Domicilio</th><th>Zona</th><th>Teléfono</th><th>Equipo</th><th>Falla</th><th>Horario</th><th>Nota</th><th style="width:15%">Resultado</th></tr></thead><tbody>'+
     its.map(function(t){if(t.kind==='taller')return '<tr><td>TALLER</td><td>'+esc(t.orden)+'</td><td>'+esc(t.cliente||'')+'</td><td></td><td></td><td></td><td>'+esc(t.equipo||'')+'</td><td>'+esc(t.falla||'')+'</td><td></td><td>'+esc(t.nota||'')+'</td><td></td></tr>';
-      return '<tr><td>'+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+(t.flete?' · '+fleteTxt(t):'')+'</td><td>'+esc([t.ordenFab,t.ordenTS].filter(Boolean).join(' / '))+'</td><td>'+esc(t.nombre)+'</td><td>'+esc(t.domicilio)+(t.ref?' ('+esc(t.ref)+')':'')+'</td><td>'+esc(t.zona||'')+'</td><td>'+esc(t.telefono)+'</td><td>'+esc([t.producto,t.marca,t.modelo].filter(Boolean).join(' '))+'</td><td>'+esc(fallaTxt(t))+'</td><td>'+esc(horarioTxt(t))+'</td><td>'+esc(t.nota||'')+'</td><td>'+esc(t.resultado||'')+'</td></tr>';}).join('')+'</tbody></table>';});
+      return '<tr><td>'+(TIPO[t.tipo]||'')+(t.tipo==='SG'&&t.visita?' '+money(t.visita):'')+(t.flete?' · '+fleteTxt(t)+(t.fleteMonto?' · cobrar '+money(t.fleteMonto):''):'')+'</td><td>'+esc([t.ordenFab,t.ordenTS,t.ordenRef].filter(Boolean).join(' / '))+'</td><td>'+esc(t.nombre)+'</td><td>'+esc(t.domicilio)+(t.ref?' ('+esc(t.ref)+')':'')+'</td><td>'+esc(t.zona||'')+'</td><td>'+esc(t.telefono)+'</td><td>'+esc([t.producto,t.marca,t.modelo].filter(Boolean).join(' '))+'</td><td>'+esc(fallaTxt(t))+'</td><td>'+esc(horarioTxt(t))+'</td><td>'+esc(t.nota||'')+'</td><td>'+esc(t.resultado||'')+'</td></tr>';}).join('')+'</tbody></table>';});
   $('print').innerHTML=h;setTimeout(function(){window.print();},50);}
 
 /* ---------- Arranque ---------- */
