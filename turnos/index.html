@@ -442,6 +442,9 @@ details.edit[open]>summary{border-bottom:1px solid var(--line)}
 .cf{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:800;padding:.12em .5em;border-radius:999px;white-space:nowrap;letter-spacing:.01em}
 .cf.ok{background:var(--ok-bg);color:var(--green-ink)}.cf.wait{background:var(--amber-bg);color:var(--amber)}.cf.bad{background:var(--red-bg);color:var(--red)}
 .xl td.lead .cf{margin-top:2px}
+.agf{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.agf .f{min-width:200px}.agf .i{min-height:42px}.agf-n{font-weight:800;color:var(--navy);font-size:.88rem;padding-bottom:10px}
+@media (max-width:600px){.agf .f{min-width:0;flex:1 1 140px}}
 /* Impresión */
 #print{display:none}
 @media print{
@@ -516,7 +519,7 @@ var DEF={tecnicos:['Marcelo','Gabi','Jorge'],inactivos:[],tecTel:{},
   msgGT:'{SALUDO}\n\nMe comunico de VillGuz Refrigeración para confirmar el turno de su visita técnica en garantía para el día *{DIA}*.\n\nPara poder confirmar el turno, por favor necesitamos lo siguiente:\n\n1️⃣ *Envíenos una foto o PDF con la factura de compra del equipo (requisito indispensable).*\n2️⃣ Confirme que habrá un mayor de 18 años para recibir al técnico.\n3️⃣ Envíenos su ubicación (clic en el clip 📎 > Ubicación > Enviar mi ubicación actual. NO en tiempo real).\n\n⚠️ Recordatorios:\n\n* Rango horario: 9:00 a 14:00 hs (sin hora fija).\n* Tolerancia: El técnico aguardará 15 minutos. De no haber respuesta, deberá retirarse y se reprogramará el turno.\n\n*IMPORTANTE: De no enviar la factura y confirmar este mensaje, el servicio será cancelado o reprogramado automáticamente.*\n\nAguardamos su respuesta.\nMuchas gracias, que tenga un buen día.'};
 var DB={cfg:JSON.parse(JSON.stringify(DEF)),items:[]},byId={};
 var CPW='',CVER=0,pushing=false,pushT=null,Q={ch:{},del:{},cfg:null};
-var VIEW='hoy',FILT={zona:'todas',tipo:'todos',ag:'todos',tal:'activos',cli:'',tbz:'todas'},WK=null,AGMODO='tablero',YO='';
+var VIEW='hoy',FILT={zona:'todas',tipo:'todos',ag:'todos',tal:'activos',cli:'',tbz:'todas',agd:'semana',age:'todos'},WK=null,AGMODO='tablero',YO='';
 try{AGMODO=localStorage.getItem('vt_agmodo2')||'tablero';YO=localStorage.getItem('vt_yo')||'';}catch(e){}
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -1077,22 +1080,25 @@ function picker(x){if(!x.sel._init){x.sel._init=1;if(!x.sel.tec&&x.pref&&x.ts.in
 function bindPicker(box,sel,redraw){box.onclick=function(e){var x=e.target.closest('[data-prec]');if(x){var pp=x.dataset.prec.split('|');sel.tec=pp[0];sel.dia=pp[1];if(sel.pref&&pp[0]!==sel.pref)sel.otro=true;redraw();return;}x=e.target.closest('[data-potro]');if(x){sel.otro=x.dataset.potro==='1';if(!sel.otro&&sel.pref)sel.tec=sel.pref;else if(sel.otro&&sel.tec===sel.pref)sel.tec='';redraw();return;}x=e.target.closest('[data-ptec]');if(x){sel.tec=sel.tec===x.dataset.ptec?'':x.dataset.ptec;redraw();return;}x=e.target.closest('[data-pdia]');if(x){sel.dia=sel.dia===x.dataset.pdia?'':x.dataset.pdia;redraw();}};
   var fd=box.querySelector('#f-dia');if(fd)fd.onchange=function(){sel.dia=this.value;redraw();};}
 function zonasDia(tec,d,excl){var z={};dayItems(tec,d).forEach(function(t){if(t.id!==excl&&t.zona)z[t.zona]=1;});return Object.keys(z);}
-function vAgenda(){var days=[];for(var i=0;i<6;i++)days.push(addD(WK,i));var ts=tecs();if(FILT.ag!=='todos'&&ts.indexOf(FILT.ag)>=0)ts=[FILT.ag];
+function vAgenda(){var semana=[];for(var i=0;i<6;i++)semana.push(addD(WK,i));if(FILT.agd!=='semana'&&semana.indexOf(FILT.agd)<0)FILT.agd='semana';var days=FILT.agd==='semana'?semana:[FILT.agd];var ts=tecs();if(FILT.ag!=='todos'&&ts.indexOf(FILT.ag)>=0)ts=[FILT.ag];
   var h='<div class="vh"><div><h2>Turnos de técnicos</h2><p>En el <b>tablero</b> ves a todos los técnicos de la semana: <b>arrastrá</b> una tarjeta a otro día o técnico para cambiarla, o arrastrá un cliente de “Esperan día” a un casillero para darle el turno. La barrita de cada casillero muestra la carga (hasta 5 normal, 6-7 completo, 8 o más son muchos). Tocá una tarjeta para ver todo. Con 📝 anotás si el técnico queda en taller, feriado, etc. Con 🖨 imprimís la hoja de un día (la lista puede cambiar día a día).</p></div>'+
-    '<div class="wk"><button class="wk-btn" id="wkP" aria-label="Semana anterior">‹</button><span class="wk-lbl">Semana '+dd(days[0])+' al '+dd(days[5])+'</span><button class="wk-btn" id="wkN" aria-label="Semana siguiente">›</button><button class="btn btn-sm" id="wkH">Esta semana</button></div></div>';
+    '<div class="wk"><button class="wk-btn" id="wkP" aria-label="Semana anterior">‹</button><span class="wk-lbl">Semana '+dd(semana[0])+' al '+dd(semana[5])+'</span><button class="wk-btn" id="wkN" aria-label="Semana siguiente">›</button><button class="btn btn-sm" id="wkH">Esta semana</button></div></div>';
   h+='<div class="bar">'+chipsF('ag',[['todos','Todos']].concat(tecs().map(function(n){return [n,n];})))+'<div class="chips">'+(MOB()?'':'<button class="chip sm'+(AGMODO==='tablero'?' on':'')+'" data-modo="tablero">▦ Tablero</button>')+'<button class="chip sm'+(AGMODO==='planilla'?' on':'')+'" data-modo="planilla">☰ Planilla</button><button class="chip sm'+(AGMODO==='semana'||(MOB()&&AGMODO==='tablero')?' on':'')+'" data-modo="semana">🗓 Por técnico</button></div></div>';
+  h+=agFiltros(semana,days);
   if(AGMODO==='tablero'&&!MOB())return h+tablero(days);
   if(!tecs().length)return h+'<div class="empty">Agregá los técnicos en Ajustes.</div>';
   if(FILT.ag==='todos')(DB.cfg.fleteros||[]).forEach(function(f){if(days.some(function(d){return dayItems(f,d).length;}))ts=ts.concat([f]);});
-  ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=dayItems(tec,d).filter(function(t){return t.kind==='turno';}).length;});
+  var vis=0;ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=agItems(tec,d).filter(function(t){return t.kind==='turno';}).length;});
+    if(FILT.age!=='todos'&&!days.some(function(d){return agItems(tec,d).length;}))return;vis++;
     h+='<section class="ag-tec"><div class="ag-h"><h3>'+esc(tec)+' · '+tot+(tot===1?' turno':' turnos')+'</h3></div>';
-    if(AGMODO==='semana'||(AGMODO==='tablero'&&MOB())){h+='<div class="ag-days">'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
+    if(AGMODO==='semana'||(AGMODO==='tablero'&&MOB())){h+='<div class="ag-days">'+days.map(function(d){var its=agItems(tec,d),dn=dayNote(tec,d);
         return '<div class="ag-day'+(d===today()?' today':'')+'"><div class="ag-dh"><b>'+fD(d)+(d===today()?' · HOY':'')+'</b><span class="cnt">'+(its.length?its.length+(its.length===1?' turno':' turnos'):'')+cargaTag(its.filter(function(i){return i.kind==='turno';}).length)+'</span><span><button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'" title="Nota del día">📝</button>'+(its.length?' <button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'" title="Imprimir el día">🖨 Imprimir el día</button> <button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'" title="Mandar la lista al técnico">📲 Enviar por WhatsApp</button>':'')+'</span></div><div class="ag-cell">'+(dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(mini).join('')+'</div></div>';}).join('')+'</div>';}
-    else{h+='<div class="xl-wrap" style="border:0;border-radius:0;max-height:none"><table class="xl"><thead><tr><th>Estado</th>'+HEAD+'</tr></thead><tbody>'+days.map(function(d){var its=dayItems(tec,d),dn=dayNote(tec,d);
+    else{h+='<div class="xl-wrap" style="border:0;border-radius:0;max-height:none"><table class="xl"><thead><tr><th>Estado</th>'+HEAD+'</tr></thead><tbody>'+days.map(function(d){var its=agItems(tec,d),dn=dayNote(tec,d);if(FILT.age!=='todos'&&!its.length)return '';
         return '<tr class="day'+(d===today()?' today':'')+'"><td colspan="13">'+fL(d)+(d===today()?' · HOY':'')+cargaTag(its.filter(function(i){return i.kind==='turno';}).length)+(dn?'<span class="dnote">'+esc(dn.texto)+'</span>':'')+'<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota</button>'+(its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button><button class="btn btn-sm btn-wa" data-watec="'+esc(tec)+'|'+d+'">📲 Enviar por WhatsApp</button>':'')+'</td></tr>'+
           (its.length?its.map(function(t){if(t.kind==='taller')return '<tr class="tal" data-ed="'+t.id+'"><td class="lead">🔧 TALLER</td><td class="nw">'+ddy(t.ingreso)+'</td><td><span class="pill p-tal">TALLER</span></td><td class="ord">'+esc(t.orden)+'</td><td class="nm">'+esc(t.cliente||'')+'</td><td></td><td colspan="2">'+esc(t.nota||'')+'</td><td>'+esc(t.equipo||'')+'</td><td class="fa">'+esc(t.falla||'')+'</td><td>'+esc(TST[t.estado]||'')+'</td><td></td><td></td></tr>';
             var ask=t.estado==='asignado'&&t.fecha<today();return '<tr class="'+(t.estado==='hecho'?'done':'')+(ask?' ask':'')+'" data-ed="'+t.id+'"><td class="lead">'+(t.estado==='hecho'?'✔ HECHO':ask?'<span class="fi-tag">FALTA INFORME</span>':(t.flete?'FLETE':confMini(t)||'TURNO'))+'<div class="act">'+actCell(t)+'</div></td>'+cols(t)+'</tr>';}).join(''):'<tr class="empty-day"><td colspan="13">Sin turnos</td></tr>');}).join('')+'</tbody></table></div>';}
     h+='</section>';});
+  if(FILT.age!=='todos'&&!vis)h+='<div class="empty">No hay turnos con ese filtro '+(FILT.agd==='semana'?'esta semana':'el '+fL(FILT.agd))+'.</div>';
   return h;}
 function tbCard(t){var tal=t.kind==='taller',ask=!tal&&t.estado==='asignado'&&t.fecha<today(),done=!tal&&t.estado==='hecho';
   var ci=tal?'🔧':done?'✔':ask?'📝':t.conf==='confirmada'?'✔':t.conf==='noresp'?'📵':t.conf==='enviada'?'⏳':'•';
@@ -1104,9 +1110,9 @@ function tablero(days){var ts=tecs().concat(fleteros());if(FILT.ag!=='todos'&&ts
     '<select class="i" id="tbZona" aria-label="Filtrar por zona"><option value="todas">Todas las zonas</option>'+Object.keys(zs).sort().map(function(z){return '<option value="'+esc(z)+'"'+(FILT.tbz===z?' selected':'')+'>'+esc(z||'Sin zona')+'</option>';}).join('')+'</select>'+
     '<div class="tb-sl">'+(esp.length?esp.slice(0,60).map(function(t){return '<div class="bc side '+(t.tipo||'')+' s-'+sem(t)+'" draggable="true" data-drag="'+t.id+'" data-ed="'+t.id+'"><b>'+esc(t.nombre||'')+'</b><span>'+(t.flete?'🚚 '+esc(fleteTxt(t))+' · ':'')+esc(t.zona||'sin zona')+' · '+eqTxt(t)+'</span><span class="pl">'+plazoCorto(t)+'</span></div>';}).join(''):'<div class="muted" style="padding:8px">Nadie esperando día 🎉</div>')+'</div><p class="tb-tip">Arrastrá un cliente a un casillero para darle el día. Soltá acá una tarjeta para sacarle el día.</p></aside>';
   h+='<div class="tb-grid" style="grid-template-columns:120px repeat('+days.length+',minmax(130px,1fr))"><div class="tb-c0"></div>'+days.map(function(d){return '<div class="tb-dh'+(d===today()?' today':'')+'">'+fD(d)+(d===today()?' · HOY':'')+'</div>';}).join('');
-  ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=dayItems(tec,d).filter(function(i){return i.kind==='turno';}).length;});
+  ts.forEach(function(tec){var tot=0;days.forEach(function(d){tot+=agItems(tec,d).filter(function(i){return i.kind==='turno';}).length;});
     h+='<div class="tb-tec"><b>'+esc(tec)+'</b><small>'+tot+(tot===1?' turno':' turnos')+'</small></div>';
-    days.forEach(function(d){var its=dayItems(tec,d),n=its.filter(function(i){return i.kind==='turno';}).length,dn=dayNote(tec,d),cc=cargaCls(n),pas=d<today();
+    days.forEach(function(d){var its=agItems(tec,d),n=dayItems(tec,d).filter(function(i){return i.kind==='turno';}).length,dn=dayNote(tec,d),cc=cargaCls(n),pas=d<today();
       h+='<div class="tb-cell'+(d===today()?' today':'')+(pas?' past':'')+'" data-cell="'+esc(tec)+'|'+d+'"><div class="tb-ch"><span class="tb-load '+cc+'" title="'+n+' turnos a domicilio"><i style="width:'+Math.min(100,Math.round(n/5*100))+'%"></i></span><small>'+(n||'')+'</small>'+
         acts('',['<button class="btn btn-sm" data-dn="'+esc(tec)+'|'+d+'">📝 Nota del día</button>',its.length?'<button class="btn btn-sm" data-pr="'+esc(tec)+'|'+d+'">🖨 Imprimir el día</button>':'',its.length?'<button class="btn btn-sm" data-watec="'+esc(tec)+'|'+d+'">📲 Lista por WhatsApp</button>':''])+'</div>'+
         (dn?'<button class="dnote-c" data-dn="'+esc(tec)+'|'+d+'">'+esc(dn.texto)+'</button>':'')+its.map(tbCard).join('')+'</div>';});});
@@ -1125,7 +1131,20 @@ function moverA(id,tec,d,ok){var t=byId[id];if(!t)return;if(t.tecnico===tec&&t.f
   snap();var cambio=t.fecha!==d;t.tecnico=tec;t.fecha=d;if(t.kind==='turno'){if(t.estado==='pendiente'){t.sinResp='';t.intentos=0;}t.estado='asignado';if(cambio)t.conf='';}else if(t.estado==='esperando')t.estado='en_reparacion';
   touch(t);render();toast((t.nombre||t.cliente||'Turno')+' → '+tec+' · '+fL(d)+(cambio&&t.kind==='turno'?'. Mandale la confirmación.':''),5000);}
 function sacarDia(id){var t=byId[id];if(!t||t.kind!=='turno'||t.estado!=='asignado')return;snap();t.estado='pendiente';t.tecnico='';t.fecha='';t.conf='';touch(t);render();toast((t.nombre||'')+' volvió a “Esperan día”');}
-function bindAgenda(){$('wkP').onclick=function(){WK=addD(WK,-7);render();};$('wkN').onclick=function(){WK=addD(WK,7);render();};$('wkH').onclick=function(){WK=monday(today());render();};
+// Filtros de la agenda: por día de la semana y por estado
+var AGE=[['todos','Todos los turnos'],['abiertos','Pendientes de hacer'],['sinconf','Sin confirmar'],['enviada','WhatsApp enviado (sin respuesta)'],['noresp','No responde'],['conf','Confirmados'],['informe','Falta informe'],['hechos','Hechos'],
+  ['repuesto','Vuelta por repuesto'],['fletes','Fletes'],['taller','Taller'],['GT','Garantía'],['SG','Sin garantía'],['AC','Aceptados'],['GTT','Garantía de taller']];
+function agMatch(t){var e=FILT.age,tu=t.kind==='turno',asg=tu&&t.estado==='asignado';
+  switch(e){case 'todos':return true;case 'abiertos':return asg;case 'sinconf':return asg&&!t.flete&&!t.conf;case 'enviada':return asg&&t.conf==='enviada';case 'noresp':return asg&&t.conf==='noresp';
+    case 'conf':return asg&&t.conf==='confirmada';case 'informe':return asg&&t.fecha<today();case 'hechos':return tu&&t.estado==='hecho';case 'repuesto':return tu&&!!t.rep&&!t.flete;
+    case 'fletes':return tu&&!!t.flete;case 'taller':return t.kind==='taller';default:return tu&&t.tipo===e;}}
+function agItems(tec,d){return dayItems(tec,d).filter(agMatch);}
+function agFiltros(semana,days){var act=FILT.agd!=='semana'||FILT.age!=='todos',n=0,tot=0;
+  (tecs().concat(fleteros())).forEach(function(tec){days.forEach(function(d){tot+=dayItems(tec,d).length;n+=agItems(tec,d).length;});});
+  return '<div class="agf"><label class="f"><span>Día</span><select class="i" id="agDia"><option value="semana">Toda la semana</option>'+semana.map(function(d){return '<option value="'+d+'"'+(FILT.agd===d?' selected':'')+'>'+fL(d)+(d===today()?' (hoy)':'')+'</option>';}).join('')+'</select></label>'+
+    '<label class="f"><span>Mostrar</span><select class="i" id="agEst">'+AGE.map(function(o){return '<option value="'+o[0]+'"'+(FILT.age===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></label>'+
+    (act?'<span class="agf-n">'+n+' de '+tot+'</span><button class="btn btn-sm" id="agLimpiar">Quitar filtros</button>':'')+'</div>';}
+function bindAgenda(){var ad=$('agDia'),ae=$('agEst'),al=$('agLimpiar');if(ad)ad.onchange=function(){FILT.agd=this.value;render();};if(ae)ae.onchange=function(){FILT.age=this.value;render();};if(al)al.onclick=function(){FILT.agd='semana';FILT.age='todos';render();};$('wkP').onclick=function(){WK=addD(WK,-7);render();};$('wkN').onclick=function(){WK=addD(WK,7);render();};$('wkH').onclick=function(){WK=monday(today());render();};
   document.querySelectorAll('[data-modo]').forEach(function(b){b.onclick=function(){AGMODO=b.dataset.modo;try{localStorage.setItem('vt_agmodo2',AGMODO);}catch(e){}render();};});if(AGMODO==='tablero'&&!MOB())bindTablero();}
 function mini(t){if(t.kind==='taller')return '<button class="mini tal" data-ed="'+t.id+'"><b>🔧 Taller · '+esc(t.orden||'')+'</b><span class="sub">'+esc([t.equipo,t.cliente].filter(Boolean).join(' · '))+' — '+esc(TST[t.estado]||'')+'</span></button>';
   var ask=t.estado==='asignado'&&t.fecha<today();
