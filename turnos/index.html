@@ -356,6 +356,11 @@ a.map{text-decoration:none;font-weight:700;font-size:.76rem;color:var(--navy);ba
 .hb-h h3{font-family:var(--f-body);font-weight:800;font-size:1.02rem;color:var(--navy)}
 .hb-n{background:var(--mist);border-radius:999px;padding:0 .55em;font-size:.85rem;margin-left:4px}
 .hb-l{display:grid}
+.fl-car{display:inline-block;width:14px;color:var(--muted,#64748B)}.fl-hint{font-size:12px;color:#2563EB;margin-top:2px}.tk.fl-tg:hover{background:#F8FAFC}.tk.fl-tg.open{background:#F1F6FD}
+.flp{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px 14px 14px 19px;background:#F8FAFC;border-bottom:1px solid #EEF2F7}
+.flp-g{background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}.flp-h{font-weight:800;font-size:12px;letter-spacing:.04em;padding:8px 12px;display:flex;align-items:center;gap:6px}.flp-h>span:last-child{margin-left:auto}.flp-h.ret{background:#FEF3C7;color:#92400E}.flp-h.ent{background:#DCFCE7;color:#166534}
+.flp-r{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-top:1px solid #EEF2F7;cursor:pointer;font-size:13px}.flp-r:hover{background:#F8FAFC}.flp-r.done{opacity:.6}.flp-n{font-weight:800;color:#64748B;min-width:16px}.flp-m{flex:1;min-width:0}.flp-c{white-space:nowrap}.flp-v{padding:10px 12px;font-size:13px}
+@media (max-width:760px){.flp{grid-template-columns:1fr;padding:10px}}
 .tk{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #EEF2F7;border-left:5px solid transparent;cursor:pointer}
 .tk:last-child{border-bottom:0}.tk:hover{background:#F6F9FD}
 .tk.red{border-left-color:var(--red)}.tk.amber{border-left-color:#E0A100}
@@ -877,6 +882,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-more]'))){abrirMenu(b);return;}
   if(e.target.closest('.pop'))cerrarMenu();
   if(e.target.closest('[data-sinr],[data-flisto],[data-confok],[data-noresp],[data-st],[data-llego]'))snap();
+  if((b=e.target.closest('[data-fltog]'))&&!e.target.closest('.tk-a')){FL_OPEN[b.dataset.fltog]=!FL_OPEN[b.dataset.fltog];render();return;}
   if((b=e.target.closest('[data-eft]'))){openItem(b.dataset.eft);var dEd=document.querySelector('.md details.edit');if(dEd){dEd.open=true;var q=dEd.querySelector('.opts[data-name="eft"]');if(q)q.scrollIntoView({block:'center'});}return;}
   if((b=e.target.closest('[data-asg]'))){asignar(byId[b.dataset.asg]);return;}
   if((b=e.target.closest('[data-cerrar]'))){cerrar(byId[b.dataset.cerrar]);return;}
@@ -1199,13 +1205,20 @@ function vLista(titulo,desc,l,hechos){var sin=l.filter(function(t){return t.esta
   if(hechos.length)h+='<details class="card"><summary style="cursor:pointer;font-weight:700">Últimos hechos ('+hechos.length+')</summary>'+tabla(hechos.slice(0,40),'dia','Día')+'</details>';return h;}
 function hechosDe(f){return turnos().filter(function(t){return t.estado==='hecho'&&f(t);}).sort(function(a,b){return (b.fecha||'')<(a.fecha||'')?-1:1;});}
 // Fletes con día, agrupados por día y fletero: imprimir la hoja o mandarle la lista por WhatsApp (como a los técnicos)
+var FL_OPEN={};
+function flPrev(its){var hs=function(t){return (t.horario||'99');},srt=function(a,b){return hs(a)<hs(b)?-1:hs(a)>hs(b)?1:0;};
+  var R=its.filter(function(t){return t.flete!=='entrega';}).sort(srt),E=its.filter(function(t){return R.indexOf(t)<0;}).sort(srt);
+  var fila=function(t,i){var done=t.estado==='hecho';return '<div class="flp-r'+(done?' done':'')+'" data-ed="'+t.id+'" role="button" tabindex="0"><span class="flp-n">'+(i+1)+'</span><div class="flp-m"><b>'+(done?'✔ ':'')+esc(t.nombre||'')+'</b>'+(t.horario?' <span class="muted">· '+esc(t.horario)+' hs</span>':'')+'<div class="muted">'+esc([t.domicilio,t.ref].filter(Boolean).join(' · '))+(t.zona?' · <b>'+esc(t.zona)+'</b>':'')+'</div><div class="muted">'+esc([PRODN[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' · '))+(t.fleteMonto?' · Flete '+money(t.fleteMonto):'')+(t.telefono?' · '+esc(t.telefono):'')+'</div></div><span class="flp-c">'+(done?'<span class="cf ok">Hecho</span>':(confMini(t)||''))+'</span></div>';};
+  var grp=function(tit,cls,L){return '<div class="flp-g"><div class="flp-h '+cls+'">'+tit+' <span>'+L.length+'</span></div>'+(L.length?L.map(fila).join(''):'<div class="muted flp-v">Ninguno</div>')+'</div>';};
+  return '<div class="flp">'+grp('⬆ RETIROS','ret',R)+grp('⬇ ENTREGAS','ent',E)+'</div>';}
 function fletesDia(){var fs=fleteros().length?fleteros():tecs(),dias=[],d=today();for(var i=0;i<14;i++){if(dow(d)!==0)dias.push(d);d=addD(d,1);}
   var filas=[];dias.forEach(function(d){fs.forEach(function(f){var its=dayItems(f,d).filter(function(t){return t.kind==='turno'&&t.flete;});if(its.length)filas.push({d:d,f:f,its:its});});});
   if(!filas.length)return '<section class="hb"><div class="hb-h"><h3>Fletes por día</h3></div><div class="empty">Todavía no hay fletes con día asignado.</div></section>';
   return '<section class="hb"><div class="hb-h"><h3>Fletes por día</h3><small class="muted">imprimí la hoja o mandale la lista al fletero</small></div><div class="hb-l">'+filas.map(function(x){
     var ret=x.its.filter(function(t){return fase(t)==='retirar';}).length,ent=x.its.length-ret,hechos=x.its.filter(function(t){return t.estado==='hecho';}).length,sc=x.its.filter(function(t){return t.estado==='asignado'&&t.conf!=='confirmada';}).length;
-    return '<div class="tk'+(x.d===today()?' amber':'')+'"><div class="tk-m"><b>'+(x.d===today()?'HOY · ':x.d===addD(today(),1)?'Mañana · ':'')+fL(x.d)+' · '+esc(x.f)+'</b><div class="tk-s">'+x.its.length+(x.its.length===1?' flete':' fletes')+(ret?' · '+ret+' para retirar':'')+(ent?' · '+ent+' para entregar':'')+(hechos?' · '+hechos+' hechos':'')+(sc?' · <span class="cf bad">'+sc+' sin confirmar</span>':x.its.length>hechos?' · <span class="cf ok">✔ todos confirmados</span>':'')+' — '+esc(x.its.map(function(t){return t.nombre;}).join(', '))+'</div></div>'+
-      '<div class="tk-a"><button class="btn btn-sm btn-wa" data-watec="'+esc(x.f)+'|'+x.d+'">📲 Enviar por WhatsApp</button><button class="btn btn-sm" data-pr="'+esc(x.f)+'|'+x.d+'">🖨 Imprimir el día</button></div></div>';}).join('')+'</div></section>';}
+    var key=x.f+'|'+x.d,ab=!!FL_OPEN[key];
+    return '<div class="tk fl-tg'+(x.d===today()?' amber':'')+(ab?' open':'')+'" data-fltog="'+esc(key)+'" role="button" tabindex="0" aria-expanded="'+ab+'"><div class="tk-m"><b><span class="fl-car">'+(ab?'▾':'▸')+'</span> '+(x.d===today()?'HOY · ':x.d===addD(today(),1)?'Mañana · ':'')+fL(x.d)+' · '+esc(x.f)+'</b><div class="tk-s">'+x.its.length+(x.its.length===1?' flete':' fletes')+(ret?' · '+ret+' para retirar':'')+(ent?' · '+ent+' para entregar':'')+(hechos?' · '+hechos+' hechos':'')+(sc?' · <span class="cf bad">'+sc+' sin confirmar</span>':x.its.length>hechos?' · <span class="cf ok">✔ todos confirmados</span>':'')+' — '+esc(x.its.map(function(t){return t.nombre;}).join(', '))+'</div><div class="tk-s fl-hint">'+(ab?'Tocá para ocultar':'Tocá para ver los retiros y entregas del día')+'</div></div>'+
+      '<div class="tk-a"><button class="btn btn-sm btn-wa" data-watec="'+esc(x.f)+'|'+x.d+'">📲 Enviar por WhatsApp</button><button class="btn btn-sm" data-pr="'+esc(x.f)+'|'+x.d+'">🖨 Imprimir el día</button></div></div>'+(ab?flPrev(x.its):'');}).join('')+'</div></section>';}
 function vFletes(){var l=L_fle(),F=function(f){return l.filter(function(t){return fase(t)===f;});},ret=F('retirar'),rdo=F('retirado'),ent=F('entregar');
   var ok=turnos().filter(function(t){return t.flete&&t.estado==='hecho'&&(fase(t)==='entregado'||(fase(t)==='retirado'&&!t.fleteVuelta));}).sort(function(a,b){return (b.fecha||'')<(a.fecha||'')?-1:1;});
   var blk=function(L,vacio,lead){var sin=L.filter(function(t){return t.estado==='pendiente';}).sort(sortPl),con=L.filter(function(t){return t.estado==='asignado';}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});
