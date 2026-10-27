@@ -877,7 +877,7 @@ document.addEventListener('click',function(e){var b;
   if((b=e.target.closest('[data-more]'))){abrirMenu(b);return;}
   if(e.target.closest('.pop'))cerrarMenu();
   if(e.target.closest('[data-sinr],[data-flisto],[data-confok],[data-noresp],[data-st],[data-llego]'))snap();
-  if((b=e.target.closest('[data-eft]'))){openItem(b.dataset.eft);var dd=document.querySelector('.md details.edit');if(dd){dd.open=true;var q=dd.querySelector('.opts[data-name="eft"]');if(q)q.scrollIntoView({block:'center'});}return;}
+  if((b=e.target.closest('[data-eft]'))){openItem(b.dataset.eft);var dEd=document.querySelector('.md details.edit');if(dEd){dEd.open=true;var q=dEd.querySelector('.opts[data-name="eft"]');if(q)q.scrollIntoView({block:'center'});}return;}
   if((b=e.target.closest('[data-asg]'))){asignar(byId[b.dataset.asg]);return;}
   if((b=e.target.closest('[data-cerrar]'))){cerrar(byId[b.dataset.cerrar]);return;}
   if((b=e.target.closest('[data-wa]'))){enviarConf(byId[b.dataset.wa]);return;}
