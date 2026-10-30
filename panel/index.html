@@ -276,6 +276,7 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
           <div><h2>Trabajos</h2><p>Importá el Excel de TS, corregí lo que haga falta y marcá cada orden como revisada.</p></div>
           <div class="row">
             <label class="btn"><input type="file" id="tsFile" accept=".xlsx,.xls,.csv" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Importar desde TS</label>
+            <button class="btn" id="trTur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 16l2 2 4-4"/></svg>Traer de Turnos</button>
             <button class="btn" id="trAyu">+ Pago semanal de ayudante</button>
             <button class="btn btn-primary" id="trNew">+ Nueva orden</button>
           </div>
@@ -415,6 +416,13 @@ table.t tr.rs-h td{background:#F2F6FA;font-weight:700;color:var(--navy)}
   <div class="dlg-f"><button class="btn btn-danger" type="button" id="p_del" hidden>Eliminar</button><button class="btn" type="button" data-close>Cancelar</button><button class="btn btn-primary" type="submit">Guardar</button></div>
 </form></dialog>
 
+<dialog id="dTur" style="width:min(1100px,calc(100% - 24px))"><div class="dlg">
+  <h3>Traer trabajos terminados de Turnos</h3>
+  <p class="hint" id="turInfo"></p>
+  <div id="turLogin" hidden><div class="grid g3" style="align-items:end"><label class="f">Contraseña de Turnos<input class="i" type="password" id="turPw" autocomplete="current-password"></label><div><button class="btn btn-primary" type="button" id="turGo">Conectar</button></div></div><p class="hint">Es la misma contraseña con la que entran a la página de Turnos. Se recuerda solo mientras esta pestaña esté abierta.</p></div>
+  <div id="turBody"></div>
+  <div class="dlg-f"><button class="btn" type="button" data-close>Cancelar</button><button class="btn btn-primary" type="button" id="turOk" disabled>Pasar trabajos</button></div>
+</div></dialog>
 <dialog id="dMap"><form class="dlg" id="fMap" method="dialog">
   <h3>Importar desde TS</h3>
   <p class="hint" id="mapInfo"></p>
@@ -739,6 +747,45 @@ $('fMap').addEventListener('submit',function(e){e.preventDefault();var b=buildIm
     var tid=x.tecName?(findTec(x.tecName)||x.tecnicoId):x.tecnicoId;
     DB.trabajos.push({id:uid(),liqId:null,ok:false,modo:'pct',obs:'',moManual:x.mo>0,orden:x.orden,fecha:x.fecha,entrega:x.entrega,cliente:x.cliente,desc:x.desc,tipo:x.tipo,tecnicoId:tid,total:x.total,repuesto:x.repuesto,mo:x.mo,pct:pctDefault(tid,x.tipo)});n++;});
   save();$('dMap').close();setWeekInfo();if(b.list[0])$('lqPers').dataset.want=b.list[0].tecnicoId;renderTrab();toast(n+' trabajos importados'+(Object.keys(b.newTec).length?'. Revisá el % de los técnicos nuevos.':''));});
+
+/* Traer de Turnos */
+var TURNOS_CLOUD='https://script.google.com/macros/s/AKfycbzzy5qRe8VOS9jW_y8jqKykcQTB0QEPF4gTVlnp33JvuNPYKwIhIFcaoysME_leWQCXWg/exec';
+var TUR={pw:'',items:null,list:[]};try{TUR.pw=sessionStorage.getItem('vp_turpw')||'';}catch(e){}
+var TUR_SOL={ok:'Solucionado',volver:'Hay que volver',presu:'Presupuesto / Diagnóstico',acepto:'Aceptó presupuesto',repuesto:'Necesita repuesto',taller:'Se lleva al taller',ausente:'No estaba',nofue:'El técnico no fue'};
+var TUR_PROD={HEL:'Heladera',FREEZER:'Freezer',LAV:'Lavarropas',LAVASECA:'Lava-seca',SEC:'Secarropas',LAVAVAJ:'Lavavajillas',AIRE:'Aire acondicionado',MICRO:'Microondas',COCINA:'Cocina / horno',OTRO:'Otro'};
+function turTipo(t){return t.tipo==='GT'?'con':t.tipo==='GTT'?'taller':'sin';}
+function turYa(t){return DB.trabajos.find(function(x){return x.turnoId===t.id||(t.ordenTS&&x.orden&&ordKey(x.orden)===ordKey(t.ordenTS));});}
+function turFalla(t){var f=(t.fallas||[]).join(', ');return [f,t.falla].filter(Boolean).join(' · ');}
+function turDesc(t){return [[TUR_PROD[t.producto]||t.producto,t.marca,t.modelo].filter(Boolean).join(' '),turFalla(t)].filter(Boolean).join(' · ');}
+function turObs(t){return [TUR_SOL[t.sol]||'',t.resultado||''].filter(Boolean).join(': ')+(t.ordenFab?' · Orden fábrica '+t.ordenFab:'');}
+async function turLoad(){var b=$('turBody');b.innerHTML='<p class="hint">Buscando los trabajos en Turnos…</p>';$('turLogin').hidden=true;$('turOk').disabled=true;
+  try{var r=await fetch(TURNOS_CLOUD,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'load',pw:TUR.pw}),redirect:'follow'});var j=JSON.parse(await r.text());
+    if(!j.ok){if(j.error==='clave'){TUR.pw='';try{sessionStorage.removeItem('vp_turpw');}catch(e){}$('turLogin').hidden=false;b.innerHTML='<p class="hint" style="color:#B42318">Contraseña de Turnos incorrecta.</p>';return;}throw j.error||'error';}
+    try{sessionStorage.setItem('vp_turpw',TUR.pw);}catch(e){}TUR.items=(j.data&&j.data.items)||[];turRender();}
+  catch(e){b.innerHTML='<p class="hint" style="color:#B42318">No se pudo conectar con Turnos. Probá de nuevo en un momento.</p>';$('turLogin').hidden=!!TUR.pw;}}
+function turRender(){
+  TUR.list=TUR.items.filter(function(t){return t.kind==='turno'&&t.estado==='hecho'&&!t.flete&&t.tipo!=='FL'&&inWeek(t.fecha);}).sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'')||String(a.tecnico||'').localeCompare(String(b.tecnico||''));});
+  var b=$('turBody');if(!TUR.list.length){b.innerHTML='<p class="empty">En Turnos no hay trabajos terminados entre el sábado '+fdate(WK)+' y el viernes '+fdate(addD(WK,6))+'.</p>';return;}
+  var tipoSel=function(t,i){var v=turTipo(t);return '<select class="i ie" data-tt="'+i+'">'+Object.keys(TIPOS_T).map(function(k){return '<option value="'+k+'"'+(k===v?' selected':'')+'>'+TIPOS_T[k]+'</option>';}).join('')+'</select>';};
+  var nYa=0;
+  b.innerHTML='<div class="tbl-wrap"><table class="t"><thead><tr><th><input type="checkbox" id="turAll" checked title="Marcar todos"></th><th>Día</th><th>Técnico</th><th>Cliente</th><th>Equipo / falla</th><th>Orden TS</th><th>Cómo terminó</th><th>Tipo</th></tr></thead><tbody>'+
+    TUR.list.map(function(t,i){var ya=turYa(t);if(ya)nYa++;var off=t.sol==='ausente'||t.sol==='nofue';var tec=findTec(t.tecnico||'');
+      return '<tr'+(ya?' style="opacity:.5"':'')+'><td>'+(ya?'<span class="pill p-liq" title="Ya está en Trabajos">Ya está</span>':'<input type="checkbox" data-tc="'+i+'"'+(off?'':' checked')+'>')+'</td><td>'+fdate(t.fecha)+'</td><td>'+esc(t.tecnico||'—')+(t.tecnico&&!tec?' <span class="pill p-pend" title="No está en Personal: se crea al pasar">nuevo</span>':'')+'</td><td><b>'+esc(t.nombre||'')+'</b></td><td>'+esc(turDesc(t))+'</td><td>'+esc(t.ordenTS||'—')+'</td><td>'+esc(TUR_SOL[t.sol]||t.sol||'')+(t.resultado?'<br><span class="muted">'+esc(t.resultado)+'</span>':'')+'</td><td>'+(ya?esc(TIPOS_T[ya.tipo]||''):tipoSel(t,i))+'</td></tr>';}).join('')+'</tbody></table></div>'+
+    '<p class="hint">'+TUR.list.length+' trabajos terminados en la semana'+(nYa?' · '+nYa+' ya estaban en Trabajos y no se vuelven a pasar':'')+'. Los de “No estaba” y “El técnico no fue” vienen destildados. Se pasan <b>sin precio</b>: lo completás vos en Trabajos.</p>';
+  var upd=function(){var n=b.querySelectorAll('[data-tc]:checked').length;$('turOk').disabled=!n;$('turOk').textContent=n?'Pasar '+n+(n===1?' trabajo':' trabajos'):'Pasar trabajos';};
+  b.querySelectorAll('[data-tc]').forEach(function(c){c.addEventListener('change',upd);});
+  $('turAll').addEventListener('change',function(){var on=this.checked;b.querySelectorAll('[data-tc]').forEach(function(c){c.checked=on;});upd();});upd();}
+$('trTur').addEventListener('click',function(){$('turInfo').textContent='Trabajos que figuran terminados en Turnos entre el sábado '+fdate(WK)+' y el viernes '+fdate(addD(WK,6))+' (la semana elegida arriba). Pasan con el cliente, el equipo, la falla, el técnico, la orden y el tipo, sin precio.';
+  $('turBody').innerHTML='';$('turOk').disabled=true;$('turOk').textContent='Pasar trabajos';$('dTur').showModal();if(TUR.pw)turLoad();else{$('turLogin').hidden=false;$('turPw').value='';setTimeout(function(){$('turPw').focus();},50);}});
+$('turGo').addEventListener('click',function(){var p=$('turPw').value;if(!p){$('turPw').focus();return;}TUR.pw=p;turLoad();});
+$('turPw').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('turGo').click();}});
+$('turOk').addEventListener('click',function(){var b=$('turBody'),n=0,nuevos=[];
+  b.querySelectorAll('[data-tc]:checked').forEach(function(c){var i=+c.dataset.tc,t=TUR.list[i];if(!t||turYa(t))return;
+    var tid=findTec(t.tecnico||'');if(!tid&&t.tecnico){var p={id:uid(),nombre:t.tecnico,doc:'',rol:'tecnico',pctSin:30,pctCon:0,activo:true};DB.personal.push(p);tid=p.id;nuevos.push(t.tecnico);}
+    var sel=b.querySelector('[data-tt="'+i+'"]'),tipo=sel?sel.value:turTipo(t);
+    DB.trabajos.push({id:uid(),liqId:null,ok:false,modo:'pct',obs:turObs(t),moManual:false,orden:t.ordenTS||'',fecha:t.ingreso||t.alta||t.fecha,entrega:t.fecha,cliente:t.nombre||'',desc:turDesc(t),tipo:tipo,tecnicoId:tid||'',total:0,repuesto:0,mo:0,pct:pctDefault(tid,tipo),turnoId:t.id,origen:'turnos'});n++;});
+  if(!n){toast('No había trabajos nuevos para pasar.');return;}
+  save();$('dTur').close();setWeekInfo();renderTrab();toast(n+(n===1?' trabajo pasado':' trabajos pasados')+' desde Turnos. Completá el precio de cada uno.'+(nuevos.length?' Se agregó a Personal: '+nuevos.join(', ')+' (revisá su %).':''),6000);});
 
 /* Fletes */
 function renderFlete(){var FW=DB.fletes.filter(function(f){return inWeek(f.fecha);});if(!FW.length){$('flTable').innerHTML='<p class="empty">No hay fletes cargados en esta semana.</p>';return;}
